@@ -1,0 +1,907 @@
+Pyramid Arch Notes
+==================
+
+TODO:
+
+-----------------------------------------------------------------------------
+
+* Babel -> Pyramid conversion
+
+    perl -p -i.bak -e 's/\bBYTE_SIZE\b/UNITS_MTO8/' *
+
+    %s/bvm_cache/pyr_cache/g
+    %s/this_bvm/this_pyr/g
+    %s/\<s\>(/sfield(/g
+    %s/\<lcl\>/ldv/g
+    %s/\<lci\>/ldp/g
+    %s/\<rcl\>/rdv/g
+    %s/\<rci\>/rdp/g
+    %s/_newlfi/mem_new_val/g
+    %s/_newin/mem_new_ptr/g
+
+    %s/TRAVERSED/is_traversed_U/g
+    %s/MARK_TRAVERSED/mark_traversed_U/g
+
+    %s/is_leaf/is_val/g
+    %s/is_inte/is_ptr/g
+
+    %s/is_leaf_masked/is_val_masked/g
+    %s/is_inte_masked/is_ptr_masked/g
+
+    %s/_arlen8/array8_size/g
+    %s/_dec_alignment_word8/array8_dec_align/g
+    %s/_alignment_word8/array8_enc_align/g
+    %s/_array8_size/array8_mword_size/g
+
+    %s/_arcat8/array8_cat/g
+
+* Program Input/Conversion
+
+    (1) Parse input: Raw text -> s-expressions
+        <text> sexpr
+    (2) Rewrite terms: s-expressions -> s-expressions
+        <sexpr> <rewrite rules> rewrite
+    (3) Convert to bstruct and apply macros
+        <sexpr> <macro-table> bpdl
+    (4) Brickify and give to core_brick_dispatch
+
+* Bricks (formally-tagged bstructs)
+
+    A brick is a bstruct that is tagged with a tag specifying its formal
+    structure.
+
+        [ptr [tag <brick-tag> nil] ...]
+
+    The exact format of the bstruct depends on the brick-tag. The
+    interp_core_dispatch function always knows what to do with a brick that is
+    defined. For example, suppose we define a brick-tag for the 'over'
+    meta-operation:
+
+        [ptr [tag "/pyramid/tag/brick/over" nil] code operand0 operand1 ... operandn]
+
+    A brick that calls a meta-operation is called an *active brick*.
+
+    For data-type bricks (passive bricks), the interp_core_dispatch will
+    return the function pointers for accessing (reading/writing) the
+    respective brick.
+
+* Tensors
+
+    Pyramid will have built-in support for tensors. (See Nial language)
+    tensor8, tensor1 support
+
+        [ptr [tag "/pyramid/tag/brick/tensor" nil] [val dim0 dim1 ... dimn] [val tensor-vals] ]
+
+* Courses
+
+    A course is a ptr-array that is an aggregrate of bricks (it is also a brick).
+
+        [ptr [tag "/pyramid/tag/course" nil] [tag <brick-tag> nil] brick0 brick1 ... brickn]
+
+    When interp_core_dispatch encounters a course, it recursively calls itself
+    for each brick in that course.
+
+* Pyramids
+
+    A pyramid is a course or any composition of courses. A pyramid can be ragged.
+
+* Ncubes
+
+    An ncube is a regular pyramid, i.e. each level in the pyramid must have
+    a regular dimension/size (but each level can have a different size).
+    Because it is regular, it is stored in flat-order.
+
+        [ptr [tag "/pyramid/tag/brick/ncube" nil] [val dim0 dim1 ... dimn] brick0 brick1 ... brickn ]
+
+    Like a tensor, an ncube can be indexed "all-at-once".
+
+    A "flat" ncube, or 1-dimensional ncube, has nil in the dimensions entry:
+
+        [ptr [tag "/pyramid/tag/brick/ncube" nil] nil brick0 brick1 ... brickn ]
+
+    Indexing of ncubes is via a val-array, where the 0th element of the
+    val-array indexes along the first dimension, the 1th element along the second
+    dimension, and so on.
+
+        [ptr [tag "/pyramid/tag/brick/ncube" nil] [val 2] brick0 brick1 brick2 brick3 ... brickn ]
+                                                          ^[0 0] ^[0 1] ^[1 0] ^[1 1] ... ^[n/2 1]
+
+    Note that [val 1] is not a valid dimension.
+
+* Ntrees
+
+    An ntree is an ncube where every level is of the same size. It is an n-ary
+    tree.
+
+        [ptr [tag "/pyramid/tag/brick/ntree" nil] [val dim] brick0 brick1 ... brickn ]
+
+* Vines
+
+    A vine is a flattened n-ary tree. If you have a tree where every node n has
+    exactly k children, then you can place the children of node n at positions
+    k*n+m in the array, where m is between 0 and k-1. A vine can be ptr, array
+    array8 or array1.
+
+        [ptr [tag "/pyramid/tag/brick/vine/ptr"  nil] [val dim] ptr0 ptr1 ... ptrn ]
+        [val [tag "/pyramid/tag/brick/vine/val"  nil] [val dim] val0 val1 ... valn ]
+        [val [tag "/pyramid/tag/brick/vine/val8" nil] [val dim] byte0 byte1 ... byten ... align_word ]
+        ...
+
+    A vine has dimension 2 or greater. If dimenson is set to 1, the vine is just 
+    a flat-array (synonym for a flat-array).
+
+* Lists (already implemented, see list.*)
+
+* Array-of-Pairs
+
+    This is a type of ncube:
+
+        [ptr [tag "/pyramid/tag/brick/ncube" nil] [val 2] pair0 pair1 ... pairn ]
+
+    AoP is used by many kinds of meta-operations, including sort, hist,
+    ls2map, map2ls, and so on.
+
+* Gates
+
+    A gate is a singleton brick object - all access to the bstruct behind the
+    gate must go through the gate; no direct references allowed. Use 
+    gate_read() and gate_write() to perform accesses to a gated bstruct.
+
+    Bricks, courses, pyramids, ncubes and ntrees must be tree-like in respect
+    to one another (though not to their payloads) - that is, one level of a
+    pyramid (for example) must not point to another level, and so on.
+
+* Bales
+
+    A bale is a packed data structure stored in a value-array. Bales can be 
+    stuffed or unstuffed (similar to Perl's pack/unpack). Array8 and array1
+    should not be confused with bales.
+
+* Vector/Tensor Topics
+
+    - binary heaps
+        http://www.cs.ucf.edu/~dmarino/ucf/cop3502/sampleprogs/heap.c
+        http://courses.csail.mit.edu/6.006/fall10/handouts/recitation10-8.pdf
+        http://www.personal.kent.edu/~rmuhamma/Algorithms/MyAlgorithms/Sorting/heapSort.htm
+
+    - Byte-Pair Encoding
+        This may be a good candidate if it can be implemented with reliably 
+            fast compression time.
+        http://www.csse.monash.edu.au/cluster/RJK/Compress/problem.html
+        Paper: "Byte pair encoding: a text compression scheme that accelerates pattern matching"
+
+    - String-matching
+
+        string_ascii_char_match (fast scan for a character)
+        string_ascii_char_match_all (fast-scan for all chars, e.g. "/", " ", "\n", etc.)
+        string_ascii_str_match (first match only; returns offset)
+        string_ascii_str_match_all (returns list of offsets)
+        array_match      --> general-purpose matching, i.e. UTF8 strings; also rooted sub-graphs
+        array_match_all
+
+        http://igm.univ-mlv.fr/~lecroq/string/index.html
+
+        Current favorite: Boyer-Moore Horspool
+            Very fast + simple + good worst-case
+
+    - Vector/tensor processing
+
+        Why vectors/tensors:
+            Very fast in CPU/GPU
+            Eliminate pointer-manipulation - O(1) lookup for every access
+            Uses:
+                Multi-media (images, audio, video, etc.)
+                Multi-precision arithmetic/averaging
+                Histograms/probabilities/entropies
+                Parallelism
+                    http://research.cs.washington.edu/zpl/comicbook/zcbp1.html
+            Non-uses:
+                Ragged/irregular-shaped data
+                Dynamically-resizable data (unless chunked/blocked)
+                Very small data objects in isolation, such as characters or bits
+
+        Implement after support for large pages + GC-max-alloc-page-size
+        https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/X86-Built_002din-Functions.html
+        https://www.youtube.com/watch?v=6Q8_kYbTqhY&list=PLLcTTp6EQ_egylIerYEjCBbEVhnPzSdXP
+        https://software.intel.com/sites/landingpage/IntrinsicsGuide/#
+
+        Key interface between vector and normal modes: scatter and gather
+
+            rows --> matrix
+            [a a a] [b b b] [c c c] [d d d] --> [a a a b b b c c c d d d]
+            matrix --> rows
+            [a a a b b b c c c d d d] --> [a a a] [b b b] [c c c] [d d d]
+
+            matrix(interleaved) --> rows
+            [a b c d a b c d a b c d] --> [a a a] [b b b] [c c c] [d d d]
+            rows --> matrix(interleaved) 
+            [a a a] [b b b] [c c c] [d d d] --> [a b c d a b c d a b c d]
+
+            rows(interleaved) --> matrix
+            [a b c d] [a b c d] [a b c d] --> [a a a b b b c c c d d d]
+            matrix --> rows(interleaved) 
+            [a b c d] [a b c d] [a b c d] --> [a a a b b b c c c d d d]
+
+            Transpose orientation as interleaving:
+
+            1  2  3      1  4  7  10
+            4  5  6  ==> 2  5  8  11
+            7  8  9      3  6  9  12
+            10 11 12 
+
+            4,3   col-size,row-size
+            [a a a b b b c c c d d d]    [1 2 3 4 5 6 7 8 9 10 11 12]
+                                          ^ ^ ^
+            3,4
+            [a a a a b b b b c c c c]
+
+            3,4 T
+            [a b c d a b c d a b c d]
+
+            4,3 T
+            [a b c a b c a b c a b c]    [1 2 3 4 5 6 7 8 9 10 11 12]
+                                          ^     ^     ^     ^
+            2,4,3
+            [a a a b b b c c c d d d e e e f f f g g g h h h]
+                multi-dim transpose? (permutation/rotation of dim vector)
+
+    - Variadic tensors (pyramids)
+
+        Vector/tensor data type cannot be resized (without a new allocation)
+        Variadics allow "growable/shrinkable" vector/tensors
+        For example, instead of {256 newval}, we use {256 newptr} and then 
+            set each element of this array to point to a 1 element val-array,
+            as each element comes available.
+        Variadics are either packed or sparse; a packed-variadic is expected
+            to be filled "left-to-right"; a sparse-variadic can be arbitrarily
+            indexed
+        Variadics can be nested according to any regular dimensional geometry
+            but the leaves are always a value-array, that is, a standard 
+            vector/tensor
+
+* Meta-operations
+
+    ls2map lsby2 mkmap keymap lumap matcol collect import  
+    accept all? any? bsig cache_dump cache_stats_labels cache_table carray cart
+    cdri cibvm collect colvecmul compile compose compose_eval dechist delta
+    delta_tmu dirmap dstackbvm dump dup2 eachify eachmap eachpair emptymap enum2ls
+    enumcard enumdiff enumelem? enumempty? enumeq? enumintersect enumleft enumpred
+    enumsubset enumtags enumunion exhist exist exlut exmap false filter fold
+    foldify gpsort group hex08 hist2ls inchist include inslut insmap insmapls
+    insmaptls intermap lexsort loadfs ls2enum ls2hist ls2lut lscmp lsdup lsend
+    lseven lsfalse lsmix lsnum lsodd lsopcodes lspair lsrange lsrol lsror lsrotn
+    lsset lsshow lssort lsstr lsstrlen lsstrlen2 lsswap lstrue lsunpair lswise
+    lubvm luhist lulut lumapls map2ls map2tls matadd matapp matcmp matcol
+    matcolcat matcolmix matcolvec? matdiag matdim mateach matij matmix matover
+    matpair matrow matrowcat matrowvec? matshow matsqmul matsub mattrans matwise
+    mergemap mkbvm mkbvm2 mkbvms nest0 newlut over overmap overptr overval rebabel
+    reduce reject repl rldecode rlencode rmlut rmmap rowvecmul savefs say sd
+    showmap sibvm sigma sizemap spaced speak stackbvm stepbvm stepnbvm strjoin
+    strslice strslice_BAD strsort strsplit symbvm tagmap takeptr takeval timed
+    tintermap tlumap tlumapls tma tmergemap tmu trace trmmap trmmapls true unexist
+    uniq valmap wrap wrapcode wrapptr
+
+* Type conversion operators
+
+        +-----------+  m2byte   +-----------+
+        |           |---------->|           |
+        |  arraym   |           |  array8   |
+        |           |<----------|           |
+        +-----------+  byte2m   +-----------+
+            ^   |
+            |   |      m2bit    +-----------+
+            |   +-------------->|           |
+            |                   |  array1   |
+            +-------------------|           |
+                       bit2m    +-----------+
+
+
+            brick
+        +-----------+        +-----------+
+        |           |------->|    tag    |
+        +-----------+        +-----------+
+        |  payload  |
+        +-----------+
+              .
+              .
+              .
+
+
+                             +-------------+
+            course        +->| course-tag  |
+        +-----------+     |  +-------------+
+        |           |-----+  
+        +-----------+        +-------------+
+        |           |------->| brick-tag   |
+        +-----------+        +-------------+
+        |           |-----+
+        +-----------+     |  +-------------+
+        |           |--+  +->|   brick0    |
+        +-----------+  |     +-------------+
+              .        |
+              .        |     +-------------+
+              .        +---->|   brick1    |
+                             +-------------+
+                                    .
+                                    .
+                                    .
+            (A pyramid occurs when a course is nested)
+
+        stuff operator:
+        +-------------+
+        |   bstruct   |--+
+        +-------------+  |    +-----------+
+                         +--->|           |
+        +-------------+       |           |
+        |   bstruct   |------>|           |
+        +-------------+       |           |
+                         +--->|   bale    |
+        +-------------+  |    |           |
+        |   bstruct   |--+    |           |
+        +-------------+    +->|           |
+                           |  +-----------+
+        +-------------+    |               
+        |   bstruct   |----+
+        +-------------+
+                .
+                .
+                .
+
+        (unstuff does the reverse)
+
+* Brick dispatch
+
+    Each type of brick is recognized by the dispatcher and sent to its appropriate
+    destination.
+
+    brick_flatten() and brick_assemble() are helper macros (or
+        inline-functions)
+
+    core_brick_dispatch() is re-entrant; core_interp() is not
+
+    It is not mandatory to dispatch a brick through core; The purpose of brick
+    dispatching is to ease the architectural design process by enabling
+    easy revision to the "flatness" of structures, e.g. the stack will be
+    encapsulated as a brick. Brick-dispatching provides flexibility, not 
+    performance - it should be avoided whenever the type of data we are
+    handling is known. Basically, core_brick_dispatch is "The Right Way" to
+    expose the C interface to Babel.
+
+    A brick-course dispatched through core_brick_dispatch() is automatically
+    iterated; courses can be nested and automatically cause recursion of
+    core_brick_dispatch()
+
+* Conceptual
+
+reduce(x y Z a B) -->
+
+    (| x y Z a B)
+    (x | y Z a B)
+    (x y | Z a B)
+    (w | a B)
+    (w a | B)
+    (z)
+
+    Equivalence...
+
+        Big topic, there are four types of equivalence:
+        (1) Literal equivalence
+            6 is literally equivalent to 6
+            {3 2 *} is not literally equivalent to 6
+            {3 2 *} ! is not literally equivalent to 6
+        (2) Reductive equivalence
+            {3 2 *} is reductively equivalent to 6
+            {3 2 *} is not reductively equivalent to {3 2 *}
+            A quine is reductively equivalent to itself
+        (3) Canonical equivalence
+            If two objects are literally equivalent, they are canonically equivalent
+            Let rep(x) mean "canonical representation of x"
+            x = rep(x) <-> x is a quine  ... is this true?
+            rep(6) is canonically equivalent to rep(6)
+            rep({3 2 *}) is not canonically equivalent to rep(6)
+            rep({3 2 *} !) is not canonically equivalent to rep({3 2 *} !) because
+                the eval operator requires reduction of the expression (no unreduced
+                expression is ever canonical, thus, not canonically equivalent to anything)
+        (4) Syntactical equivalence
+            [1836212582 0] is literally equivalent to "farm" (invoking << on either will print "farm")
+            [1836212582 0] is not syntactically equivalent to "farm"
+            [1836212582 0] is syntactically equivalent to [1836212582 0] (things written exactly the same are syntactically equivalent)
+            [1836212582 0] is syntactically equivalent to [    1836212582 0] (whitespace is negligible)
+
+    Proof-search as program-search
+        "Prove that the product of two squares is a square"
+            a^2 + b^2 = aa * bb = ab * ab; since x * x = x^2, ab * ab = (ab)^2; thus, a^2 * b^2 = (ab)^2
+
+    Lambda --> substitution, reordering (macros)
+    Rstack --> stack-based recursion, local variables (fast, by-value backtracking)
+    Alternation --> (backtracking conditional)
+    Sequence --> Babelish try/catch construct
+    Perl6::Quantum --> any/all/one/none (modal logic)
+    Enumerated functions (LUTs)
+    Predicate-types --> "Sparse sets"
+        Think about "sparse functions"...
+    Laziness --> Memoization
+        https://www.quora.com/How-is-lazy-evaluation-implemented-in-functional-programming-languages
+    Constraint-solving (eg Prolog) - specifically, solve Ex : x = ..., where 
+                                        x is in non-reduced form (code)
+    Constraint-Functional Programming (det. vs. non-det Turing machine; NFA
+                                        vs. DFA (subset construction); generate 
+                                        vs. accept grammar)
+
+    While-via-tail-call?
+
+    (stack|control) as single construct
+
+    map-as-stack
+        Esp. in combination with LUTs
+
+    (stack|control; stack|rstack) (Y-shaped control-construct w/shared dstack)
+    (stack, rstack, control, env) --> "complete" construct; semantics more
+
+    graph-as-stack
+        This is useful with data-flow graphs (see below)
+
+    Types-as-predicates
+    Types-as-sets
+
+    FP --> What about "pass-through" arguments? Only make a copy of a value when
+            it is written to. (still doesn't help solve the "purity" problem,
+            i.e. recursion still consumes massive stack-space)
+
+    Continuation --> use continuation=nil to implement direct style (return to 
+                        call-point)
+
+    Logic-circuit minimization (e.g. Espresso algorithm, Expand-Irredundant-Reduce)
+
+    Data-flow graphs (e.g. digital circuit simulator anyschrony)
+
+    Matrix inversion for solving parallel equations
+        If we think of a LUT as a kind of matrix, then we can think of
+        solving parallel BINARY equations as a kind of function inversion
+
+        Binary matrices, graphs and relations http://slideplayer.com/slide/5788932/
+
+        https://en.wikipedia.org/wiki/Logical_matrix
+
+* JITing
+
+    See jit HTMLs for basic idea
+    Use mmap() on Linux systems
+    Must use Windows API for Windows systems
+        https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx
+        "To execute dynamically generated code, use VirtualAlloc to allocate memory and the VirtualProtect function to grant PAGE_EXECUTE access."
+
+    - Allocate and configure an executable page
+    - Insert assembly bytes into the page
+    - Return a function pointer to the (now) JIT page
+
+    - To generate assembly, follow parameter-passing and calling conventions
+        - Slightly different for Windows and Linux
+
+    For Pyramid, we probably want something like the following:
+
+        void *foo(void *args)
+
+    This gives maximum flexibility for minimal interface.
+
+    JIT code is perfect place for "exceptionless" code - code here is expected
+    to be "perfect", that is, not to generate exception conditions. This means
+    all operand-checking, etc. was performed *before* handoff to JIT'd code.
+
+* Enumerated functions + constraint-solving + NFA-to-DFA + Espresso
+    Holy Grail xD
+
+    - Logic-circuit as BDD
+        - Series of selects or if-thens
+    - Multiple-valued function as LUT
+    - LUT as n-ary decision diagram (where n is >= 2)
+    - Decision-diagram as state-machine
+    - State-machine minimization (equiv. multiple-valued circuit minimization)
+        Espresso
+    - NFA-to-DFA subset construction
+
+* Caching notes
+
+    cachify/uncachify --> templates for caching/uncaching data-structures
+
+          cachify(pyr_cache *this_pyr, mword *cachification_map, mword *tag, void *caching_struct)
+        uncachify(pyr_cache *this_pyr, mword *cachification_map, mword *tag, void *caching_struct)
+
+    Similar to core_brick_dispatch, these represent "The Right Way" to convert
+    from C-representation to Babel-representation (and back).
+
+    -----
+
+    cache_read_from_pyr()
+    cache_write_to_pyr()
+    cache_update_pyr()
+    cache_flush_pyr()
+
+    Read/write will track validity of cache entry PER entry. This will
+    preserve cache performance while avoiding huge swathes of nasty cache bugs...
+
+    Update and flush will call cachify/uncachify (see above).
+
+* Array notes
+
+    - Meta-ops (bit, byte, mword):
+        cmp
+        slice
+        th
+        cat
+        sort
+        move
+        find
+
+* Memory-allocation notes:
+
+    Memory types:
+
+    - sys memory
+        allocated with mem_sys_alloc, mem_raw_alloc, or mem_alloc w/MEM_USE_MALLOC
+        freed with mem_sys_free
+        tracked by global_mem_sys_alloc_count & global_mem_sys_free_count
+
+    - user dyn memory
+        allocated with mem_dyn_alloc
+        freed with mem_dyn_free
+        tracked by this_pyr->user_dyn_list
+
+    - gc dyn memory
+        allocated by mem_alloc for oversize alloc requests
+            also by calling mem_alloc w/MEM_USE_DYN=SET
+        freed during GC using mark&sweep
+        tracked by this_pyr->gc_dyn_list
+
+    - gc stat memory
+        allocated with mem_alloc
+            MEM_USE_DYN=CLR and MEM_USE_RSTACK=CLR
+        collected during mem_copy_collect
+        tracked by mem_context
+
+    - rstack memory
+        allocated with mem_rstack_alloc (or mem_alloc w/MEM_USE_RSTACK=SET)
+        freed by rstack_pop (reverse order of allocation)
+        tracked by rstack_dyn_list
+
+        oversize rstack allocs just interpolate into rstack_dyn_list
+            i.e. large automatic variables
+
+* Array-programming
+
+    - slice, cat, cmp, index, transpose, sort, select, filter
+    - vectorization
+        [1 2 3] {1 +} eachar
+        [1 2 3] [4 5 6] {+} overar
+    - operate-assign (accumulation)
+
+    - array-mode code format:
+    [ ptr
+        [ ptr [val operator] operand ] 
+        [ ptr [val operator] operand ] 
+        [ ptr [val operator] operand ] 
+        ... ]
+
+* Use FP_Backus.pdf to reconceptualize the high-level arch
+
+    - Specifically, focus on defining unordered versus ordered sequences early
+        in the language semantics. Also, incorporate Backus' concept of a
+        "bottom" (let's call it undef).
+
+        Ordered sequences can be interpreted as expressions (sequence of "operations")
+
+        Unordered expressions must be treated as higher-level objects which
+            cannot be interpreted as expressions proper (unless the operations 
+            are strictly parallel)
+
+    From Backus:
+
+        We describe the set O of objects and the set E of expressions of an 
+        FFP (Formal Functional Programming) system. These depend on the choice 
+        of some set A of atoms, which we take as given. We assume that T (true), 
+        F (false), phi (the empty sequence), and # (default) belong to A, as 
+        well as "numbers" of various kinds, etc.
+
+            1) Bottom, _|_, is an object but not an atom.
+            2) Every atom is an object. 
+            3) Every object is an expression.  <-- This is the one we may want to modify
+            4) If x1 ... xn are objects [expressions], then <x1 ... xn> is an object 
+                [resp., expression] called a sequence (of length n) for n >= 1. The 
+                object [expression] xi for 1 <= i <= n, is the ith element of the 
+                sequence <x1 ... xi ... xn>. (phi is both a sequence and an atom; 
+                its length is 0.) 
+            5) If x and y are expressions, then (x:y) is an expression called an 
+                application, x is its operator and y is its operand. Both are elements 
+                of the expression. 
+            6) If x = <x1 ... xn> and if one of the elements of x is _|_, then 
+                x = _|_. That is, <..., _|_ .... > = _|_. 
+            7) All objects and expressions are formed by finite use of the above 
+                rules. A subexpression of an expression x is either x itself or a 
+                subexpression of an element of x. An FFP object is an expression 
+                that has no application as a subexpression. Given the same set of 
+                atoms, FFP and FP objects are the same.
+
+    ----- Elements
+
+        1) undef is the undefined object (bstruct)
+            Every operation on undef returns undef
+                e.g. is_atom(undef) -> undef
+        2) nil returns true for both is_atom(nil) and is_ptr(nil)
+        3) the fundamental meta-operation is application
+            x y apply --> apply operator y to operand x
+            apply is a meta-operation
+        4) If x = <x1 ... xn> and if one of the elements of x is undef, then 
+            x = undef. That is, <..., undef .... > = undef.
+
+    val-array -> tensor
+    atom      -> "indivisible" object, i.e. tagged-bstruct
+
+    #define is_atom(x) (!is_undef(x) && (is_val(x) || is_ptr(x)))
+
+    An atom can be a bstruct structure, but "lookups" cannot be performed
+    inside an atom.
+
+    ----- Lambda/substitution
+
+        3 [\ (x) {x x +}]   --> {3 3 +}
+        3 [\ (x) {x x +}] ! --> 6
+        undef ! --> undef
+
+    ----- Alternation/sequence/back-tracking (accept vs. generate)
+
+        [choice 2 'a' 'b' 'c'] --> 
+            ('a' 'b')
+            ('b' 'c')
+            ('a' 'c')
+
+        [all 0 1 2] [\ (x) [choice x 'a' 'b'] ] -->
+            ()
+            ('a')
+            ('b')
+            ('a' 'b')
+
+        [opt 'a'] -->
+            ()
+            ('a')
+
+    How do we make this Pyramidal? (vector-based, not list-based)
+
+        Two types of back-tracking: alternation and sequence
+
+        Four operators: alt, seq, pass and fail
+
+        decimal  : (sign? whole (point fraction)?)
+        sign     : [opt '-']
+        whole    : numerals
+        fraction : numerals
+        numerals : [any numerals (numeral numerals)]
+        numeral  : [any 0 1 2 3 4 5 6 7 8 9]
+
+        foo : 'a'
+        foo : 'b'
+        foo : 'c'
+            --> foo : [any 'a' 'b' 'c']
+
+        -- Alternation
+
+            x 
+            ({a} 
+             {b}
+             {c})
+            alt
+
+            --> x is the backtrackable state
+                if it is nil, the entire BVM is backtracked (except code_ptr)
+            --> the list of code-lists ({a} {b} {c}) define the alternation
+
+            First, code-list a is executed. Unless the pass-tag is on TOS when
+                control returns from code-list a, x will be restored to its
+                value prior to executing code-list a and then code-list b
+                will be executed, and so on. The alt operator does not remove
+                the pass-tag.
+
+                If there is a fail-tag on TOS after executing a code-list it is 
+                culled.
+
+            If a code-list places the pass-tag on TOS, the alt "nexts" and
+                normal execution continues.
+
+        -- Sequence
+
+            x 
+            {a} 
+            seq
+
+            --> x is the backtrackable state
+                if it is nil, the entire BVM is backtracked (except code_ptr)
+            --> the list of code-lists ({a} {b} {c}) define the sequence
+
+            First, code-list a is executed. If the fail-tag is NOT on TOS, 
+                then seq will execute code-list b WITHOUT backtracking x.
+                And so on through all code-lists in the seq-list.
+
+                If there is a pass-tag on TOS after executing a code-list it is 
+                culled.
+
+            If the fail-tag is on TOS when control returns from a code-list 
+                x will be restored to its value prior to executing that code-
+                list, the seq operator will "next" and normal execution 
+                will continue. The seq operator does not remove the fail-tag.
+
+    ----- Unordered lists, enums, junctions
+
+        [any  1 2 3 4] 3 eq? --> 1 (true)
+        [all  5 6 7 8]
+        [one  1 2 3 4]
+        [none 5 6 7 8]
+
+        [map 
+            "foo" abc 
+            "bar" 'bop' 
+            "baz" 123 
+            "doo" {+ +}]
+
+        [enum           --> special map where each value is its own key
+            abc 
+            'bop' 
+            123 
+            {+ +}]
+
+        [tuple 9 8 7 6] --> "read-only" enum
+
+        [hist           --> same as a map except every key must be numeric (val)
+            "foo" 123
+            "bar" 456
+            "baz" 789 ]
+
+        [heap           --> heapified array-of-conses
+            abc   123
+            'bop' 234
+            123   345
+            {+ +} 456 ]
+
+            [ptr [ptr abc 123] [ptr 'bop' 234] [ptr 123 345] [ptr {+ +} 456]]
+
+        A hist a map with numeric keys
+        A heap is an array-of-conses with the car element a value (cdr is
+            payload); priority-queue
+
+        [lut            --> a map that can be "invoked"; lookup-table
+            [0 0] 0
+            [0 1] 1
+            [1 0] 1
+            [1 1] 0 ]
+
+        This lookup-table implements the boolean XOR function
+
+    ----- Laziness/thunks
+
+* Low-level changes
+
+    - Dispatchable arrays
+
+        [ptr [tptr "foo" nil] a b c ... ]
+
+        The array is dispatched to the appropriate block within the pyramid
+        by examining the tag associated with the initial tptr. 1-to-1 conversion 
+        of sexpr's to dispatch-arrays.
+
+        [dispatch 'operator_all_ordered'   op0 op1 op2]
+        [dispatch 'operator_all_unordered' op0 op1 op2]
+        [dispatch 'operator_any_unordered' op0 op1 op2]
+        ...
+
+    - Blocky arrays
+
+        Array that expands/contracts along a fixed block-size.
+
+    - Elastic arrays (list-of-array)
+
+        ( [array0] [array1] ... ) 
+
+        arrayn are of fixed size and type (all val- or all ptr-)
+
+    - Bit-slicing, catting etc.
+
+    - stuffing/unstuffing (see bales)
+
+* High-level changes (non-interp/perf)
+
+    - canonical "flat" representation (mword-independent representation)
+        necessary for data-interchange, code-incompatibility detection and
+        machine-independent data-comparison
+
+    - nest becomes apply
+        x y apply --> takes x off the stack, creates a sub-stack, applies y to
+                            it, returns the TOS of the result (or nil)
+
+    - stack-mode or enum-mode
+        stack-mode represents an ORDERED set (sequence) of results
+        enum-mode represents an UNORDERED set of results
+
+        In Backus-FFP, "results" == meaning
+
+        Because we are postfix, we do not have to worry about "innermost",
+        it's just left-to-right
+
+    - ordered application; unordered application
+        purpose: build in automatic parallelization semantics
+
+        if order-of-operations does not matter, do not over-specify by
+        using a list (ordered set)
+
+    - application semantics redux:
+
+        - ordered operations applied to stack
+            - standard apply
+        - unordered operations applied to stack
+            - copy operands (in order) and send a copy to each operation in 
+                the enum in any order (equiv. to code-reordering)
+        - ordered operations applied to enum
+            - Send operands (in any order) to each operator (equiv. to 
+              data-reordering)
+        - unordered operations applied to enum
+            - Send each operand (in any order) to each operator (in any order)
+
+        application becomes a meta-operator because order always matters
+
+    - "FP-based backtracking"
+        - Think about streamlining GC using this approach
+
+    - laziness
+        - Perl6: do it all with lazy lists
+        - What about nth-element (sparse lists?), e.g. lazy calculation of the
+            nth digit of pi?
+
+* Logic-Software correspondence
+
+    Logic            Software
+    ---------------------------------
+    propositions     types
+    proofs           terms (programs)
+    simplification   evaluation 
+
+    Dependent types - A dependent type is a type whose definition depends on 
+        a value. A "pair of integers" is a type. A "pair of integers where 
+        the second is greater than the first" is a dependent type because of 
+        the dependence on the value.
+
+* Heapify
+
+    #define PARENT(i) ((i - 1) / 2)
+    #define LEFT(i)   (2 * i + 1)
+    #define RIGHT(i)  (2 * i + 2)
+
+    typedef struct {
+        int *nodes;
+        int length;
+        int heap_size;
+    } heap;
+
+    void max_heapify(heap A, int i) {
+        int left, right, largest, temp;
+
+        while(1) {
+            left  = LEFT(i);
+            right = RIGHT(i);
+
+            if (left < A.heap_size && A.nodes[left] > A.nodes[i])
+                largest = left;
+            else
+                largest = i;
+
+            if (right < A.heap_size && A.nodes[right] > A.nodes[largest])
+                largest = right;
+
+            if (largest == i)
+                return;
+
+            temp = A.nodes[i];
+            A.nodes[i] = A.nodes[largest];
+            A.nodes[largest] = temp;
+
+            i = largest;
+        }
+    }
+
+

@@ -1,0 +1,53 @@
+pyramid_clean(){
+    rm -f bin/pyramid.exe
+}
+
+pyramid_build(){
+    gcc src/pyramid.c src/mem.c src/interp.c src/pearson.c src/util.c \
+    src/array.c src/introspect.c src/cache.c src/tptr.c -Wall -o bin/pyramid;
+}
+
+pyramid_macro(){
+    bin/pyramid.exe mktable.sp macro_table.sp macro_table.bbl
+}
+
+pyramid_opcode(){
+    bin/pyramid.exe mktable.sp opcode_table.sp opcode_table.bbl
+}
+
+pyramid_sparse(){
+    perl sparse.pl "$1" src/construct.sp src/opcodes.sp;
+}
+
+pyramid_construct(){
+    perl sparse.pl src/construct.sp src/root.sp src/opcodes.sp;
+}
+
+pyramid_compile(){
+    pyramid_clean;
+    pyramid_build;
+}
+
+pyramid_full(){
+    pyramid_construct;
+    pyramid_compile;
+}
+
+pyramid_run(){
+    pyramid_clean;
+    pyramid_build;
+    bin/pyramid.exe;
+}
+
+pyramid_exec(){
+    bin/pyramid.exe
+}
+
+pyramid_capture(){
+    bin/pyramid.exe > test.dot
+}
+
+pyramid_convert(){
+    dot -Tsvg test.dot > test.svg;
+}
+

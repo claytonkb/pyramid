@@ -1,0 +1,31 @@
+Pyramid Dev Notes
+=================
+
+* Item 3
+    - array1 implementation
+    - Just DO IT, stop lolly-gagging
+
+* Item 2
+    - Test array* functions
+
+* Item 1
+    - Change PYR_TAGS from global variable names to an enum
+    - Allocate a ptr-array to store references to the tags
+    - Index into this array using the PYR_TAGS enum
+    - Make sure to update the mem_sys_free_bs() calls
+
+* Item 2
+    - mk_cptr
+    - Takes an unsafe_ptr and returns a /pyramid/tag/cptr tag pointing to a 
+        val-array containing the unsafe_ptr
+    - Traversal functions need to be updated to indicate when/if we have
+        encountered a cptr
+    - Also, create a ptr2val function to allow a ptr-array to be copied as a
+        val-array
+
+* Item 4
+    - core_brick_dispatch
+    - Use sorted tag array (one mword per tag) + binary search
+        log(N) lookup
+
+

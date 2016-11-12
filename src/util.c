@@ -147,11 +147,14 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = _mktptr(this_pyr, "foo", nil);
 
-                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
-                ACC = _val(this_pyr, array8_read(temp, tempv++));
+//                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
+//                ACC = _val(this_pyr, array8_read(temp, tempv++));
 
 //                ACC = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
 //                array8_write(ACC, tempv++, 0xdd);
+
+                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
+                ACC = array8_th(this_pyr, temp, tempv++);
 
                 // implement/test array1 functions...
 

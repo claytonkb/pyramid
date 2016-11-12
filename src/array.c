@@ -163,7 +163,7 @@ mword array8_mword_size(pyr_cache *this_pyr, mword size8){ // array8_mword_size#
  ****************************************************************************/
 
 
-#define array1_mask_generate(off,arr,sel,mask)      \
+#define array1_mask_generate(off,arr,mask,sel)      \
     mword sel          = (off / MWORD_BIT_SIZE);    \
     mword bit_offset   = (off % MWORD_BIT_SIZE);    \
                                                     \

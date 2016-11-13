@@ -174,7 +174,7 @@ mword array8_mword_size(pyr_cache *this_pyr, mword size8){ // array8_mword_size#
     mword mask = (1<<bit_offset);
     
 
-//
+// XXX TESTED XXX
 //
 mword array1_read(mword *array, mword offset){ // array1_read#
 
@@ -189,12 +189,13 @@ mword array1_read(mword *array, mword offset){ // array1_read#
 void array1_write(mword *array, mword offset, mword value){ // array1_write#
 
     array1_mask_generate(offset, array, write_mask, mword_select);
-    ldv(array,mword_select) = (rdv(array,mword_select) & ~write_mask) | (value & write_mask);
+    ldv(array,mword_select) = (rdv(array,mword_select) & ~write_mask) | ((value<<bit_offset) & write_mask);
 
 }
 
 
 // Returns a val containing the bit at val_array[entry1] (bitwise addressing)
+// XXX TESTED XXX
 //
 mword *array1_th(pyr_cache *this_pyr, mword *val_array, mword entry1){ // array1_th#
 
@@ -270,6 +271,92 @@ mword array1_mword_size(pyr_cache *this_pyr, mword size1){ // array1_mword_size#
     }
 
     return size+1; //for the alignment_word
+
+}
+
+
+/*****************************************************************************
+ *                                                                           *
+ *                            ARRAY CONVERSION                               *
+ *                                                                           *
+ ****************************************************************************/
+
+
+// XXX TESTED XXX
+//
+mword *array_mwords_to_bytes(pyr_cache *this_pyr, mword *array){ // array_mwords_to_bytes#
+
+    mword arr_size  = size(array);
+    char *result = (char*)_newstr(this_pyr, arr_size, ' ');
+
+    int i;
+
+    for(i=0; i<arr_size; i++){
+        result[i] = (char)(array[i] & 0xff);
+    }
+
+    return (mword*)result;
+
+}
+
+
+// XXX TESTED XXX
+//
+mword *array_bytes_to_mwords(pyr_cache *this_pyr, mword *array8){ // array_bytes_to_mwords#
+
+    unsigned char *cast_array = (unsigned char *)array8;
+    mword arr8_size = array8_size(this_pyr, array8);
+    mword *result = mem_new_val(this_pyr, arr8_size, 0);
+
+    int i;
+
+    for(i=0; i<arr8_size; i++){
+        result[i] = (mword)cast_array[i];
+    }
+
+    return result;
+
+}
+
+
+//
+//
+mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array){ // array_mwords_to_bits#
+
+    mword arr_size  = size(array);
+    mword *result   = _newbits(this_pyr, arr_size);
+
+    int i;
+
+    for(i=0; i<arr_size-1; i++){
+        array1_write(result, i, (array[i] != 0));
+    }
+
+    return result;
+
+}
+
+
+//
+//
+mword *array_bits_to_mwords(pyr_cache *this_pyr, mword *array1){ // array_bits_to_mwords#
+
+//mword array1_size(pyr_cache *this_pyr, mword *string){ // array1_size#
+//mword *array1_th(pyr_cache *this_pyr, mword *val_array, mword entry1){ // array1_th#
+//mword array1_read(mword *array, mword offset){ // array1_read#
+
+    mword arr1_size  = array1_size(this_pyr, array1);
+    mword *result = mem_new_val(this_pyr, arr1_size, 0);
+
+    int i;
+
+    for(i=0; i<arr1_size; i++){
+
+        result[i] = array1_read(array1, i);
+
+    }
+
+    return result;
 
 }
 
@@ -685,91 +772,7 @@ mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ 
 }
 
 
-/*****************************************************************************
- *                                                                           *
- *                            ARRAY CONVERSION                               *
- *                                                                           *
- ****************************************************************************/
-
-
-////
-////
-//mword *array_mwords_to_bytes(pyr_cache *this_pyr, mword *array){ // array_mwords_to_bytes#
-//
-//    mword arr_size  = size(array);
-//    char *result = (char*)_newstr(this_pyr, arr_size, ' ');
-//
-//    int i;
-//
-//    for(i=0; i<arr_size; i++){
-//        result[i] = (char)(array[i] & 0xff);
-//    }
-//
-//    return (mword*)result;
-//
-//}
-//
-//
-////
-////
-//mword *array_bytes_to_mwords(pyr_cache *this_pyr, mword *array8){ // array_bytes_to_mwords#
-//
-//    unsigned char *cast_array = (unsigned char *)array8;
-//    mword arr8_size = array8_size(this_pyr, array8);
-//    mword *result = mem_new_val(this_pyr, arr8_size, 0);
-//
-//    int i;
-//
-//    for(i=0; i<arr8_size; i++){
-//        result[i] = (mword)cast_array[i];
-//    }
-//
-//    return result;
-//
-//}
-//
-//
-////
-////
-//mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array){ // array_mwords_to_bits#
-//
-//    mword arr_size  = size(array);
-//    mword arr1_size = array1_mword_size(this_pyr, arr_size);
-//    mword *result   = mem_new_val(this_pyr, arr1_size, 0);
-//
-//    int i;
-//
-//    for(i=0; i<arr_size-1; i++){
-//        _wrcxr1(this_pyr, result, i, (array[i] & 0x1));
-//    }
-//
-//    ldv(result, arr1_size-1) = array1_enc_align(this_pyr, arr_size);
-//
-//    return (mword*)result;
-//
-//}
-//
-//
-////
-////
-//mword *array_bits_to_mwords(pyr_cache *this_pyr, mword *array1){ // array_bits_to_mwords#
-//
-//    mword arr1_size  = _arlen1(this_pyr, array1);
-//    mword *result = mem_new_val(this_pyr, arr1_size, 0);
-//
-//    int i;
-//
-//    for(i=0; i<arr1_size; i++){
-//
-//        result[i] = _cxr1(this_pyr, array1, i);
-//
-//    }
-//
-//    return result;
-//
-//}
-//
-
+// ETC:
 
 // mword *array_heapify(pyr_cache *this_pyr, ...
 // mword *array_sort(pyr_cache *this_pyr, ...

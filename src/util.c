@@ -153,8 +153,28 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
 //                array8_write(ACC, tempv++, 0xdd);
 
-                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
-                ACC = array8_th(this_pyr, temp, tempv++);
+//                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
+//                ACC = array8_th(this_pyr, temp, tempv++);
+
+//                temp = _val(this_pyr, 0x000a596f0);
+//                ACC = array1_th(this_pyr, temp, tempv++);
+
+//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 3, 0x11, 0x55, 0x99));
+
+//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 6, 0x11, 0x55, 0x99, 0x88, 0x66, 0x44));
+
+//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 6, 0x11, 0x55, 0x99, 0x88, 0x66, 0x44));
+
+//                ACC = array_bytes_to_mwords(this_pyr, _mkval(this_pyr, 3, 0xdeadbeef, 0xbadcab, 0xff000000));
+
+//                ACC = array_bits_to_mwords(this_pyr, _mkval(this_pyr, 2, 0x3d, 0xffffffc0));
+
+//                ACC =  _newbits(this_pyr, 17);
+
+                ACC = _mkval(this_pyr, 1, 0x5a5a5a5a);
+                array1_write(ACC, tempv++, 0x1);
+
+//                ACC = array_mwords_to_bits(this_pyr, _mkval(this_pyr, 4, 0x1, 0x0, 0x1, 0x0));
 
                 // implement/test array1 functions...
 

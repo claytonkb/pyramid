@@ -27,6 +27,11 @@ mword array1_dec_align(pyr_cache *this_pyr, mword alignment_word);
 mword array1_enc_align(pyr_cache *this_pyr, mword size1);
 mword array1_mword_size(pyr_cache *this_pyr, mword size1);
 
+mword *array_mwords_to_bytes(pyr_cache *this_pyr, mword *array);
+mword *array_bytes_to_mwords(pyr_cache *this_pyr, mword *array8);
+mword *array_bits_to_mwords(pyr_cache *this_pyr, mword *array1);
+mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array);
+
 mword *array8_cat(pyr_cache *this_pyr, mword *left, mword *right);
 mword *array_cat(pyr_cache *this_pyr, mword *left, mword *right);
 mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right);

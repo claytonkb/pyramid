@@ -91,8 +91,11 @@
 #define HI_BITS(mword, index) BIT_SELECT(mword, MWORD_MSB, index)                               // HI_BITS#
 #define LO_BITS(mword, index) BIT_SELECT(mword, index, 0)                                       // LO_BITS#
 
-#define MASK_1_BYTE 0xff
-#define MASK_1_BIT  0x01
+#define NBIT_HI_MASK(n) (FMAX << (MWORD_BIT_SIZE-(n)))          // NBIT_HI_MASK#
+#define NBIT_LO_MASK(n) (FMAX >> (MWORD_BIT_SIZE-(n)))          // NBIT_LO_MASK#
+
+#define MASK_1_BYTE 0xff                                        // MASK_1_BYTE#
+#define MASK_1_BIT  0x01                                        // MASK_1_BIT#
 
 #define HASH_BIT_SIZE 128                                       // HASH_BIT_SIZE#
 #define HASH_BYTE_SIZE (HASH_BIT_SIZE/BITS_PER_BYTE)            // HASH_BYTE_SIZE#

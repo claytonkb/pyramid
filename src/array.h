@@ -7,6 +7,8 @@
 #define ARRAY_SORT_TYPE_LEAF     0
 #define ARRAY_SORT_TYPE_NON_LEAF 1
 
+#define array8_aligned(x) ((x) % BITS_PER_BYTE == 0)
+
 mword *array_th(pyr_cache *this_pyr, mword *bs, mword entry);
 
 mword array8_read(mword *array, mword offset);
@@ -39,6 +41,9 @@ mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right);
 int array_cmp_lex(mword *left, mword *right);
 int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
 int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
+
+void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword src_index, mword size_arg, access_size_sel access_size);
+void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword size_arg);
 
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 

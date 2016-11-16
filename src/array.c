@@ -184,7 +184,7 @@ mword array1_read(mword *array, mword offset){ // array1_read#
 }
 
 
-//
+// XXX TESTED XXX
 //
 void array1_write(mword *array, mword offset, mword value){ // array1_write#
 
@@ -319,7 +319,7 @@ mword *array_bytes_to_mwords(pyr_cache *this_pyr, mword *array8){ // array_bytes
 }
 
 
-//
+// XXX TESTED XXX
 //
 mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array){ // array_mwords_to_bits#
 
@@ -328,7 +328,7 @@ mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array){ // array_mwords_
 
     int i;
 
-    for(i=0; i<arr_size-1; i++){
+    for(i=0; i<arr_size; i++){
         array1_write(result, i, (array[i] != 0));
     }
 
@@ -337,13 +337,9 @@ mword *array_mwords_to_bits(pyr_cache *this_pyr, mword *array){ // array_mwords_
 }
 
 
-//
+// XXX TESTED XXX
 //
 mword *array_bits_to_mwords(pyr_cache *this_pyr, mword *array1){ // array_bits_to_mwords#
-
-//mword array1_size(pyr_cache *this_pyr, mword *string){ // array1_size#
-//mword *array1_th(pyr_cache *this_pyr, mword *val_array, mword entry1){ // array1_th#
-//mword array1_read(mword *array, mword offset){ // array1_read#
 
     mword arr1_size  = array1_size(this_pyr, array1);
     mword *result = mem_new_val(this_pyr, arr1_size, 0);
@@ -368,69 +364,57 @@ mword *array_bits_to_mwords(pyr_cache *this_pyr, mword *array1){ // array_bits_t
  ****************************************************************************/
 
 
-//
+// XXX TESTED XXX
 //
 mword *array_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array_cat#
 
-    mword size_left;
-    mword size_right;
+    mword s_left;
+    mword s_right;
 
     char *result;
 
-    size_left  = size(left);
-    size_right = size(right);
-
     if(is_val(right) && is_val(left)){
-        result = (char*)mem_new_val(this_pyr, UNITS_MTO8(size_left+size_right), 0);
+        s_left  = sfield(left);
+        s_right = sfield(right);
+        result = (char*)mem_new_valz(this_pyr, UNITS_8TOM(s_left+s_right));
     }
     else if(is_ptr(right) && is_ptr(left)){
-        result = (char*)mem_new_ptr(this_pyr, size_left+size_right);
+        s_left  = sfield(left);
+        s_right = sfield(right);
+        result = (char*)mem_new_ptr(this_pyr, UNITS_8TOM(s_left+s_right));
     }
     else{ //FIXME: Throw an exception
         _fatal("cannot concatenate leaf array and interior array");
     }
 
-    memcpy(result,           left,  size_left);
-    memcpy(result+size_left, right, size_right);
+    memcpy(result,        left,  s_left);
+    memcpy(result+s_left, right, s_right);
 
     return (mword*)result;
 
 }
 
 
-#define array_cat_prefix                                    \
-    mword size_left;                                        \
-    mword size_right;                                       \
-    mword mword_total_size;                                 \
-    mword fine_total_size;                                  \
-                                                            \
-    char *result;                                           \
-                                                            \
-    if(!is_val(right) || !is_val(left)){                    \
-        _fatal("cannot byte-concatenate ptr-array");        \
-    }
-
-
-#define array_cat_body(fine_size_fn, mword_size_fn, align_enc_fn)       \
-    size_left  = fine_size_fn(this_pyr, left);                          \
-    size_right = fine_size_fn(this_pyr, right);                         \
-    mword_total_size = size_left + size_right;                          \
-    fine_total_size = mword_size_fn(this_pyr, mword_total_size);        \
-                                                                        \
-    result = (char*)mem_new_val(this_pyr, fine_total_size, 0);          \
-                                                                        \
-    memcpy(result,           left,  size_left);                         \
-    memcpy(result+size_left, right, size_right);                        \
-                                                                        \
-    ldv((mword*)result, fine_total_size-1) = align_enc_fn(this_pyr, mword_total_size);
-
-
-//
+// XXX TESTED XXX
 //
 mword *array8_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array8_cat#
 
-    array_cat_prefix;
-    array_cat_body(array8_size, array8_mword_size, array8_enc_align);
+    mword size_left;
+    mword size_right;
+
+    char *result;
+
+    if(!is_val(right) || !is_val(left)){
+        _fatal("cannot byte-concatenate ptr-array");
+    }
+
+    size_left  = array8_size(this_pyr, left);
+    size_right = array8_size(this_pyr, right);
+
+    result = (char*)_newstr(this_pyr, size_left+size_right, '\0');
+
+    memcpy(result,           left,  size_left);
+    memcpy(result+size_left, right, size_right);
 
     return (mword*)result;
 
@@ -441,10 +425,31 @@ mword *array8_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array8_cat
 //
 mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array1_cat#
 
-    array_cat_prefix;
-    array_cat_body(array1_size, array1_mword_size, array1_enc_align);
+    mword size_left;
+    mword size_right;
+
+    char *result;
+
+    if(!is_val(right) || !is_val(left)){
+        _fatal("cannot byte-concatenate ptr-array");
+    }
+
+    size_left  = array1_size(this_pyr, left);
+    size_right = array1_size(this_pyr, right);
+
+    if(   (size_left  % BITS_PER_BYTE == 0)
+       && (size_right % BITS_PER_BYTE == 0)) // array8_cat is *much* faster
+        return array8_cat(this_pyr, left, right);
+
+    result = (char*)_newbits(this_pyr, size_left+size_right);
+
+    // The hard part...
+
+//    memcpy(result,           left,  size_left);
+//    memcpy(result+size_left, right, size_right);
 
     return (mword*)result;
+
 
 }
 
@@ -532,7 +537,7 @@ int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_
 
 /*****************************************************************************
  *                                                                           *
- *                              ARRAY SLICE                                  *
+ *                           ARRAY MOVE/SLICE                                *
  *                                                                           *
  ****************************************************************************/
 
@@ -581,6 +586,82 @@ void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, 
         memmove( ((char*)dest+dest_index), ((char*)src+src_index), (size_t)final_size );
 
     }
+
+}
+
+
+// src is always aligned
+// Note: to move from unaligned src to unaligned dest, use an intermediate buffer
+//
+void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword size_arg){ // array1_move#
+
+    int i;
+
+    if(src == dest) // src and dest must not overlap
+        return;
+
+//    mword src_size  = array1_size(this_pyr, src );
+//    mword dest_size = array1_size(this_pyr, dest);
+
+    // Call array_move() for byte-aligned moves...
+    if(    (dest_index % BITS_PER_BYTE == 0)
+        && (  size_arg % BITS_PER_BYTE == 0) ){
+        array_move(this_pyr, dest, dest_index, src, 0, UNITS_1TO8(size_arg), BYTE_ASIZE);
+    }
+
+    mword size_arg_mwords = array1_mword_size(this_pyr, size_arg) - 1;
+    mword dest_index_mod  = dest_index % MWORD_BIT_SIZE;
+
+    mword src_curr_mword;
+    mword final_mword_mask;
+
+    mword bits_remaining = size_arg;
+
+    mword src_hi_mask = NBIT_HI_MASK(dest_index_mod);
+    mword src_lo_mask = NBIT_LO_MASK(dest_index_mod);
+
+    mword prev_lo_split=0;
+
+    mword dest_write;
+
+    if(dest_index_mod == 0){
+
+        _say("aligned move");
+        // just copy mwords until we get to the last mword, then mask
+        // return
+        for(i=0; (i<size_arg_mwords) & (bits_remaining >= MWORD_BIT_SIZE); i++){
+            src_curr_mword = rdv(src,i);
+            _d(src_curr_mword);
+            bits_remaining -= MWORD_BIT_SIZE;
+        }
+
+        if(bits_remaining){
+            final_mword_mask = NBIT_LO_MASK(bits_remaining);
+            _d(final_mword_mask);
+        }
+
+    }
+    else{
+
+        _say("unaligned move");
+        // just copy mwords until we get to the last mword, then mask
+        // return
+        for(i=0; (i<size_arg_mwords) & (bits_remaining >= MWORD_BIT_SIZE); i++){
+            src_curr_mword = rdv(src,i);
+            dest_write = ((src_curr_mword & src_lo_mask) << dest_index) | prev_lo_split;
+            prev_lo_split = (src_curr_mword & src_hi_mask) >> (MWORD_BIT_SIZE-dest_index);
+            _d(src_curr_mword);
+            _d(dest_write);
+            bits_remaining -= MWORD_BIT_SIZE;
+        }
+
+        if(bits_remaining){ // UGH!!
+            final_mword_mask = NBIT_LO_MASK(bits_remaining);
+            _d(final_mword_mask);
+        }
+
+    }
+
 
 }
 

@@ -171,10 +171,32 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC =  _newbits(this_pyr, 17);
 
-                ACC = _mkval(this_pyr, 1, 0x5a5a5a5a);
-                array1_write(ACC, tempv++, 0x1);
+//                ACC = _mkval(this_pyr, 1, 0x5a5a5a5a);
+//                array1_write(ACC, tempv++, 0x1);
 
-//                ACC = array_mwords_to_bits(this_pyr, _mkval(this_pyr, 4, 0x1, 0x0, 0x1, 0x0));
+//                ACC = array_mwords_to_bits(this_pyr, _mkval(this_pyr, 8,
+//                           0x1, 0x0, 0x1, 0x0,
+//                           0x0, 0x1, 0x0, 0x1));
+
+//                ACC = array_cat(this_pyr,
+//                        _mkval(this_pyr, 3, 1, 2, 3),
+//                        _mkval(this_pyr, 3, 4, 5, 6));
+
+//                ACC = array8_cat(this_pyr,
+//                        _mkval(this_pyr, 2, 0xbadcab, 0xff000000),
+//                        _mkval(this_pyr, 2, 0xfacade, 0xff000000));
+
+//                ACC = array1_cat(this_pyr, 
+//                        _mkval(this_pyr, 2, 0x3d, 0xffffffc0),
+//                        _mkval(this_pyr, 2, 0xaa, 0xffffffc0));
+
+//                ACC = array1_cat(this_pyr,
+//                        _mkval(this_pyr, 2, 0xbadcab, 0xff000000),
+//                        _mkval(this_pyr, 2, 0xfacade, 0xff000000));
+
+                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+
+                array1_move(this_pyr, nil, 1, temp, 37);
 
                 // implement/test array1 functions...
 

@@ -488,6 +488,111 @@ reduce(x y Z a B) -->
     to be "perfect", that is, not to generate exception conditions. This means
     all operand-checking, etc. was performed *before* handoff to JIT'd code.
 
+* TCC
+
+    Mob-branch mirror:
+        https://github.com/TinyCC/tinycc
+
+    Win32 build:
+        tcc/win32/build-tcc.bat
+
+    Test libtcc:
+        tcc/tests/libtcc_test.c
+
+    Header file:
+        tcc/win32/libtcc/libtcc.h
+        OR
+        tcc/libtcc.h
+
+    DLL:
+        tcc/win32/libtcc.dll
+
+    A:
+        tcc/win32/libtcc/libtcc.a
+
+    Win32 Guide:
+        tcc/win32/tcc-win32.txt
+
+        Using libtcc as JIT compiler in your program
+        --------------------------------------------
+        Check out the 'libtcc_test' example:
+
+        - Running it from source:
+            tcc -I libtcc libtcc/libtcc.def -run examples/libtcc_test.c
+
+        - Compiling with TCC:
+            tcc examples/libtcc_test.c -I libtcc libtcc/libtcc.def
+
+        - Compiling with MinGW:
+            gcc examples/libtcc_test.c -I libtcc libtcc.dll
+
+        - Compiling with MSVC:
+            lib /def:libtcc\libtcc.def /out:libtcc.lib
+            cl /MD examples/libtcc_test.c -I libtcc libtcc.lib
+
+    =============================
+
+        #include "libtcc/libtcc.h" // Changed to add sub-directory
+
+        ./tcc.exe -c libtcc_test.c
+        ./tcc.exe libtcc_test.o -L. -ltcc
+        ./libtcc_test.exe
+
+        win32> ./libtcc_test.exe
+
+        Have to make sure all lib-required files are present... this is
+        tricky. Also have to make sure any files referenced in the compile-
+        string are present. The tcc_set_lib_path() calls don't seem to work
+        or the example is not correct.
+
+    ============================= 
+
+    See section on JITing. Need to design a complete interface for seamless
+    JIT versus opcode interpretation. The core_brick_dispatch() trampoline
+    function is more low-level than the JITer. Thus, we are always in a
+    core_brick_dispatch() loop. But the interp_core() loop is only if we are
+    in opcode interpretation mode. We can also generate C intermediate code
+    instead of opcodes. This avoids the interp_core() trampoline.
+
+    This does not allow us to take advantage of the branch-predictor. In order
+    to do this, we could implement sel and selr as if-else statements in the
+    C-code.
+
+    See operator.h in Babel/src. We need to create macros that expand into
+    either opcode interpretation mode for installation into the jump-table,
+    or JIT mode.
+
+    General pattern:
+
+        OPERATOR:
+            op_boundary_checks()
+            get_operands()
+            alloc_results()
+            operator()
+            write_results()
+            SET_GC_PNR
+            stack_removes()
+            stack_pushes()
+            CLR_GC_PNR
+
+        OPERAND:
+            op_boundary_checks()
+            interp_push_operand()
+
+    Note: We don't need to worry about tracing
+
+    Think about eval, loop, over, etc.
+
+    JIT only occurs on an individual code-list (no nesting). Each code-brick 
+    will have an associated flag indicating whether it has been JIT'd. A code-
+    list is only JIT'd after the JIT_GENERATE flag has been set. All eval
+    operators are sensitive to JIT_GENERATE. JIT_GENERATE is cleared by the
+    operator that set it (e.g. loop or times). It is also cleared by the babel
+    operator (nesting to a new BVM).
+
+    There's no easy way to preserve JIT across GC boundaries - GC wipes out
+    all JIT.
+
 * Enumerated functions + constraint-solving + NFA-to-DFA + Espresso
     Holy Grail xD
 

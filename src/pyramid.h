@@ -91,8 +91,12 @@
 #define HI_BITS(mword, index) BIT_SELECT(mword, MWORD_MSB, index)                               // HI_BITS#
 #define LO_BITS(mword, index) BIT_SELECT(mword, index, 0)                                       // LO_BITS#
 
-#define NBIT_HI_MASK(n) (FMAX << (MWORD_BIT_SIZE-(n)))          // NBIT_HI_MASK#
-#define NBIT_LO_MASK(n) (FMAX >> (MWORD_BIT_SIZE-(n)))          // NBIT_LO_MASK#
+#define NBIT_HI_MASK(n) (((n)==0) ? 0 : (FMAX << (MWORD_BIT_SIZE-(n))))      // NBIT_HI_MASK#
+#define NBIT_LO_MASK(n) (((n)==0) ? 0 : (FMAX >> (MWORD_BIT_SIZE-(n))))      // NBIT_LO_MASK#
+#define BIT_RANGE(hi,lo) ((FMAX >> (MWORD_BIT_SIZE-(hi))) & (FMAX << (lo)))  // BIT_RANGE#
+
+#define MWORD_MUX(A, B, sel) (((A) & sel) | ((B) & (~sel)))
+#define BIT_MERGE(A, B, sel) ldv(A,0) = MWORD_MUX(B, rdv(A,0), sel);
 
 #define MASK_1_BYTE 0xff                                        // MASK_1_BYTE#
 #define MASK_1_BIT  0x01                                        // MASK_1_BIT#
@@ -568,8 +572,9 @@ PYR_TAGS
 
 #define _prn(x)         fprintf(stderr, "%s", x); // _prn#
 #define _say(x)         fprintf(stderr, "%s\n", x);   // _say#
-#define _msg(x)         fprintf(stderr, "%s in %s(), %s line %d\n", x, __func__, __FILE__, __LINE__);   // _msg#
-#define _trace          fprintf(stderr, "%s() in %s line %d\n", __func__, __FILE__, __LINE__);   // _trace#
+#define _notify(x)      fprintf(stderr, "PYRAMID: %s\n", x);   // _say#
+#define _msg(x)         fprintf(stderr, "PYRAMID: %s in %s(), %s line %d\n", x, __func__, __FILE__, __LINE__);   // _msg#
+#define _trace          fprintf(stderr, "PYRAMID: %s() in %s line %d\n", __func__, __FILE__, __LINE__);   // _trace#
 #define _reset_trace    fprintf(stderr, "INTERP_RESET_TRACE: %s() in %s line %d\n", __func__, __FILE__, __LINE__);   // _trace#
 
 #define QUOTEME(x)      #x

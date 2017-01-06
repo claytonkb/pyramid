@@ -43,7 +43,11 @@ int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
 int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
 
 void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword src_index, mword size_arg, access_size_sel access_size);
-void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword size_arg);
+void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg);
+
+void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
+void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
+void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
 
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 

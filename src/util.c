@@ -38,13 +38,27 @@
     util_strtok_rest(x)                         \
     y = (mword*)strtoul((char*)x,NULL,16);
 
+
+#define get_cmd_code2
+
+//                cmd_code_str = strtok(NULL, " ");
+//                if(cmd_code_str == NULL){
+//                    _say("Two arguments required");
+//                    continue; 
+//                }
+//                cmd_code = atoi(cmd_code_str);
+
+//                util_strtok_dec(cmd_code_str, cmd_code);
+//                util_strtok_dec(cmd_code_str, cmd_code2);
+
+
 //
 //
 void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_metal_prompt#
 
     char *cmd_code_str;
-    int cmd_code;
-//    int cmd_code2;
+    int cmd_code =0;
+//    int cmd_code2=0;
 
     char buffer[256];
     int i;
@@ -52,6 +66,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
     mword *ACC = init_ptr;
     mword  tempv=0;
     mword *temp=nil;
+
+    _notify("entering bare metal prompt");
 
 //    mword *temp = mem_new_val(this_pyr,2,0);
 //    ldp(temp,0) = this_pyr->self;
@@ -194,15 +210,26 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                        _mkval(this_pyr, 2, 0xbadcab, 0xff000000),
 //                        _mkval(this_pyr, 2, 0xfacade, 0xff000000));
 
-                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+//                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+//                ACC  = _mkval(this_pyr, 3, 0, 0, 0);
+//
+//                array1_move(this_pyr, ACC, 0, temp, 37);
 
-                array1_move(this_pyr, nil, 1, temp, 37);
+//                ACC = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+
+//                ACC = _val(this_pyr, BIT_RANGE(27,5));
+
+                array1_move(this_pyr, 
+                        _mkval(this_pyr, 4, 0xf0f0f0f0, 0x0f0f0f0f, 0xf0f0f0f0, 0x0f0f0f0f),
+                        4, 
+                        _mkval(this_pyr, 2, 0x789abcde, 0x87654321),
+                        128);
 
                 // implement/test array1 functions...
 
                 break;
             case 2:
-                _say("exiting bare metal prompt");
+                _notify("exiting bare metal prompt");
                 return;
             case 3:
                 _say("command code inactive");

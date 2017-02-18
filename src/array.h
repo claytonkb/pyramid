@@ -50,6 +50,7 @@ void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword 
 void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
 
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
+void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
 
 #define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
 #define  _arcmp(x,y,z)  array_cmp_lex(x, y, z)

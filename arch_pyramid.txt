@@ -3,6 +3,16 @@ Pyramid Arch Notes
 
 TODO:
 
+    - mem_non_gc_alloc
+        - Implement global_mem_non_gc_alloc_list
+    - Implement array-of-pairs (prepare for backtrack + lazy-lists)
+    - Implement lazy-lists (or AoP) - prepare for laziness/JIT
+    - Implement executable memory (prepare for tcc-in-memory)
+    - Implement basic JIT flow
+        - Pyramid will be JIT-only
+        - Design compiler-independent interface to avoid marrying pyramid to
+          tcc
+
 -----------------------------------------------------------------------------
 
 * Babel -> Pyramid conversion
@@ -465,7 +475,7 @@ reduce(x y Z a B) -->
 
 * JITing
 
-    See jit HTMLs for basic idea
+    See jit HTMLs/PDFs for basic idea
     Use mmap() on Linux systems
     Must use Windows API for Windows systems
         https://msdn.microsoft.com/en-us/library/windows/desktop/aa366887(v=vs.85).aspx
@@ -484,9 +494,10 @@ reduce(x y Z a B) -->
 
     This gives maximum flexibility for minimal interface.
 
-    JIT code is perfect place for "exceptionless" code - code here is expected
-    to be "perfect", that is, not to generate exception conditions. This means
-    all operand-checking, etc. was performed *before* handoff to JIT'd code.
+    Use laziness/translation-cache to handle the interp-vs-JIT switch
+
+    Set up interpreter so that JIT handoff is as transparent as possible. See
+        Dalvik.
 
 * TCC
 
@@ -524,7 +535,7 @@ reduce(x y Z a B) -->
             tcc examples/libtcc_test.c -I libtcc libtcc/libtcc.def
 
         - Compiling with MinGW:
-            gcc examples/libtcc_test.c -I libtcc libtcc.dll
+            gcc examples/libtcc_test.c -I libtcc libtcc.dll <<<<===== THIS WORKS
 
         - Compiling with MSVC:
             lib /def:libtcc\libtcc.def /out:libtcc.lib
@@ -544,6 +555,12 @@ reduce(x y Z a B) -->
         tricky. Also have to make sure any files referenced in the compile-
         string are present. The tcc_set_lib_path() calls don't seem to work
         or the example is not correct.
+
+    =============================
+
+    Linking libtcc with MinGW:
+
+        gcc libtcc_test.c -I src/libtcc libtcc.dll -o libtcc_test.exe
 
     ============================= 
 
@@ -814,7 +831,7 @@ reduce(x y Z a B) -->
         -- Sequence
 
             x 
-            {a} 
+            ({a} {b} {c})
             seq
 
             --> x is the backtrackable state
@@ -859,7 +876,7 @@ reduce(x y Z a B) -->
             "bar" 456
             "baz" 789 ]
 
-        [heap           --> heapified array-of-conses
+        [heap           --> heapified array-of-pairs
             abc   123
             'bop' 234
             123   345
@@ -919,6 +936,12 @@ reduce(x y Z a B) -->
     - nest becomes apply
         x y apply --> takes x off the stack, creates a sub-stack, applies y to
                             it, returns the TOS of the result (or nil)
+
+        Implement stack-cleaning convention
+            - callee is responsible to clean up the stack
+            - apply cleans up everything (including x?) except y
+            - memory allocation maintains two separate areas - pseudo-heap and
+              stack
 
     - stack-mode or enum-mode
         stack-mode represents an ORDERED set (sequence) of results
@@ -1009,4 +1032,10 @@ reduce(x y Z a B) -->
         }
     }
 
+* Callback timer articles:
+
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms687003(v=vs.85).aspx
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms686271(v=vs.85).aspx
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms686790(v=vs.85).aspx
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms682485(v=vs.85).aspx
 

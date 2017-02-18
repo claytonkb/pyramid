@@ -76,8 +76,6 @@ inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 //
 void *mem_sys_alloc(int size){ // mem_sys_alloc#
 
-//_dd(size);
-
     void *alloc_attempt = malloc(size); // XXX WAIVER(malloc) XXX
 
     if(alloc_attempt == NULL){ // malloc failed
@@ -114,9 +112,9 @@ void mem_sys_free(void *p, int size){ // mem_sys_free#
     }
 
 
-// DESC: Allocates non-GC memory using sfield
-//
-inline mword *mem_raw_alloc(mword alloc_sfield){ // mem_raw_alloc#
+// Allocates non-GC memory using sfield
+// XXX This is intended for bootstrap and memory-debug use ONLY XXX
+inline mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
 
     alloc_size_check(alloc_sfield);
 
@@ -130,6 +128,22 @@ inline mword *mem_raw_alloc(mword alloc_sfield){ // mem_raw_alloc#
 }
 
 
+//// Allocates non-GC memory using sfield
+//// XXX This is intended for bootstrap and memory-debug use ONLY XXX
+//inline mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
+//
+//    mword *result;
+//
+////    lci(global_boot_mem_allocs,global_mem_sys_alloc_count) = alloc_attempt;
+//
+//    result = (void*)mem_sys_alloc(UNITS_MTO8(alloc_request_size)); // XXX WAIVER(mem_sys_alloc) XXX //
+//    sfield(result) = alloc_sfield;
+//
+//    return result;
+//
+//}
+//
+
 //
 //
 mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
@@ -140,7 +154,7 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
     }
 
     if(this_pyr->flags->MEM_USE_MALLOC == SET)
-        return mem_raw_alloc(alloc_sfield);
+        return mem_non_gc_alloc(alloc_sfield);
 
 //    if(this_pyr->flags->MEM_USE_DYN == SET)
 //        return mem_user_dyn_alloc(alloc_sfield);

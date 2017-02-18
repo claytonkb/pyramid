@@ -38,16 +38,6 @@
     util_strtok_rest(x)                         \
     y = (mword*)strtoul((char*)x,NULL,16);
 
-
-#define get_cmd_code2
-
-//                cmd_code_str = strtok(NULL, " ");
-//                if(cmd_code_str == NULL){
-//                    _say("Two arguments required");
-//                    continue; 
-//                }
-//                cmd_code = atoi(cmd_code_str);
-
 //                util_strtok_dec(cmd_code_str, cmd_code);
 //                util_strtok_dec(cmd_code_str, cmd_code2);
 
@@ -58,7 +48,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
     char *cmd_code_str;
     int cmd_code =0;
-//    int cmd_code2=0;
+    int cmd_code2=0;
 
     char buffer[256];
     int i;
@@ -132,13 +122,6 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _dd(src_end_modulus);
 //                _dd(src_start_split);
 //                _dd(src_end_split);
-
-//                cmd_code_str = strtok(NULL, " ");
-//                if(cmd_code_str == NULL){
-//                    _say("Two arguments required");
-//                    continue; 
-//                }
-//                cmd_code = atoi(cmd_code_str);
 
 //                util_strtok_dec(cmd_code_str, cmd_code);
 //                util_strtok_dec(cmd_code_str, cmd_code2);
@@ -219,11 +202,17 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = _val(this_pyr, BIT_RANGE(27,5));
 
+                util_strtok_dec(cmd_code_str, cmd_code);
+                util_strtok_dec(cmd_code_str, cmd_code2);
+
+                       ACC = _mkval(this_pyr, 4, 0xf0f0f0f0, 0x0f0f0f0f, 0xf0f0f0f0, 0x0f0f0f0f);
+                mword *src = _mkval(this_pyr, 4, 0x77777777, 0x99999999, 0xbbbbbbbb, 0xdddddddd);
+
                 array1_move(this_pyr, 
-                        _mkval(this_pyr, 4, 0xf0f0f0f0, 0x0f0f0f0f, 0xf0f0f0f0, 0x0f0f0f0f),
-                        4, 
-                        _mkval(this_pyr, 2, 0x789abcde, 0x87654321),
-                        128);
+                        ACC,
+                        cmd_code, 
+                        src,
+                        cmd_code2);
 
                 // implement/test array1 functions...
 

@@ -17,7 +17,7 @@
 #define DEV_MODE
 #define COMPAT_MODE
 //#define MEM_DEBUG
-//#define PROF_MODE
+#define PROF_MODE
 //#define CHK_MODE
 
 //#define INTERP_RESET_TRACE
@@ -326,6 +326,16 @@ typedef struct { // pyr_cache#
 
 mword *nil;                                     // nil#
 mword *GLOBAL_TAG_ZERO_HASH;                    // GLOBAL_TAG_ZERO_HASH#
+
+mword *global_mem_non_gc_alloc_list;                   // global_mem_non_gc_alloc_list#
+mword *global_mem_non_gc_alloc_array_size;             // global_mem_non_gc_alloc_array_size#
+mword *global_mem_non_gc_alloc_current_array;          // global_mem_non_gc_alloc_current_array#
+mword *global_mem_non_gc_alloc_current_array_offset;   // global_mem_non_gc_alloc_current_array_offset#
+
+#ifdef DEV_MODE
+mword *global_dev_overrides;                    // global_dev_overrides#
+#endif
+
 mword global_mem_sys_alloc_count;               // global_mem_sys_alloc_count#
 mword global_mem_sys_alloc_total;               // global_mem_sys_alloc_total#
 mword global_mem_sys_free_count;                // global_mem_sys_free_count#

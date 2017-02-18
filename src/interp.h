@@ -12,7 +12,12 @@ pyr_cache *interp_init(pyr_cache *this_pyr, int argc, char **argv, char **envp, 
 pyr_cache *interp_init_flags(pyr_cache *this_pyr);
 pyr_cache *interp_init_limits(pyr_cache *this_pyr);
 pyr_cache *interp_init_privileges(pyr_cache *this_pyr);
-pyr_cache *interp_init_globals(pyr_cache *this_pyr);
+//pyr_cache *interp_init_globals(pyr_cache *this_pyr);
+void interp_init_globals(void);
+void interp_init_zero_hash(void);
+mword *interp_init_golden_nil(void);
+void interp_reinitialize_nil(mword *golden_nil);
+void interp_init_nil_mem(void);
 
 void interp_exit(pyr_cache *this_pyr);
 

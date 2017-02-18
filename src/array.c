@@ -576,6 +576,8 @@ void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, 
 
     final_size = (size_arg < size_limit) ? size_arg : size_limit;
 
+//    final_size = size_arg;
+
     if(access_size == MWORD_ASIZE){
 
         memmove( dest+dest_index, src+src_index, (size_t)UNITS_MTO8(final_size) );
@@ -591,63 +593,60 @@ void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, 
 
 
 // comp --> "complementary modulus", i.e. comp(modulus) = (MWORD_BIT_SIZE - modulus)
+// XXX dest_begin and size_arg are NOT safety-checked before they are used XXX
 //
 void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg){ // array1_move#
-//void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, src_begin, mword size_arg, align_sel who_is_aligned){ // array1_move#
 
-    // FIXME: dest_begin could be > MWORD_BIT_SIZE
-    // Fix this by adjusting dest to point at the first mword of the move and
-    // adjusting dest_begin accordingly
-
-    if((src == dest) // src and dest must not overlap
-           || (!size_arg)) // nothing to move
+    if((src == dest)        // src and dest must not overlap
+           || (!size_arg))  // nothing to move
         return;
 
-//    if(    (  dest_mod % BITS_PER_BYTE == 0)
-//        && (  size_arg % BITS_PER_BYTE == 0) ){
-//        array_move(this_pyr, dest, dest_mod, src, 0, UNITS_1TO8(size_arg), BYTE_ASIZE);
-//    }
+    if(    (  dest_begin % BITS_PER_BYTE == 0)
+        && (  size_arg % BITS_PER_BYTE == 0) ){
+        memmove( ((char*)dest+UNITS_1TO8(dest_begin)), (char*)src, (size_t)UNITS_1TO8(size_arg) );
+        return;
+    }
 
-//    mword src_begin = 0;
-//    mword src_mod = 0;
-//    mword src_comp = MWORD_BIT_SIZE;
+    mword dest_begin_mword = UNITS_1TOM(dest_begin);
 
-    mword dest_begin_mod = dest_begin % MWORD_BIT_SIZE;
-    mword dest_begin_comp = MWORD_BIT_SIZE-dest_begin_mod;
+    dest+=dest_begin_mword;
+    dest_begin -= UNITS_MTO1(dest_begin_mword);
 
-//    mword dest_end = dest_begin + size_arg;
-//    mword dest_end_mod = dest_end % MWORD_BIT_SIZE;
-//    mword dest_end_comp = MWORD_BIT_SIZE-dest_end_mod;
+    mword dest_begin_comp = MWORD_BIT_SIZE-dest_begin;
+    mword dest_end = dest_begin+size_arg;
+    mword dest_end_mod = dest_end % MWORD_BIT_SIZE;
 
-//    mword size_mod  = size_arg % MWORD_BIT_SIZE;
-//    mword size_comp = MWORD_BIT_SIZE-size_mod;
-
-//    _dd(src_begin);
-//    _dd(src_mod);
-//    _dd(src_comp);
-//
-//    _dd(dest_begin);
-//    _dd(dest_begin_mod);
-//    _dd(dest_begin_comp);
-//
-//    _dd(dest_end);
-//    _dd(dest_end_mod);
-//    _dd(dest_end_comp);
-//
-//    _dd(size_arg);
-//    _dd(size_mod);
-//    _dd(size_comp);
+//_dd(dest_begin);
+//_dd(dest_begin_comp);
+//_dd(dest_end_mod);
+//_dd(dest_end_comp);
 
     mword num_dest_boundaries_crossed = 0;
 
-    if(size_arg <= (2*MWORD_BIT_SIZE)){
+    if(size_arg <= MWORD_BIT_SIZE){ // 0 or 1 boundaries crossed
         num_dest_boundaries_crossed = (dest_begin_comp < size_arg);
     }
-    else{
+    else if(size_arg < (2*MWORD_BIT_SIZE)){
+        if((size_arg+dest_begin) <= (2*MWORD_BIT_SIZE)){
+            num_dest_boundaries_crossed = 1;
+        }
+        else{
+            num_dest_boundaries_crossed = 2;
+        }
+    }
+    else if(size_arg == (2*MWORD_BIT_SIZE)){
+        if( !dest_begin && !dest_end_mod ){
+            num_dest_boundaries_crossed = 1;
+        }
+        else{
+            num_dest_boundaries_crossed = 2;
+        }
+    }
+    else{ // 2 or more boundaries crossed
         num_dest_boundaries_crossed = 2;
     }
 
-   _dd(num_dest_boundaries_crossed);
+_dd(num_dest_boundaries_crossed);
 
     if(num_dest_boundaries_crossed == 0){
         array1_move_single(this_pyr, dest, dest_begin, src, size_arg);
@@ -667,41 +666,33 @@ void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src,
 //      dest_mod < MWORD_BIT_SIZE
 //      size_arg <= MWORD_BIT_SIZE-dest_mod
 //
-void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){
+void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_single#
 
-    // single move operation
-    mword read_mask  = NBIT_LO_MASK(size_arg);
-    mword write_mask = read_mask << dest_mod;
-    mword write_val = (rdv(src,0) & read_mask) << dest_mod;
+    ldv(dest,0) = MWORD_MUX(    
+                        rdv(src,0) << dest_mod, 
+                        rdv(dest,0), 
+                        NBIT_LO_MASK(size_arg) << dest_mod );
 
-    ldv(dest,0) = MWORD_MUX(write_val, rdv(dest,0), write_mask);
-
-//    mword result = ldv(dest,0);
-//    _d(result);
+//mword result = ldv(dest,0);
+//_d(result);
 
 }
 
 
 //
 //
-void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){
+void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_double#
 
     // |----------------|----------------|
     //       |-----------------|
     // |.....^..........^......^.........|
     //            B        A
 
-    // two move operations (in dest)
-//    _trace;
-//
-//    _dd(dest_mod);
-//    _dd(size_arg);
-
     mword dest_comp = MWORD_BIT_SIZE-dest_mod;
     mword size_argA, size_argB, size_argC;
-    mword read_maskA, read_maskB, read_maskC;
+    mword read_maskA; //, read_maskB, read_maskC;
     mword write_maskA, write_maskB, write_maskC;
-    mword write_valA, write_valB, write_valC;
+    mword src_val0;
 
     if(size_arg <= MWORD_BIT_SIZE){
 
@@ -709,34 +700,20 @@ void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword 
         size_argB = size_arg-size_argA;
 
         read_maskA  = NBIT_LO_MASK(size_argA);
-        read_maskB  = NBIT_LO_MASK(size_argB) << size_argA;
 
         write_maskA = read_maskA << dest_mod;
         write_maskB = NBIT_LO_MASK(size_argB);
 
-        write_valA = (rdv(src,0) & read_maskA) << dest_mod;
-        write_valB = (rdv(src,0) & read_maskB) >> size_argA;
+        src_val0 = rdv(src,0);
 
-//        _dd(size_argA);
-//        _dd(size_argB);
-//
-//        _d(read_maskA);
-//        _d(read_maskB);
-//
-//        _d(write_maskA);
-//        _d(write_maskB);
-//
-//        _d(write_valA);
-//        _d(write_valB);
+        ldv(dest,0) = MWORD_MUX(src_val0 << dest_mod,  rdv(dest,0), write_maskA);
+        ldv(dest,1) = MWORD_MUX(src_val0 >> dest_comp, rdv(dest,1), write_maskB);
 
-        ldv(dest,0) = MWORD_MUX(write_valA, rdv(dest,0), write_maskA);
-        ldv(dest,1) = MWORD_MUX(write_valB, rdv(dest,1), write_maskB);
-
-//        mword result0 = ldv(dest,0);
-//        mword result1 = ldv(dest,1);
+//mword result0 = ldv(dest,0);
+//mword result1 = ldv(dest,1);
 //
-//        _d(result0);
-//        _d(result1);
+//_d(result0);
+//_d(result1);
 
     }
     // |----------------|----------------|
@@ -750,42 +727,22 @@ void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword 
         size_argB = size_arg-(size_argA+size_argC);
 
         read_maskA  = NBIT_LO_MASK(size_argA);
-        read_maskB  = NBIT_LO_MASK(size_argB) << size_argA;
-        read_maskC  = NBIT_LO_MASK(size_argC);
 
         write_maskA = read_maskA << dest_mod;
         write_maskB = NBIT_LO_MASK(size_argB);
         write_maskC = NBIT_LO_MASK(size_argC) << size_argB;
 
-        write_valA = (rdv(src,0) & read_maskA) << dest_mod;
-        write_valB = (rdv(src,0) & read_maskB) >> size_argA;
-        write_valC = (rdv(src,1) & read_maskC) << size_argB;
+        src_val0 = rdv(src,0);
 
-//        _dd(size_argA);
-//        _dd(size_argB);
-//        _dd(size_argC);
-//
-//        _d(read_maskA);
-//        _d(read_maskB);
-//        _d(read_maskC);
-//
-//        _d(write_maskA);
-//        _d(write_maskB);
-//        _d(write_maskC);
-//
-//        _d(write_valA);
-//        _d(write_valB);
-//        _d(write_valC);
+        ldv(dest,0) = MWORD_MUX(src_val0 << dest_mod, rdv(dest,0), write_maskA);
+        ldv(dest,1) = MWORD_MUX(src_val0 >> size_argA, rdv(dest,1), write_maskB);
+        ldv(dest,1) = MWORD_MUX(rdv(src,1) << size_argB, rdv(dest,1), write_maskC);
 
-        ldv(dest,0) = MWORD_MUX(write_valA, rdv(dest,0), write_maskA);
-        ldv(dest,1) = MWORD_MUX(write_valB, rdv(dest,1), write_maskB);
-        ldv(dest,1) = MWORD_MUX(write_valC, rdv(dest,1), write_maskC);
-
-//        mword result0 = ldv(dest,0);
-//        mword result1 = ldv(dest,1);
+//mword result0 = ldv(dest,0);
+//mword result1 = ldv(dest,1);
 //
-//        _d(result0);
-//        _d(result1);
+//_d(result0);
+//_d(result1);
 
     }
 
@@ -797,150 +754,61 @@ void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword 
 
 // prereq: dest_begin < MWORD_BIT_SIZE
 //
-void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg){
+void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_n#
 
-    // calculate A and B masks
-    // move body
-    // final move operation
-    _trace;
+    mword dest_comp = MWORD_BIT_SIZE-dest_mod;
 
-    mword dest_comp = MWORD_BIT_SIZE-dest_begin;
+    mword read_maskA  = NBIT_LO_MASK(dest_mod);
+    mword read_maskB  = ~read_maskA;
 
-    mword read_mask  = NBIT_HI_MASK(dest_comp);
-    mword write_mask = read_mask >> dest_begin;
-//    mword write_val  = (rdv(src,0) & read_mask) >> dest_begin;
-
-_dd(dest_comp);
-_d(write_mask);
-
-//    ldv(dest,0) = MWORD_MUX(write_val, rdv(dest,0), write_mask);
-
-    // body of move loop ...
-
-    mword dest_end = dest_begin + size_arg;
+    mword dest_end = dest_mod + size_arg;
     mword dest_end_mod = dest_end % MWORD_BIT_SIZE;
+    mword dest_mword_count = UNITS_1TOM((dest_end-dest_end_mod)) - 1;
 
-_dd(dest_end_mod);
 
-    mword body_size = UNITS_1TOM(size_arg-(dest_comp+dest_end_mod));
-
-    //|ffffffff|fffffff f|fffffff f|fffffff f|ffffffff|
-    //      |ff fffffff|f fffffff|f fffffff|f fffffff|
-    //         |                                     |
-    //                                      ^ ^^^^^^^
-    //                                      B    A
+    ldv(dest,0) = MWORD_MUX(rdv(src,0) << dest_mod, rdv(dest,0), read_maskB);
 
     int i;
-    for(i=0; i<body_size; i++){
 
+    for(i=0; i<dest_mword_count; i++){
+        ldv(dest,i+1) = MWORD_MUX(rdv(src,i)   >> dest_comp, rdv(dest,i+1), read_maskA);
+        ldv(dest,i+1) = MWORD_MUX(rdv(src,i+1) << dest_mod,  rdv(dest,i+1), read_maskB);
     }
 
-_dd(body_size);
+    if(dest_end_mod){ // dest is aligned; src is unaligned
 
-    if(dest_end_mod){
+        if(dest_end_mod > dest_mod){
 
-//    read_mask  = NBIT_LO_MASK(dest_end_mod);
-//    write_mask = read_mask >> SOMETHING;
-//    write_val  = (rdv(src,SOMETHING) & read_mask) >> SOMETHING;
+            read_maskA = NBIT_LO_MASK(dest_mod);
+            read_maskB = NBIT_LO_MASK(dest_end_mod-dest_mod) << dest_mod;
+
+            ldv(dest,i+1) = MWORD_MUX(rdv(src,i)   >> dest_comp, rdv(dest,i+1), read_maskA);
+            ldv(dest,i+1) = MWORD_MUX(rdv(src,i+1) << dest_mod,  rdv(dest,i+1), read_maskB);
+
+        }
+        else{
+
+            read_maskA = NBIT_LO_MASK(dest_end_mod);
+            ldv(dest,i+1) = MWORD_MUX(rdv(src,i) >> dest_comp, rdv(dest,i+1), read_maskA);
+
+        }
+
+    }
+//    else{ // XXX DEBUG ONLY; REMOVE XXX
+//_trace;
+//   }
+
+//    mword result0 = ldv(dest,0);
+//    mword result1 = ldv(dest,1);
+//    mword result2 = ldv(dest,2);
+//    mword result3 = ldv(dest,3);
 //
-//    ldv(dest,SOMETHING) = MWORD_MUX(write_val, rdv(dest,SOMETHING), write_mask);
-
-    }
+//    _d(result0);
+//    _d(result1);
+//    _d(result2);
+//    _d(result3);
 
 }
-
-
-//// src is always aligned
-//// Note: to move from unaligned src to unaligned dest, use an intermediate buffer
-////
-//void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword size_arg){ // array1_move#
-//
-//    int i;
-//
-//    if(src == dest) // src and dest must not overlap
-//        return;
-//
-////    mword src_size  = array1_size(this_pyr, src );
-////    mword dest_size = array1_size(this_pyr, dest);
-//
-//    // Call array_move() for byte-aligned moves...
-////    if(    (dest_index % BITS_PER_BYTE == 0)
-////        && (  size_arg % BITS_PER_BYTE == 0) ){
-////        array_move(this_pyr, dest, dest_index, src, 0, UNITS_1TO8(size_arg), BYTE_ASIZE);
-////    }
-//
-//    mword size_arg_mwords = array1_mword_size(this_pyr, size_arg) - 1;
-//    mword dest_index_mod  = dest_index % MWORD_BIT_SIZE;
-//    mword dest_end_mod    = (dest_index+size_arg) % MWORD_BIT_SIZE;
-//
-//    mword src_curr_mword;
-//    mword final_mword_mask;
-//
-//    mword bits_remaining = size_arg;
-//
-//    mword src_hi_mask = NBIT_HI_MASK(dest_index_mod);
-//    mword src_lo_mask = NBIT_LO_MASK(dest_index_mod);
-//
-//    mword prev_lo_split=0;
-//
-//    mword dest_write;
-//
-//    if(dest_index_mod == 0){
-//
-//        _say("aligned move");
-//
-//        // just copy mwords until we get to the last mword, then mask
-//        // return
-//        for(i=0; (i<size_arg_mwords) & (bits_remaining >= MWORD_BIT_SIZE); i++){
-//            src_curr_mword = rdv(src,i);
-//            _d(src_curr_mword);
-//            bits_remaining -= MWORD_BIT_SIZE; // FIXME: PERF YUCK!
-//        }
-//
-//        if(bits_remaining){
-//            if(bits_remaining <= (MWORD_BIT_SIZE-dest_end_mod)){
-//_trace;
-//                final_mword_mask = NBIT_LO_MASK(bits_remaining);
-//                src_curr_mword = (rdv(src,i) & final_mword_mask);
-//                ldv(dest,i) = src_curr_mword;
-//                _d(src_curr_mword);
-//            }
-//            else{
-//_trace;
-//                final_mword_mask = NBIT_HI_MASK(bits_remaining);
-//                final_mword_mask = NBIT_HI_MASK(MWORD_BIT_SIZE-dest_index_mod);
-//                src_curr_mword = rdv(src,i) & final_mword_mask;
-//                _d(src_curr_mword);
-//                final_mword_mask = NBIT_LO_MASK(bits_remaining-(MWORD_BIT_SIZE-dest_index_mod));
-//                src_curr_mword = rdv(src,i) & final_mword_mask;
-//                _d(src_curr_mword);
-//            }
-////            _d(final_mword_mask);
-//        }
-//
-//    }
-//    else{
-//
-//        _say("unaligned move");
-//
-//        for(i=0; (i<size_arg_mwords) & (bits_remaining >= MWORD_BIT_SIZE); i++){
-//            src_curr_mword = rdv(src,i);
-//            dest_write = ((src_curr_mword & src_lo_mask) << dest_index) | prev_lo_split;
-//            prev_lo_split = (src_curr_mword & src_hi_mask) >> (MWORD_BIT_SIZE-dest_index);
-//            _d(src_curr_mword);
-//            _d(dest_write);
-//            bits_remaining -= MWORD_BIT_SIZE;
-//        }
-//
-//        if(bits_remaining){ // UGH!!
-//            final_mword_mask = NBIT_LO_MASK(bits_remaining);
-//            _d(final_mword_mask);
-//        }
-//
-//    }
-//
-//
-//}
 
 
 // NB: Do not use on tptr's
@@ -991,144 +859,33 @@ mword *array8_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ 
 }
  
 
-//
+// dest aligned, src un-aligned
 //
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ // array1_slice#
 
-//      Use src_split and dest_split
-//      If src_split == 0 (MWORD-aligned): 
-//          memcpy
-//      Else
-//          read 2 mwords, mask each at src_split
-//          if first iteration:
-//              discard lower bits of mwords[0]
-//          dest_result = ((mword[0]&upper_src_split) >> dest_split)
-//                          | ((mword[1]&lower_src_split) << (MWORD_BIT_SIZE-dest_split))
-//          prime dest_result for next iteration from (mword[1] & upper_src_split)
-//
-
-    // XXX put start and end checks HERE XXX
-    if(start >= end)
-        return nil;
-
-    mword bit_length = end-start;
-//_d(bit_length);
-
-    mword mword_length = UNITS_1TOM(bit_length-1)+1;
-//_d(mword_length);
-
-    mword src_start_mword = UNITS_1TOM(start);
-//_d(src_start_mword);
-
-    mword src_end_mword = UNITS_1TOM(end-1);
-//_d(src_end_mword);
-
-    mword src_mword_length = (src_end_mword-src_start_mword)+1;
-//_d(src_mword_length);
-
-    mword *result = _newbits(this_pyr, bit_length);
-
-//    mword src_start_modulus;
-//    mword src_end_modulus;
-
-    mword src_start_modulus = MODULO_MTO1(start);
-//    mword src_end_modulus   = MODULO_MTO1(end);
-
-//    mword src_start_split    = MWORD_BIT_SIZE - src_start_modulus;
-//    mword src_end_split      = MWORD_BIT_SIZE - src_end_modulus;
-
-//      mword dest_start_modulus = 0;
-//      mword dest_end_modulus   = modulo_mword_size(bit_length);
-//
-//      mword dest_start_split   = MWORD_BIT_SIZE;
-//      mword dest_end_split     = 
-
-
-//    mword src_start_mask;
-//    mword src_end_mask;
-
-//    if(bit_length < MWORD_BIT_SIZE){
-    if(mword_length == 1){
-        if(src_mword_length == 1){
-            _say("Case 1a");
-            // Case 1a: All bits in single mword
-            //
-            //  |.###....|
-            //    |||
-            //    +++-+++
-            //        |||
-            //  |.....###|
-
-            ldv(result,0) = rdv(array, src_start_mword) >> src_start_modulus;
-            ldv(result,0) = rdv(result,0) & ~rdv(result,1);
-
-        }
-        else{ // crosses mword boundary
-            _say("Case 1b");
-            // Case 1b: Bits cross single mword-boundary, size(result) <= MWORD_BIT_SIZE
-            //
-            //         11 1
-            //         45 6
-            //  |......##|#.......|
-            //         || |
-            //         ++-+----+++
-            //                 |||
-            //           |.....###|
-//            src_start_modulus = MODULO_MTO1(start);
-//            src_end_modulus   = MODULO_MTO1(end);
-//            mword mask = mask_split_low(bit_length) << start;
-//            ldv(result,0) = (rdv(array,0) & mask) >> start;
-
-            // src_mword1_mask = FMAX & [MWORD_BIT_SIZE:start_modulus]
-            // src_mword2_mask = FMAX & [end_modulus:0]
-            //
-            // dest_lo_mask = FMAX >> [MWORD_BIT_SIZE-start_modulus]
-            // dest_hi_mask = ~dest_lo_mask
-            //
-            // XXX USE ARRAY1_ENC_ALIGN TO GENERATE MASKS!!! XXX
-
-        }
-    }
-//    else if(bit_length < (2*MWORD_BIT_SIZE)){
-    else if(mword_length == 2){
-        if(src_mword_length == 2){
-            _say("Case 2a");
-            // Case 2a: Bits cross single mword-boundary, size(result) > MWORD_BIT_SIZE
-            //
-            //         11 1
-            //         45 6
-            //  |.#######|##......|
-            //    ||||||| ||
-            //    +++++++-++++++++
-            //          | ||||||||
-            //  |.......#|########|
-        }
-        else{ //src_mword_length = 3
-            _say("Case 2b");
-            // Case 2b: Bits cross more than one mword-boundary; size(excess bits) <= MWORD_BIT_SIZE
-            //
-            //  |......##|########|#.......|
-            //         || |||||||| |
-            //         ++-++++++++-++++++++
-            //                 ||| ||||||||
-            //           |.....###|########|
-        }
-    }
-    else{ // mword_length > 2
-        _say("Case 3");
-        // Case 3: Bits cross more than one mword-boundary; size(excess bits) > MWORD_BIT_SIZE
-        //
-        //  |...#####|########|####....|
-        //      ||||| |||||||| ||||
-        //      +++++-++++++++-++++++++
-        //          | |||||||| ||||||||
-        //  |.......#|########|########|
-    }
-
+    mword *result=nil;
     return result;
 
 }
 
+
+// prereqs: 
+//      src_mod  <  MWORD_BIT_SIZE
+//      size_arg <= MWORD_BIT_SIZE-src_mod
+//
+void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg){ // array1_slice_single#
+
+    ldv(dest,0) = MWORD_MUX(
+                        rdv(src,0) >> src_mod, 
+                        rdv(dest,0), 
+                        NBIT_LO_MASK(size_arg) );
+
+}
+
+//    ldv(dest,0) = MWORD_MUX(    
+//                        rdv(src,0) << dest_mod, 
+//                        rdv(dest,0), 
+//                        NBIT_LO_MASK(size_arg) << dest_mod );
 
 // ETC:
 

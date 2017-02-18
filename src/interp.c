@@ -19,33 +19,12 @@ _reset_trace;
     clock_t wall_clock_time;
     wall_clock_time = clock();
 
-    interp_init_globals(this_pyr);
+    interp_init_globals();
+    interp_init_zero_hash();
 
-    // Initialize golden_nil
-//    GLOBAL_TAG_ZERO_HASH = mem_sys_alloc(UNITS_MTO8(HASH_SIZE));
-//    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
+    mword *golden_nil = interp_init_golden_nil();
 
-    GLOBAL_TAG_ZERO_HASH = mem_sys_alloc(UNITS_MTO8(HASH_ALLOC_SIZE));
-    ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
-    GLOBAL_TAG_ZERO_HASH++;
-    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
-
-    mword *golden_nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
-    golden_nil++;
-
-    sfield(golden_nil) = 0;
-    sfield(golden_nil+HASH_SIZE+1) = (-1*MWORD_SIZE);
-
-#ifdef COMPAT_MODE
-    HASHI(golden_nil, "nil");
-#else
-    HASHI(golden_nil, "/pyramid/tag/nil");
-#endif
-
-    tptr_set_ptr(golden_nil, golden_nil);
-
-    nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
-    nil++;
+    interp_init_nil_mem();
 
     // Interpreter reset or catastrophic-exception
     jmp_buf cat_ex;
@@ -62,9 +41,11 @@ _reset_trace;
         _say("INTERP_RESET: pyramid");
     }
 
+    interp_reinitialize_nil(golden_nil);
+
     // Init nil from golden_nil to protect against accidental nil-overwrite
-    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
-    tptr_set_ptr(nil, nil);
+//    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+//    tptr_set_ptr(nil, nil);
 
     interp_init(this_pyr, argc, argv, envp, &cat_ex);
 
@@ -94,6 +75,61 @@ _reset_trace;
 }
 
 
+//
+//
+void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
+
+    // Init nil from golden_nil to protect against accidental nil-overwrite
+    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+    tptr_set_ptr(nil, nil);
+
+}
+
+
+//
+//
+void interp_init_nil_mem(void){ // interp_init_nil_mem#
+
+    nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
+    nil++;
+
+}
+
+
+//
+//
+mword *interp_init_golden_nil(void){ // interp_init_golden_nil#
+
+    mword *golden_nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
+    golden_nil++;
+
+    sfield(golden_nil) = 0;
+    sfield(golden_nil+HASH_SIZE+1) = (-1*MWORD_SIZE);
+
+#ifdef COMPAT_MODE
+    HASHI(golden_nil, "nil");
+#else
+    HASHI(golden_nil, "/pyramid/tag/nil");
+#endif
+
+    tptr_set_ptr(golden_nil, golden_nil);
+
+    return golden_nil;
+
+}
+
+
+//
+//
+void interp_init_zero_hash(void){ // interp_init_zero_hash#
+
+    GLOBAL_TAG_ZERO_HASH = mem_sys_alloc(UNITS_MTO8(HASH_ALLOC_SIZE));
+    ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
+    GLOBAL_TAG_ZERO_HASH++;
+    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
+
+}
+
 // must be LAST function called before exit
 //
 void interp_exit(pyr_cache *this_pyr){ // interp_exit#
@@ -121,7 +157,8 @@ PYR_TAGS
 
 //
 //
-pyr_cache *interp_init_globals(pyr_cache *this_pyr){ // interp_init_globals#
+void interp_init_globals(void){ // interp_init_globals#
+//pyr_cache *interp_init_globals(pyr_cache *this_pyr){ // interp_init_globals#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
@@ -132,7 +169,7 @@ _reset_trace;
     global_mem_sys_free_count  = 0;
     global_mem_sys_free_total  = 0;
 
-    return this_pyr;
+//    return this_pyr;
 
 }
 
@@ -171,8 +208,9 @@ _prn("\n");
 // XXX //SECURITY// **DO NOT REMOVE** ABOVE LINES     //SECURITY// XXX //
 
 //#ifdef DEV_MODE
-//    init_dev_overrides(this_pyr);
+//    global_dev_overrides = interp_init_load_from_file(this_pyr, "init_dev_overrides.bbl");
 //#endif
+
 
     ////////////////////////////
     // init this_pyr->interp  //
@@ -398,12 +436,11 @@ _trace;
     mword file_size = io_file_size(this_pyr, f);
 
     mword *file_buffer = mem_alloc(this_pyr, file_size);
+//    mword *file_buffer = mem_sys_alloc(file_size);
 
     fread((char*)file_buffer, 1, file_size, f);
 
     io_close_file(this_pyr, f);
-
-//    file_buffer++;
 
     return file_buffer;
 
@@ -454,287 +491,5 @@ pyr_cache *io_close_file(pyr_cache *this_pyr, FILE *file){ // io_close_file#
 }
 
 
-////
-////
-//pyr_cache *init_load_root_bvm(pyr_cache *this_pyr){ // init_load_root_bvm#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    mword *load_bbl = (void*)mem_alloc(this_pyr, UNITS_MTO8(BBL_SIZE)); // BBL_SIZE is sfield/4
-//    memcpy(load_bbl, bbl, (size_t)UNITS_MTO8(BBL_SIZE)); // XXX WAIVER(memcpy) XXX //
-//    this_pyr->self = _load(this_pyr, (mword*)load_bbl, BBL_SIZE);
-//
-//this_pyr->flags->MC_USE_MALLOC = FLAG_SET; // XXX WAIVER(MC_USE_MALLOC); temporary until large_alloc_list XXX //
-//
-//    mword *load_null_bvm = (void*)mem_alloc(this_pyr, UNITS_MTO8(NULL_BVM_SIZE)); // NULL_BVM_SIZE is sfield/4
-//    memcpy(load_null_bvm, null_bvm, (size_t)UNITS_MTO8(NULL_BVM_SIZE)); // XXX WAIVER(memcpy) XXX //
-//    this_pyr->interp->cold_null_BVM = _load(this_pyr, (mword*)load_null_bvm, NULL_BVM_SIZE);
-//
-//this_pyr->flags->MC_USE_MALLOC = FLAG_CLR; // XXX WAIVER(MC_USE_MALLOC); temporary until large_alloc_list XXX //
-//
-//    return this_pyr;
-//
-//}
-
-
-////
-////
-//pyr_cache *init_jump_table(pyr_cache *this_pyr){ // init_jump_table#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-////    this_pyr->interp->jump_table = 
-////        _newlfcp(this_pyr, (mword*)opcode_array, NUM_INTERP_OPCODES);
-//
-//    this_pyr->interp->jump_table = mem_sys_alloc(UNITS_MTO8(NUM_INTERP_OPCODES));
-//
-//    int i;
-//    for(i=0;i<NUM_INTERP_OPCODES;i++){
-//        this_pyr->interp->jump_table[i] = (mword)opcode_array[i];
-//    }
-//
-//    return this_pyr;
-//
-//}
-//
-//
-////
-////
-//pyr_cache *init_new_epoch(pyr_cache *this_pyr){ // init_new_epoch#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    time_t rawtime;
-//    struct tm *utc_epoch;
-//
-//    time( &rawtime );
-//    utc_epoch = gmtime( &rawtime );
-//
-//    //    tm_sec     int    seconds after the minute    0-61*
-//    //    tm_min     int    minutes after the hour      0-59
-//    //    tm_hour    int    hours since midnight        0-23
-//    //    tm_mday    int    day of the month            1-31
-//    //    tm_mon     int    months since January        0-11
-//    //    tm_year    int    years since 1900
-//    //    tm_wday    int    days since Sunday           0-6
-//    //    tm_yday    int    days since January 1        0-365
-//
-//    struct tm *bvm_utc_epoch = mem_sys_alloc(sizeof(struct tm)); //&this_pyr->interp->utc_epoch;
-//
-//    bvm_utc_epoch->tm_sec  = utc_epoch->tm_sec;
-//    bvm_utc_epoch->tm_min  = utc_epoch->tm_min;
-//    bvm_utc_epoch->tm_hour = utc_epoch->tm_hour;
-//    bvm_utc_epoch->tm_mday = utc_epoch->tm_mday;
-//    bvm_utc_epoch->tm_mon  = utc_epoch->tm_mon;
-//    bvm_utc_epoch->tm_year = utc_epoch->tm_year;
-//    bvm_utc_epoch->tm_wday = utc_epoch->tm_wday;
-//    bvm_utc_epoch->tm_yday = utc_epoch->tm_yday;
-//
-//    this_pyr->interp->utc_epoch = bvm_utc_epoch;
-//
-//    this_pyr->interp->epoch_ms = time_ms();
-//
-//    return this_pyr;
-//
-//}
-//
-//
-//// must be called AFTER init_new_epoch
-////
-//void init_new_srand(pyr_cache *this_pyr){ // init_new_srand#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    #define SRAND_STRING_SIZE 32
-//
-//    char srand_string[SRAND_STRING_SIZE];
-//
-//    sprintf(srand_string, 
-//            "%d%d%d%d%d%d", 
-//            this_pyr->interp->utc_epoch->tm_sec,
-//            this_pyr->interp->utc_epoch->tm_min,
-//            this_pyr->interp->utc_epoch->tm_hour,
-//            this_pyr->interp->utc_epoch->tm_mday,
-//            this_pyr->interp->utc_epoch->tm_mon,
-//            this_pyr->interp->utc_epoch->tm_year);
-//
-//    mword *babel_srand_string = string_c2b(this_pyr, srand_string, SRAND_STRING_SIZE);
-//
-//    mword *time_hash = _hash8(this_pyr, babel_srand_string);
-//
-////    mword *time_hash = _pearson16(
-////                            this_pyr,  
-////                            hash_init, 
-////                            babel_srand_string,
-////                            _arlen8(this_pyr, babel_srand_string) );
-//
-//    init_by_array( (unsigned long *)time_hash, HASH_SIZE*(sizeof(mword)/sizeof(unsigned long)));
-//
-//    this_pyr->interp->srand = time_hash;
-//
-//    time_hash = _hash(this_pyr, time_hash);
-//
-//    xoroshiro128_s[0] = time_hash[0];
-//    xoroshiro128_s[1] = time_hash[1];
-//
-////    return time_hash;
-//
-//}
-//
-//
-////
-////
-//pyr_cache *init_nil(pyr_cache *this_pyr){ // init_nil#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    mword *nil_hash = _sys_cp( this_pyr, HASH8(this_pyr, "nil") );
-//
-//    nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
-//    nil++;
-//
-//    s(nil) = 0;
-//
-//    memcpy(nil, nil_hash, UNITS_MTO8(HASH_SIZE)); // XXX WAIVER(memcpy) XXX
-//
-//    lcl(nil,HASH_SIZE)   = -1 * UNITS_MTO8(1);
-//    lci(nil,HASH_SIZE+1) = nil;
-//
-//    this_pyr->interp->nil = nil;
-//
-//    return this_pyr;
-//
-//}
-//
-//
-////
-////
-//void init_interp_consts(pyr_cache *this_pyr){ // init_interp_consts#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    this_pyr->interp->empty_string = _newlfi(this_pyr, 1, 0);
-//    this_pyr->interp->alt_tag      = _sys_cp(this_pyr, BABEL_TAG_ALT);
-//    this_pyr->interp->seq_tag      = _sys_cp(this_pyr, BABEL_TAG_SEQ);
-//    this_pyr->interp->fail_tag     = _sys_cp(this_pyr, BABEL_TAG_FAIL);
-//    this_pyr->interp->pass_tag     = _sys_cp(this_pyr, BABEL_TAG_PASS);
-//    this_pyr->interp->accept_tag   = _sys_cp(this_pyr, BABEL_TAG_ACCEPT);
-//    this_pyr->interp->reject_tag   = _sys_cp(this_pyr, BABEL_TAG_REJECT);
-//    this_pyr->interp->true_tag     = _sys_cp(this_pyr, BABEL_TAG_TRUE);
-//    this_pyr->interp->false_tag    = _sys_cp(this_pyr, BABEL_TAG_FALSE);
-//    this_pyr->interp->exist_tag    = _sys_cp(this_pyr, BABEL_TAG_EXIST);
-//    this_pyr->interp->unexist_tag  = _sys_cp(this_pyr, BABEL_TAG_UNEXIST);
-//
-//}
-//
-//
-////
-////
-//pyr_cache *init_capture_argv(pyr_cache *this_pyr){ // init_capture_argv#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    // 1. babel
-//    // 2. switches
-//    // 3. - OR .bbl file name
-//
-//    char **argv = this_pyr->interp->argv;
-//    int    argc = this_pyr->interp->argc;
-//
-//    mword *temp_argv = nil;
-//
-//    //initialize argv
-//    //XXX This will change when we add CLI processing:
-//    #define NUM_BABEL_INTERP_ARGS 1 
-//
-//    if(argc > NUM_BABEL_INTERP_ARGS){
-//
-//        temp_argv = _cons(
-//                        this_pyr, 
-//                        string_c2b(this_pyr, argv[NUM_BABEL_INTERP_ARGS], 100), nil);
-//
-//        int i;
-//        for( i = NUM_BABEL_INTERP_ARGS+1; i < argc; i++ ){
-//
-//            temp_argv = _unshift(this_pyr, temp_argv, string_c2b(this_pyr, argv[i], 100));
-//
-//        }
-//
-//    }
-//
-//    this_pyr->interp->interp_argv = temp_argv;
-//
-//    trie_insert(
-//            this_pyr, 
-//            tptr_detag(this_pyr, 
-//                this_pyr->self), 
-//            BABEL_SYM_ARGV, 
-//            nil, 
-//            temp_argv);
-//
-//    return this_pyr;
-//
-//}
-//
-//
-////
-////
-//#ifdef PROF_MODE
-//void init_bvm_profile(pyr_cache *this_pyr){
-//
-//    bvm_profile *p = this_pyr->interp->profile;
-//
-//    p->BVM_PROFILE_ENABLE   = FLAG_CLR;
-//    p->operator_ms          = 0;
-//    p->GC_ms                = 0;
-//    p->cache_flush_count    = 0;
-//    p->cache_update_count   = 0;
-//    p->mem_alloc_count      = 0;
-//    p->stack_pops           = 0;
-//    p->stack_pushes         = 0;
-//    p->GC_overshoot         = 0;
-//    p->interp_boot_time     = 0;
-//
-//}
-//#endif
-//
-//
-////
-////
-//void init_dev_overrides(pyr_cache *this_pyr){ // init_dev_override#
-//
-//#ifdef BABEL_RESET_TRACE
-//_trace;
-//#endif
-//
-//    FILE *f = io_open_file(this_pyr, (mword*)"init_dev_overrides.bbl");
-//    mword file_size = io_file_size(this_pyr, f);
-//
-//    global_dev_overrides = mem_sys_alloc(file_size);
-//
-//    fread( (char*)global_dev_overrides, 1, file_size, f );
-//
-//    io_close_file(this_pyr, f);
-//
-//    global_dev_overrides++;
-//
-//}
-//
-
-
-// Clayton Bauman 2016
+// Clayton Bauman 2017
 

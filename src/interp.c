@@ -12,6 +12,32 @@
 //
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp){ // interp_pyramid#
 
+// XXX //SECURITY// **DO NOT REMOVE** FOLLOWING LINES //SECURITY// XXX //
+
+#ifdef MEM_DEBUG
+_prn(" >>MEM_DEBUG<< ");
+#endif
+
+#ifdef DEV_MODE
+_prn(" >>DEV_MODE<< ");
+#endif
+
+#ifdef PROF_MODE
+_prn(" >>PROF_MODE<< ");
+#endif
+
+#ifdef COMPAT_MODE
+_prn(" >>COMPAT_MODE<< ");
+#endif
+
+#ifdef CHK_MODE
+_prn(" >>CHK_MODE<< ");
+#endif
+
+_prn("\n");
+
+// XXX //SECURITY// **DO NOT REMOVE** ABOVE LINES     //SECURITY// XXX //
+
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
@@ -19,12 +45,9 @@ _reset_trace;
     clock_t wall_clock_time;
     wall_clock_time = clock();
 
-    interp_init_globals();
-    interp_init_zero_hash();
+    interp_init_once();
 
     mword *golden_nil = interp_init_golden_nil();
-
-    interp_init_nil_mem();
 
     // Interpreter reset or catastrophic-exception
     jmp_buf cat_ex;
@@ -41,13 +64,7 @@ _reset_trace;
         _say("INTERP_RESET: pyramid");
     }
 
-    interp_reinitialize_nil(golden_nil);
-
-    // Init nil from golden_nil to protect against accidental nil-overwrite
-//    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
-//    tptr_set_ptr(nil, nil);
-
-    interp_init(this_pyr, argc, argv, envp, &cat_ex);
+    interp_reinit(this_pyr, golden_nil, argc, argv, envp, &cat_ex);
 
     util_bare_metal_prompt(this_pyr, nil);
 
@@ -59,14 +76,14 @@ _reset_trace;
 
     wall_clock_time = (clock() - wall_clock_time) / CLOCKS_PER_SEC;
 
-//    mem_sys_free(golden_nil-1, UNITS_MTO8(TPTR_SIZE));
-//    mem_sys_free(nil-1, UNITS_MTO8(TPTR_SIZE));
-//    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
-
-    mem_sys_free_bs(golden_nil, UNITS_MTO8(TPTR_SIZE));
-    mem_sys_free_bs(nil, UNITS_MTO8(TPTR_SIZE));
-    mem_sys_free_bs(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_ALLOC_SIZE));
-//    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
+////    mem_sys_free(golden_nil-1, UNITS_MTO8(TPTR_SIZE));
+////    mem_sys_free(nil-1, UNITS_MTO8(TPTR_SIZE));
+////    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
+//
+//    mem_sys_free_bs(golden_nil, UNITS_MTO8(TPTR_SIZE));
+//    mem_sys_free_bs(nil, UNITS_MTO8(TPTR_SIZE));
+//    mem_sys_free_bs(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_ALLOC_SIZE));
+////    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
 
     interp_exit(this_pyr);
 
@@ -77,7 +94,28 @@ _reset_trace;
 
 //
 //
+void interp_init_once(void){ // interp_init_once#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
+
+    mem_non_gc_new();
+
+    interp_init_zero_hash();
+
+    interp_init_nil_mem();
+
+}
+
+
+//
+//
 void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
 
     // Init nil from golden_nil to protect against accidental nil-overwrite
     memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
@@ -89,6 +127,10 @@ void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
 //
 //
 void interp_init_nil_mem(void){ // interp_init_nil_mem#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
 
     nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
     nil++;
@@ -123,12 +165,17 @@ mword *interp_init_golden_nil(void){ // interp_init_golden_nil#
 //
 void interp_init_zero_hash(void){ // interp_init_zero_hash#
 
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
+
     GLOBAL_TAG_ZERO_HASH = mem_sys_alloc(UNITS_MTO8(HASH_ALLOC_SIZE));
     ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
     GLOBAL_TAG_ZERO_HASH++;
     memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
 
 }
+
 
 // must be LAST function called before exit
 //
@@ -155,62 +202,19 @@ PYR_TAGS
 }
 
 
-//
-//
-void interp_init_globals(void){ // interp_init_globals#
-//pyr_cache *interp_init_globals(pyr_cache *this_pyr){ // interp_init_globals#
-
-#ifdef INTERP_RESET_TRACE
-_reset_trace;
-#endif
-
-    global_mem_sys_alloc_count = 0;
-    global_mem_sys_alloc_total = 0;
-    global_mem_sys_free_count  = 0;
-    global_mem_sys_free_total  = 0;
-
-//    return this_pyr;
-
-}
-
-
 // Initializes the root virtual machine and interpreter-only state...
 //
-pyr_cache *interp_init(pyr_cache *this_pyr, int argc, char **argv, char **envp, jmp_buf *cat_ex){ // interp_init#
+pyr_cache *interp_reinit(pyr_cache *this_pyr, mword *golden_nil, int argc, char **argv, char **envp, jmp_buf *cat_ex){ // interp_init#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
-
-// XXX //SECURITY// **DO NOT REMOVE** FOLLOWING LINES //SECURITY// XXX //
-#ifdef MEM_DEBUG
-_prn(" >>MEM_DEBUG<< ");
-#endif
-
-#ifdef DEV_MODE
-_prn(" >>DEV_MODE<< ");
-#endif
-
-#ifdef PROF_MODE
-_prn(" >>PROF_MODE<< ");
-#endif
-
-#ifdef COMPAT_MODE
-_prn(" >>COMPAT_MODE<< ");
-#endif
-
-#ifdef CHK_MODE
-_prn(" >>CHK_MODE<< ");
-#endif
-
-_prn("\n");
-
-// XXX //SECURITY// **DO NOT REMOVE** ABOVE LINES     //SECURITY// XXX //
 
 //#ifdef DEV_MODE
 //    global_dev_overrides = interp_init_load_from_file(this_pyr, "init_dev_overrides.bbl");
 //#endif
 
+    interp_reinitialize_nil(golden_nil);
 
     ////////////////////////////
     // init this_pyr->interp  //

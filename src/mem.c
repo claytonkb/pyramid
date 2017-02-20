@@ -82,8 +82,7 @@ void *mem_sys_alloc(int size){ // mem_sys_alloc#
         _fatal("malloc failed");
     }
 
-    global_mem_sys_alloc_count++;
-    global_mem_sys_alloc_total+=size;
+    global_this_thread_mem->sys_alloc_count++;
 
     return alloc_attempt;
 
@@ -98,25 +97,58 @@ void mem_sys_free(void *p, int size){ // mem_sys_free#
 //_d(p);
 
     free(p); // XXX WAIVER(free) XXX
-    global_mem_sys_free_count++;
-    global_mem_sys_free_total+=size;
+//    global_mem_sys_free_count++;
+//    global_mem_sys_free_total+=size;
 
 }
 
 
-#define alloc_size_check(x)                                                 \
-    mword alloc_request_size = mem_alloc_size(x)+1;                         \
-                                                                            \
-    if(alloc_request_size > MEM_ABS_MAX_ALLOC){                             \
-        _fatal("alloc failed: alloc_request_size > MEM_ABS_MAX_ALLOC");     \
+//typedef struct { // mem_thread_base#
+//
+//    mword *base_ptr;
+//    mword *current_page_ptr;
+//    mword current_offset;
+//    mword *alloc_ptr;
+//
+//    // statistics
+//    mword sys_alloc_count;
+//    mword sys_free_count;
+//
+//} mem_thread_base; 
+//
+
+
+//
+//
+void mem_non_gc_new(void){ // mem_non_gc_new#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
+
+    global_this_thread_mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
+
+    global_this_thread_mem->sys_alloc_count = 0;
+    global_this_thread_mem->sys_free_count = 0;
+
+    // XXX We can use mem_sys_alloc() now
+    global_this_thread_mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
+    global_this_thread_mem->current_page_ptr = global_this_thread_mem->base_ptr;
+    global_this_thread_mem->current_offset = 0;
+
+    int i;
+    for(i=0; i<mem_thread_base_page_size; i++){
+        global_this_thread_mem->base_ptr[i] = (mword)nil;
     }
+
+}
 
 
 // Allocates non-GC memory using sfield
 // XXX This is intended for bootstrap and memory-debug use ONLY XXX
-inline mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
+mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
 
-    alloc_size_check(alloc_sfield);
+    mword alloc_request_size = mem_alloc_size(alloc_sfield)+1;
 
     mword *result;
 
@@ -129,52 +161,105 @@ inline mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
 
 
 //// Allocates non-GC memory using sfield
-//// XXX This is intended for bootstrap and memory-debug use ONLY XXX
-//inline mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
+//// XXX mem_non_gc* functions are intended for bootstrap and memory-debug use ONLY XXX
+//mword *mem_non_gc_alloc(int size){ // mem_non_gc_alloc#
 //
 //    mword *result;
 //
-////    lci(global_boot_mem_allocs,global_mem_sys_alloc_count) = alloc_attempt;
+//    result = (void*)mem_sys_alloc(mem_alloc_size(alloc_sfield)+1); // XXX WAIVER(mem_sys_alloc) XXX //
 //
-//    result = (void*)mem_sys_alloc(UNITS_MTO8(alloc_request_size)); // XXX WAIVER(mem_sys_alloc) XXX //
-//    sfield(result) = alloc_sfield;
+//    mem_non_gc_insert(result);
 //
 //    return result;
 //
 //}
+
+
+// Returns 1 if insert succeeded, 0 otherwise
+// 
+mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
+
+    if(global_this_thread_mem->current_offset
+            == (mem_thread_base_page_size-2)){ // Leave a space for the chaining pointer
+        _die; // XXX implement chaining, if needed XXX
+    }
+    else{
+        global_this_thread_mem->base_ptr[global_this_thread_mem->current_offset]
+            = (mword)nil;
+    }
+
+    global_this_thread_mem->current_offset++;
+
+    return 1;
+
+}
+
+
+// Returns 1 if freed, 0 otherwise
+// 
+mword mem_non_gc_free(void *non_gc_ptr){ // mem_non_gc_free#
+
+    return 0;
+
+}
+
+
+// Returns 1 if insert succeeded, 0 otherwise
+// 
+mword mem_non_gc_teardown(void *non_gc_ptr){ // mem_non_gc_free#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
+
+    return 0;
+
+}
+
+
 //
+//
+mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size){ // *mem_alloc2#
+
+    return nil;
+
+}
 
 //
 //
 mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
-
+//_trace;
     // mem_alloc is non-reentrant... this is enforced with the MEM_ALLOC_BLOCKING flag
     if(this_pyr->flags->MEM_ALLOC_BLOCKING == SET){
         _fatal("this_pyr->flags->MEM_ALLOC_BLOCKING == SET");
     }
 
-    if(this_pyr->flags->MEM_USE_MALLOC == SET)
-        return mem_non_gc_alloc(alloc_sfield);
+//    if(this_pyr->flags->MEM_USE_MALLOC == SET)
 
-//    if(this_pyr->flags->MEM_USE_DYN == SET)
-//        return mem_user_dyn_alloc(alloc_sfield);
+    return mem_non_gc_alloc(alloc_sfield);
 
-    alloc_size_check(alloc_sfield);
+//        return mem_non_gc_alloc(mem_alloc_size(alloc_sfield)+1);
 
-    alloc_bank *b = this_pyr->interp->mem->primary;
 
-    if((b->alloc_ptr - alloc_request_size) < b->base_ptr){
-        _fatal("out of memory");
-    }
-
-    b->alloc_ptr -= alloc_request_size;
-
-    mword *result = b->alloc_ptr+1;
-    sfield(result) = alloc_sfield;
-
-    this_pyr->flags->MEM_ALLOC_BLOCKING = CLR;
-
-    return result;
+////    if(this_pyr->flags->MEM_USE_DYN == SET)
+////        return mem_user_dyn_alloc(alloc_sfield);
+//
+////    alloc_size_check(alloc_sfield);
+//
+//    alloc_bank *b = this_pyr->interp->mem->primary;
+//
+//    if((b->alloc_ptr - alloc_request_size) < b->base_ptr){
+//        _fatal("out of memory");
+//    }
+//
+//    b->alloc_ptr -= alloc_request_size;
+//
+//    mword *result = b->alloc_ptr+1;
+//    sfield(result) = alloc_sfield;
+//
+//    this_pyr->flags->MEM_ALLOC_BLOCKING = CLR;
+//
+//    return result;
 
 //#ifdef MEM_DEBUG
 //#endif

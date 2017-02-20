@@ -13,10 +13,8 @@ int main(int argc, char **argv, char **envp){ // main#
 #ifdef PROF_MODE
     int wall_clock_time = interp_pyramid(&pyr, argc, argv, envp);
     _dd(wall_clock_time);
-    _dd(global_mem_sys_alloc_total);
-    _dd(global_mem_sys_free_total);
-    _dd(global_mem_sys_alloc_count);
-    _dd(global_mem_sys_free_count);
+    _dd(global_this_thread_mem->sys_alloc_count);
+    _dd(global_this_thread_mem->sys_free_count);
 #else
     interp_pyramid(&pyr, argc, argv, envp);
 #endif

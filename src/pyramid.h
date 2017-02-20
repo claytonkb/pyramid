@@ -7,7 +7,7 @@
 
 /*****************************************************************************
  *                                                                           *
- *                              SWITCHES                                     *
+ *                         PREPROCESSOR SWITCHES                             *
  *                                                                           *
  ****************************************************************************/
 
@@ -20,7 +20,7 @@
 #define PROF_MODE
 //#define CHK_MODE
 
-//#define INTERP_RESET_TRACE
+#define INTERP_RESET_TRACE
 //#define INTERP_CORE_TRACE
 //#define BPDL_TRACE
 //#define BPDL2_TRACE
@@ -317,6 +317,20 @@ typedef struct { // pyr_cache#
 
 } pyr_cache;
 
+#define mem_thread_base_page_size 1024
+
+typedef struct { // mem_thread_base#
+
+    mword *base_ptr;
+    mword *current_page_ptr;
+    mword current_offset;
+
+    // statistics
+    mword sys_alloc_count;
+    mword sys_free_count;
+
+} mem_thread_base; 
+
 
 /*****************************************************************************
  *                                                                           *
@@ -326,20 +340,11 @@ typedef struct { // pyr_cache#
 
 mword *nil;                                     // nil#
 mword *GLOBAL_TAG_ZERO_HASH;                    // GLOBAL_TAG_ZERO_HASH#
-
-mword *global_mem_non_gc_alloc_list;                   // global_mem_non_gc_alloc_list#
-mword *global_mem_non_gc_alloc_array_size;             // global_mem_non_gc_alloc_array_size#
-mword *global_mem_non_gc_alloc_current_array;          // global_mem_non_gc_alloc_current_array#
-mword *global_mem_non_gc_alloc_current_array_offset;   // global_mem_non_gc_alloc_current_array_offset#
+mem_thread_base *global_this_thread_mem;        // global_this_thread_mem#
 
 #ifdef DEV_MODE
 mword *global_dev_overrides;                    // global_dev_overrides#
 #endif
-
-mword global_mem_sys_alloc_count;               // global_mem_sys_alloc_count#
-mword global_mem_sys_alloc_total;               // global_mem_sys_alloc_total#
-mword global_mem_sys_free_count;                // global_mem_sys_free_count#
-mword global_mem_sys_free_total;                // global_mem_sys_free_total#
 
 /*****************************************************************************
  *                                                                           *

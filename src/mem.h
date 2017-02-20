@@ -29,8 +29,14 @@ void mem_destroy(mem_context *m);
 
 //inline void mem_reset_bank(alloc_bank *b);
 
-inline mword *mem_non_gc_alloc(mword alloc_sfield);
+mword *mem_non_gc_alloc(mword alloc_sfield);
+//mword *mem_non_gc_alloc(int size);
+mword mem_non_gc_free(void *non_gc_ptr);
+void mem_non_gc_new(void);
+mword mem_non_gc_insert(void *non_gc_ptr);
+
 mword *mem_alloc(pyr_cache *this_pyr, mword sfield);
+mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size);
 
 inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init);
 inline void *mem_new_ptr(pyr_cache *this_pyr, mword size);

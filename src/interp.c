@@ -76,14 +76,7 @@ _reset_trace;
 
     wall_clock_time = (clock() - wall_clock_time) / CLOCKS_PER_SEC;
 
-////    mem_sys_free(golden_nil-1, UNITS_MTO8(TPTR_SIZE));
-////    mem_sys_free(nil-1, UNITS_MTO8(TPTR_SIZE));
-////    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
-//
-//    mem_sys_free_bs(golden_nil, UNITS_MTO8(TPTR_SIZE));
-//    mem_sys_free_bs(nil, UNITS_MTO8(TPTR_SIZE));
-//    mem_sys_free_bs(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_ALLOC_SIZE));
-////    mem_sys_free(GLOBAL_TAG_ZERO_HASH, UNITS_MTO8(HASH_SIZE));
+    mem_sys_free(golden_nil-1);
 
     interp_exit(this_pyr);
 
@@ -100,26 +93,25 @@ void interp_init_once(void){ // interp_init_once#
 _reset_trace;
 #endif
 
-    mem_non_gc_new();
-
     interp_init_zero_hash();
-
     interp_init_nil_mem();
+    mem_non_gc_new();
 
 }
 
 
 //
 //
-void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
+void interp_init_zero_hash(void){ // interp_init_zero_hash#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
 
-    // Init nil from golden_nil to protect against accidental nil-overwrite
-    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
-    tptr_set_ptr(nil, nil);
+    GLOBAL_TAG_ZERO_HASH = malloc(UNITS_MTO8(HASH_ALLOC_SIZE)); // XXX WAIVER(malloc) XXX // Cannot use mem_sys_alloc before mem_non_gc_new
+    ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
+    GLOBAL_TAG_ZERO_HASH++;
+    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
 
 }
 
@@ -132,7 +124,7 @@ void interp_init_nil_mem(void){ // interp_init_nil_mem#
 _reset_trace;
 #endif
 
-    nil = mem_sys_alloc(UNITS_MTO8(TPTR_SIZE));
+    nil = malloc(UNITS_MTO8(TPTR_SIZE)); // XXX WAIVER(malloc) XXX // Cannot use mem_sys_alloc before mem_non_gc_new
     nil++;
 
 }
@@ -163,41 +155,15 @@ mword *interp_init_golden_nil(void){ // interp_init_golden_nil#
 
 //
 //
-void interp_init_zero_hash(void){ // interp_init_zero_hash#
+void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
 
-    GLOBAL_TAG_ZERO_HASH = mem_sys_alloc(UNITS_MTO8(HASH_ALLOC_SIZE));
-    ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
-    GLOBAL_TAG_ZERO_HASH++;
-    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
-
-}
-
-
-// must be LAST function called before exit
-//
-void interp_exit(pyr_cache *this_pyr){ // interp_exit#
-
-    // Complete mem teardown
-
-    mem_destroy(this_pyr->interp->mem);
-
-    mem_sys_free(this_pyr->interp->limits,sizeof(interp_limits));
-    mem_sys_free(this_pyr->interp->privileges,sizeof(interp_privileges));
-
-#ifdef PROF_MODE
-    mem_sys_free(this_pyr->interp->profile,sizeof(pyr_profile));
-#endif
-
-    mem_sys_free(this_pyr->interp,sizeof(interp_state));
-    mem_sys_free(this_pyr->flags,sizeof(interp_flags));
-
-#define X(a, b) mem_sys_free_bs(a, UNITS_MTO8(HASH_ALLOC_SIZE));
-PYR_TAGS    
-#undef X
+    // Init nil from golden_nil to protect against accidental nil-overwrite
+    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+    tptr_set_ptr(nil, nil);
 
 }
 
@@ -210,9 +176,7 @@ pyr_cache *interp_reinit(pyr_cache *this_pyr, mword *golden_nil, int argc, char 
 _reset_trace;
 #endif
 
-//#ifdef DEV_MODE
-//    global_dev_overrides = interp_init_load_from_file(this_pyr, "init_dev_overrides.bbl");
-//#endif
+    mem_non_gc_reset();
 
     interp_reinitialize_nil(golden_nil);
 
@@ -220,10 +184,8 @@ _reset_trace;
     // init this_pyr->interp  //
     ////////////////////////////
 
-    this_pyr->interp            = mem_sys_alloc(sizeof(interp_state)); // XXX WAIVER(mem_sys_alloc) XXX //
+    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_state)); // XXX WAIVER(mem_sys_alloc) XXX //
     this_pyr->interp->cat_ex    = cat_ex;
-
-    interp_init_flags(this_pyr);
 
     this_pyr->interp->op_restart        = (jmp_buf*)UNINIT_VAL;
     this_pyr->interp->thread_counter    = 0;
@@ -238,6 +200,12 @@ _reset_trace;
 #else
     this_pyr->interp->hash_fn   = pearson_marsaglia16;
 #endif
+
+    ////////////////////////////////////
+    // init this_pyr->interp->flags   //
+    ////////////////////////////////////
+
+    interp_init_flags(this_pyr);
 
     ////////////////////////////
     // init this_pyr          //
@@ -268,49 +236,21 @@ _reset_trace;
 
     this_pyr->flags->MEM_ALLOC_BLOCKING = CLR; // It is now safe to use mem_alloc()
 
+    this_pyr->flags->MEM_ALLOC_NON_GC = SET; // Continue using mem_non_gc_alloc until boot is complete (ensures proper teardown)
+
     interp_init_limits(this_pyr);
+
     interp_init_privileges(this_pyr);
 
 #ifdef PROF_MODE
-    this_pyr->interp->profile = mem_sys_alloc(sizeof(pyr_profile));       // XXX WAIVER(mem_sys_alloc) XXX //
+    this_pyr->interp->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
-
-this_pyr->flags->MEM_USE_MALLOC = SET;
 
 #define X(a, b) a = HASHC(this_pyr, b);
 PYR_TAGS    
 #undef X
 
-this_pyr->flags->MEM_USE_MALLOC = CLR;
-
     this_pyr->self = interp_load_root_bvm(this_pyr);
-
-//    init_interp_consts(this_pyr);
-//    init_jump_table(this_pyr);
-//    init_new_epoch(this_pyr);
-//    init_new_srand(this_pyr);
-////    interp_new_null_hash(this_pyr);
-////    interp_new_stdin_capture(this_pyr);
-//
-////    bpdl_new(this_pyr);
-//    bpdl_init_opcode_table(this_pyr); // XXX MOVE to bpdl_new()
-//    bpdl_init_macro_table(this_pyr);  // XXX MOVE to bpdl_new()
-//
-//
-//    init_load_root_bvm(this_pyr);
-//
-//    init_capture_argv(this_pyr);
-//
-//#ifdef PROF_MODE
-//    init_bvm_profile(this_pyr);
-//#endif
-//
-//    this_pyr->flags->INTERP_BOOT_IN_PROGRESS = FLAG_CLR;
-//
-//#if( defined BABEL_RESET_TRACE && defined MEM_DEBUG )
-//    _d(mem_sys_alloc_count);
-//    _d(mem_sys_alloc_total);
-//#endif
 
     this_pyr->flags->INTERP_BOOT_IN_PROGRESS = CLR;
 
@@ -331,9 +271,11 @@ pyr_cache *interp_init_flags(pyr_cache *this_pyr){ // interp_init_flags#
 _reset_trace;
 #endif
 
-    interp_flags *f = mem_sys_alloc(sizeof(interp_flags)); // XXX WAIVER(mem_sys_alloc) XXX //
+    interp_flags *f = mem_non_gc_alloc(sizeof(interp_flags));
 
     f->MEM_ALLOC_BLOCKING                   = SET; // Cleared after mem_new in interp_init
+    f->MEM_ALLOC_NON_GC                     = CLR;
+
     f->MEM_GC_BLOCKING                      = CLR;
     f->MEM_GC_INTERP_BLOCKING               = CLR;
 
@@ -380,7 +322,7 @@ pyr_cache *interp_init_limits(pyr_cache *this_pyr){ // init_interp_limits#
 _reset_trace;
 #endif
 
-    interp_limits *l = mem_sys_alloc(sizeof(interp_limits)); // XXX WAIVER(mem_sys_alloc) XXX //
+    interp_limits *l = mem_non_gc_alloc(sizeof(interp_limits)); // XXX WAIVER(mem_sys_alloc) XXX //
 
     l->max_num_sys_threads      = 1;        // XXX unimplemented
     l->max_num_steps            = -1;       // XXX: Implement command-line init of this value
@@ -404,7 +346,7 @@ pyr_cache *interp_init_privileges(pyr_cache *this_pyr){ // init_interp_privilege
 _reset_trace;
 #endif
 
-    interp_privileges *p = mem_sys_alloc(sizeof(interp_privileges)); // XXX WAIVER(mem_sys_alloc) XXX //
+    interp_privileges *p = mem_non_gc_alloc(sizeof(interp_privileges)); // XXX WAIVER(mem_sys_alloc) XXX //
 
     p->FILE_READ_ALLOWED  = SET;
     p->FILE_WRITE_ALLOWED = SET;
@@ -415,6 +357,25 @@ _reset_trace;
     this_pyr->interp->privileges = p;
 
     return this_pyr;
+
+}
+
+
+// must be LAST function called
+//
+void interp_exit(pyr_cache *this_pyr){ // interp_exit#
+
+    // Complete mem teardown
+    mem_destroy(this_pyr->interp->mem);
+
+    mem_non_gc_teardown();
+
+    free(nil-1);
+    free(GLOBAL_TAG_ZERO_HASH-1);
+
+#ifdef DEV_MODE
+    _say("PYRAMID: exiting normally");
+#endif
 
 }
 
@@ -439,7 +400,8 @@ _trace;
     FILE *f = io_open_file(this_pyr, (mword*)filename);
     mword file_size = io_file_size(this_pyr, f);
 
-    mword *file_buffer = mem_alloc(this_pyr, file_size);
+    mword *file_buffer = _newstr(this_pyr, file_size, ' ');
+//    mword *file_buffer = mem_alloc(this_pyr, file_size);
 //    mword *file_buffer = mem_sys_alloc(file_size);
 
     fread((char*)file_buffer, 1, file_size, f);

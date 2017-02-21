@@ -17,10 +17,10 @@
 #define DEV_MODE
 #define COMPAT_MODE
 //#define MEM_DEBUG
-#define PROF_MODE
+//#define PROF_MODE
 //#define CHK_MODE
 
-#define INTERP_RESET_TRACE
+//#define INTERP_RESET_TRACE
 //#define INTERP_CORE_TRACE
 //#define BPDL_TRACE
 //#define BPDL2_TRACE
@@ -192,6 +192,8 @@ typedef struct { // interp_privileges#
 typedef struct { // interp_flags#
 
     flag_val MEM_ALLOC_BLOCKING;
+    flag_val MEM_ALLOC_NON_GC;
+
     flag_val MEM_GC_BLOCKING;
     flag_val MEM_GC_INTERP_BLOCKING;
 
@@ -317,12 +319,12 @@ typedef struct { // pyr_cache#
 
 } pyr_cache;
 
-#define mem_thread_base_page_size 1024
+#define mem_thread_base_page_size 128
 
 typedef struct { // mem_thread_base#
 
     mword *base_ptr;
-    mword *current_page_ptr;
+    mword *current_page;
     mword current_offset;
 
     // statistics

@@ -16,10 +16,10 @@ _reset_trace;
 _trace;
 #endif
 
-    mem_context *m = mem_sys_alloc(sizeof(mem_context));    // XXX WAIVER(mem_sys_alloc) XXX //
+    mem_context *m = mem_non_gc_alloc(sizeof(mem_context));
 
-    m->primary   = mem_sys_alloc(sizeof(alloc_bank));       // XXX WAIVER(mem_sys_alloc) XXX //
-    m->secondary = mem_sys_alloc(sizeof(alloc_bank));       // XXX WAIVER(mem_sys_alloc) XXX //
+    m->primary   = mem_non_gc_alloc(sizeof(alloc_bank));
+    m->secondary = mem_non_gc_alloc(sizeof(alloc_bank));
 
     mem_bank_alloc(m->primary,   init_mem_size);
     mem_bank_alloc(m->secondary, init_mem_size);
@@ -35,11 +35,6 @@ void mem_destroy(mem_context *m){ // mem_destroy#
 
     mem_bank_free(m->primary);
     mem_bank_free(m->secondary);
-
-    mem_sys_free(m->primary,   sizeof(alloc_bank));
-    mem_sys_free(m->secondary, sizeof(alloc_bank));
-
-    mem_sys_free(m, sizeof(mem_context));
 
 }
 
@@ -61,7 +56,7 @@ inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
 //
 inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 
-    mem_sys_free(a->base_ptr, a->size);
+    mem_sys_free(a->base_ptr);
 
     a->base_ptr    = nil;
     a->size        = 0;
@@ -72,7 +67,7 @@ inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 
 // XXX WAIVER REQUIRED mem_sys_alloc XXX
 // NB: size is in units of bytes
-// DESC: malloc() wrapper (check ret ptr, track stats)
+// DESC: malloc() wrapper (check ret ptr + track stats)
 //
 void *mem_sys_alloc(int size){ // mem_sys_alloc#
 
@@ -82,7 +77,7 @@ void *mem_sys_alloc(int size){ // mem_sys_alloc#
         _fatal("malloc failed");
     }
 
-    global_this_thread_mem->sys_alloc_count++;
+    global_this_thread_mem->sys_alloc_count++; // FIXME Wrap this in PROF_MODE guards
 
     return alloc_attempt;
 
@@ -92,30 +87,13 @@ void *mem_sys_alloc(int size){ // mem_sys_alloc#
 // NB: Use only with mem created by mem_sys_alloc
 // DESC: free() wrapper (track stats)
 //
-void mem_sys_free(void *p, int size){ // mem_sys_free#
-
-//_d(p);
+void mem_sys_free(void *p){ // mem_sys_free#
 
     free(p); // XXX WAIVER(free) XXX
-//    global_mem_sys_free_count++;
-//    global_mem_sys_free_total+=size;
+
+    global_this_thread_mem->sys_free_count++; // FIXME Wrap this in PROF_MODE guards
 
 }
-
-
-//typedef struct { // mem_thread_base#
-//
-//    mword *base_ptr;
-//    mword *current_page_ptr;
-//    mword current_offset;
-//    mword *alloc_ptr;
-//
-//    // statistics
-//    mword sys_alloc_count;
-//    mword sys_free_count;
-//
-//} mem_thread_base; 
-//
 
 
 //
@@ -133,7 +111,7 @@ _reset_trace;
 
     // XXX We can use mem_sys_alloc() now
     global_this_thread_mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
-    global_this_thread_mem->current_page_ptr = global_this_thread_mem->base_ptr;
+    global_this_thread_mem->current_page = global_this_thread_mem->base_ptr;
     global_this_thread_mem->current_offset = 0;
 
     int i;
@@ -146,33 +124,35 @@ _reset_trace;
 
 // Allocates non-GC memory using sfield
 // XXX This is intended for bootstrap and memory-debug use ONLY XXX
-mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
+void *mem_non_gc_alloc2(mword alloc_sfield){ // mem_non_gc_alloc2#
 
     mword alloc_request_size = mem_alloc_size(alloc_sfield)+1;
 
     mword *result;
 
     result = (void*)mem_sys_alloc(UNITS_MTO8(alloc_request_size)); // XXX WAIVER(mem_sys_alloc) XXX //
-    sfield(result) = alloc_sfield;
+
+    mem_non_gc_insert(result);
 
     return result;
 
 }
 
 
-//// Allocates non-GC memory using sfield
-//// XXX mem_non_gc* functions are intended for bootstrap and memory-debug use ONLY XXX
-//mword *mem_non_gc_alloc(int size){ // mem_non_gc_alloc#
-//
-//    mword *result;
-//
-//    result = (void*)mem_sys_alloc(mem_alloc_size(alloc_sfield)+1); // XXX WAIVER(mem_sys_alloc) XXX //
-//
-//    mem_non_gc_insert(result);
-//
-//    return result;
-//
-//}
+// Allocates non-GC memory using sfield
+// XXX This is intended for bootstrap and memory-debug use ONLY XXX
+//mword *mem_non_gc_alloc(mword alloc_sfield){ // mem_non_gc_alloc#
+void *mem_non_gc_alloc(int size){ // mem_non_gc_alloc#
+
+    mword *result;
+
+    result = (void*)mem_sys_alloc(size); // XXX WAIVER(mem_sys_alloc) XXX //
+
+    mem_non_gc_insert(result);
+
+    return result;
+
+}
 
 
 // Returns 1 if insert succeeded, 0 otherwise
@@ -185,7 +165,7 @@ mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
     }
     else{
         global_this_thread_mem->base_ptr[global_this_thread_mem->current_offset]
-            = (mword)nil;
+            = (mword)non_gc_ptr;
     }
 
     global_this_thread_mem->current_offset++;
@@ -204,18 +184,52 @@ mword mem_non_gc_free(void *non_gc_ptr){ // mem_non_gc_free#
 }
 
 
-// Returns 1 if insert succeeded, 0 otherwise
+// Returns 1 if teardown succeeded, 0 otherwise
 // 
-mword mem_non_gc_teardown(void *non_gc_ptr){ // mem_non_gc_free#
+//mword mem_non_gc_teardown(void){ // mem_non_gc_teardown#
+mword mem_non_gc_reset(void){ // mem_non_gc_reset#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
 
+    int i;
+
+    if(global_this_thread_mem->base_ptr
+            == global_this_thread_mem->current_page){
+        for(i=0; i<mem_thread_base_page_size; i++){
+            if(global_this_thread_mem->base_ptr[i] != (mword)nil){
+                mem_sys_free((mword*)global_this_thread_mem->base_ptr[i]);
+            }
+            global_this_thread_mem->base_ptr[i] = (mword)nil;
+        }
+        return 1;
+    }
+    else{
+        _die; // XXX to be implemented...
+    }
+
     return 0;
 
 }
 
+
+//
+//
+void mem_non_gc_teardown(void){ // mem_non_gc_teardown#
+
+    mem_non_gc_reset();
+
+    mem_sys_free(global_this_thread_mem->base_ptr);
+
+#ifdef PROF_MODE
+    _dd(global_this_thread_mem->sys_alloc_count);
+    _dd(global_this_thread_mem->sys_free_count);
+#endif
+
+    free(global_this_thread_mem);
+
+}
 
 //
 //
@@ -228,146 +242,21 @@ mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel acces
 //
 //
 mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
-//_trace;
+
     // mem_alloc is non-reentrant... this is enforced with the MEM_ALLOC_BLOCKING flag
     if(this_pyr->flags->MEM_ALLOC_BLOCKING == SET){
         _fatal("this_pyr->flags->MEM_ALLOC_BLOCKING == SET");
     }
 
-//    if(this_pyr->flags->MEM_USE_MALLOC == SET)
+    if(this_pyr->flags->MEM_ALLOC_NON_GC == SET){
+        mword *result = mem_non_gc_alloc(UNITS_MTO8(mem_alloc_size(alloc_sfield)+1));
+        result++;
+        sfield(result) = alloc_sfield;
+        return result;
+    }
 
-    return mem_non_gc_alloc(alloc_sfield);
-
-//        return mem_non_gc_alloc(mem_alloc_size(alloc_sfield)+1);
-
-
-////    if(this_pyr->flags->MEM_USE_DYN == SET)
-////        return mem_user_dyn_alloc(alloc_sfield);
-//
-////    alloc_size_check(alloc_sfield);
-//
-//    alloc_bank *b = this_pyr->interp->mem->primary;
-//
-//    if((b->alloc_ptr - alloc_request_size) < b->base_ptr){
-//        _fatal("out of memory");
-//    }
-//
-//    b->alloc_ptr -= alloc_request_size;
-//
-//    mword *result = b->alloc_ptr+1;
-//    sfield(result) = alloc_sfield;
-//
-//    this_pyr->flags->MEM_ALLOC_BLOCKING = CLR;
-//
-//    return result;
-
-//#ifdef MEM_DEBUG
-//#endif
-//
-//    this_pyr->flags->MC_ALLOC_BLOCKING = FLAG_SET;
-//
-//    alloc_bank *b = this_pyr->interp->mem->primary;
-//
-//    if((b->alloc_ptr - alloc_request_size) <= b->base_ptr){ // swap banks and set MC_GC_PENDING
-//
-//        if(this_pyr->flags->MC_GC_PENDING == FLAG_CLR){
-//
-//#ifdef GC_TRACE
-//_msg("MC_GC_PENDING");
-//#endif
-//
-//            mem_swap_banks(this_pyr);
-//            b = this_pyr->interp->mem->primary; // update local copy
-//            this_pyr->flags->MC_GC_PENDING = FLAG_SET;
-//
-//        }
-//        else{
-//
-//#ifdef GC_TRACE
-//_msg("MC_GC_OP_RESTART");
-//#endif
-//
-//            if(this_pyr->flags->MC_GC_INTERP_BLOCKING == FLAG_SET){
-//                _fatal("this_pyr->flags->MC_GC_INTERP_BLOCKING == FLAG_SET");
-//            }
-//
-//            if(this_pyr->flags->INTERP_BOOT_IN_PROGRESS == FLAG_SET){
-//                _fatal("MC_GC_OP_RESTART while INTERP_BOOT_IN_PROGRESS");
-//            }
-//
-//            this_pyr->flags->MC_GC_BLOCKING = FLAG_CLR;
-//            this_pyr->flags->MC_ALLOC_BLOCKING = FLAG_CLR;
-//            this_pyr->interp->mem->op_restart_alloc_size = alloc_request_size;
-//            _op_restart(this_pyr);
-//
-//        }
-//
-//    }
-//
-//#if 0
-//    mword mbu = mem_bank_in_use(b);
-//
-//    if( (mbu+alloc_request_size) >= b->size ){
-//
-//        if(this_pyr->flags->MC_GC_PENDING == FLAG_CLR){
-//
-//#ifdef GC_TRACE
-//_msg("MC_GC_PENDING");
-//#endif
-//            mem_swap_banks(this_pyr);
-//            b = this_pyr->interp->mem->primary; // update local copy
-//            this_pyr->flags->MC_GC_PENDING = FLAG_SET;
-//
-//        }
-//        else{
-//
-//#ifdef GC_TRACE
-//_msg("MC_GC_OP_RESTART");
-//#endif
-//
-//            if(this_pyr->flags->MC_GC_INTERP_BLOCKING == FLAG_SET){
-//                _fatal("this_pyr->flags->MC_GC_INTERP_BLOCKING == FLAG_SET");
-//            }
-//
-//            if(this_pyr->flags->INTERP_BOOT_IN_PROGRESS == FLAG_SET){
-//                _msg("MC_GC_OP_RESTART while INTERP_BOOT_IN_PROGRESS");
-//                _cat_except(this_pyr);
-//            }
-//
-//            if(this_pyr->flags->MC_GC_BLOCKING == FLAG_SET){
-//                this_pyr->flags->MC_GC_BLOCKING = FLAG_CLR;
-//            }
-//
-//            this_pyr->flags->MC_ALLOC_BLOCKING = FLAG_CLR;
-//            this_pyr->interp->mem->op_restart_alloc_size = alloc_request_size;
-//            _op_restart(this_pyr);
-//
-//        }
-//
-//    }
-//#endif
-//
-//    b->alloc_ptr -= alloc_request_size;
-//
-//#if 0
-//if(b->alloc_ptr <= b->base_ptr){
-//    _d((mword)b->alloc_ptr);
-//    _d((mword)b->base_ptr);
-//    _die;
-//}
-//#endif
-//
-//    return_ptr = b->alloc_ptr+1;
-//
-//    sfield(return_ptr) = alloc_sfield;
-//
-//    this_pyr->flags->MC_ALLOC_BLOCKING = FLAG_CLR;
-//    this_pyr->flags->MC_GC_OP_RESTART  = FLAG_CLR;
-//
-////mword bounds_check = mem_bounds_check(this_pyr, return_ptr);
-////_d(bounds_check);
-//
-//    return return_ptr;
+    _die;
+    return nil;
 
 }
 
@@ -378,7 +267,7 @@ inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init){ // mem_ne
 
     mword local_size = UNITS_MTO8(size);
 
-    void *ptr = (void*)mem_alloc(this_pyr, local_size);
+    void *ptr = (void*)mem_alloc(this_pyr, UNITS_MTO8(size));
 
     memset((char*)ptr,init,local_size);
 

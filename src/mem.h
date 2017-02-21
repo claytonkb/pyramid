@@ -19,7 +19,8 @@
 #define mem_new_cons(x) (mem_new_ptr(x, 2)) // mem_new_cons#
 
 void *mem_sys_alloc(int size);
-void  mem_sys_free(void *p, int size);
+//void  mem_sys_free(void *p, int size);
+void mem_sys_free(void *p);
 
 inline void mem_bank_alloc(alloc_bank *a, mword bank_size);
 inline void mem_bank_free(alloc_bank *a);
@@ -29,9 +30,11 @@ void mem_destroy(mem_context *m);
 
 //inline void mem_reset_bank(alloc_bank *b);
 
-mword *mem_non_gc_alloc(mword alloc_sfield);
-//mword *mem_non_gc_alloc(int size);
+void *mem_non_gc_alloc2(mword alloc_sfield);
+void *mem_non_gc_alloc(int size);
 mword mem_non_gc_free(void *non_gc_ptr);
+void mem_non_gc_teardown(void);
+mword mem_non_gc_reset(void);
 void mem_non_gc_new(void);
 mword mem_non_gc_insert(void *non_gc_ptr);
 

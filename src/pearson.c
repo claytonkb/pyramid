@@ -68,7 +68,9 @@ void pearson_marsaglia16(char *result, char *init, char *key, mword strlen){ // 
 mword *pearson16a(pyr_cache *this_pyr, char *init, char *key, mword strlen){ // pearson16a#
 
     char *result = (char*)mem_new_valz(this_pyr, HASH_SIZE);
+
     pearson16(result, init, key, strlen);
+
     return (mword*)result;
 
 }

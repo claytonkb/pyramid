@@ -3,11 +3,6 @@ Pyramid Arch Notes
 
 TODO:
 
-    - mem_alloc
-        - Add select for byte-based or mword-based allocation
-            wrapper?
-    - mem_non_gc_teardown
-
     - Implement array-of-pairs (prepare for backtrack + lazy-lists)
     - Implement lazy-lists (or AoP) - prepare for laziness/JIT
     - Implement executable memory (prepare for tcc-in-memory)

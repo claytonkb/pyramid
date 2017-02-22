@@ -60,7 +60,8 @@ _reset_trace;
         _die;
     }
     else if(val==INTERP_RESET){
-        interp_exit(this_pyr);
+//        interp_exit(this_pyr);
+        mem_destroy(this_pyr->interp->mem);
         _say("INTERP_RESET: pyramid");
     }
 

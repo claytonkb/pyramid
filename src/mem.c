@@ -213,8 +213,8 @@ _reset_trace;
 
     mem_non_gc_reset_pages(global_this_thread_mem->base_ptr);
 
-    global_this_thread_mem->sys_alloc_count = 0;
-    global_this_thread_mem->sys_free_count = 0;
+//    global_this_thread_mem->sys_alloc_count = 0;
+//    global_this_thread_mem->sys_free_count = 0;
 
     global_this_thread_mem->current_page = global_this_thread_mem->base_ptr;
     global_this_thread_mem->current_offset = 0;

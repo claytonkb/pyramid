@@ -5,11 +5,16 @@ TODO:
 
     - Implement array-of-pairs (prepare for backtrack + lazy-lists)
     - Implement lazy-lists (or AoP) - prepare for laziness/JIT
+        - thunk
     - Implement executable memory (prepare for tcc-in-memory)
+        - This might not be necessary, just ride on tcc_relocate for free
+            - Creates a potential dependency on tcc, but OK for now
     - Implement basic JIT flow
         - Pyramid will be JIT-only
         - Design compiler-independent interface to avoid marrying pyramid to
           tcc
+    - Windows threads
+    - Memory-mapped files (stretch goal)
 
 -----------------------------------------------------------------------------
 

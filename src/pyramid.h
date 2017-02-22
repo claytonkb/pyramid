@@ -17,7 +17,7 @@
 #define DEV_MODE
 #define COMPAT_MODE
 //#define MEM_DEBUG
-//#define PROF_MODE
+#define PROF_MODE
 //#define CHK_MODE
 
 //#define INTERP_RESET_TRACE
@@ -345,7 +345,15 @@ mword *GLOBAL_TAG_ZERO_HASH;                    // GLOBAL_TAG_ZERO_HASH#
 mem_thread_base *global_this_thread_mem;        // global_this_thread_mem#
 
 #ifdef DEV_MODE
+
 mword *global_dev_overrides;                    // global_dev_overrides#
+mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
+
+#define FLAG_IGN    ((mword)-1) // FLAG_IGN#
+#define FLAG_SET    1 // FLAG_SET#
+#define FLAG_CLR    0 // FLAG_CLR#
+#define TOGGLE_FLAG(x) (((x) == FLAG_SET) ? (x = FLAG_CLR) : (x = FLAG_SET)) // XXX: DO NOT USE ON FLAG_IGN
+
 #endif
 
 /*****************************************************************************
@@ -452,7 +460,7 @@ mword *global_dev_overrides;                    // global_dev_overrides#
 // size is in units of MWORDS
 #define cpy(dest,src,size) memcpy(dest,src,UNITS_MTO8(size)) // cpy#
 
-#define TOGGLE_FLAG(x) (((x) == IGN) ? (x = IGN) : (((x) == SET) ? (x = CLR) : (x = SET))) // TOGGLE_FLAG#
+//#define TOGGLE_FLAG(x) (((x) == IGN) ? (x = IGN) : (((x) == SET) ? (x = CLR) : (x = SET))) // TOGGLE_FLAG#
 
 #define tagcmp(x,y,z) ( (is_tptr(x) || (size(x) >= HASH_SIZE)) ? (memcmp((mword*)x, y, z)) : -1 ) // tagcmp#
 #define tageq(x,y,z)  ( tagcmp(x,y,z) == 0 ) // tageq#

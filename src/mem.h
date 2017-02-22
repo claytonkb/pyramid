@@ -34,9 +34,11 @@ void *mem_non_gc_alloc2(mword alloc_sfield);
 void *mem_non_gc_alloc(int size);
 mword mem_non_gc_free(void *non_gc_ptr);
 void mem_non_gc_teardown(void);
-mword mem_non_gc_reset(void);
+void mem_non_gc_reset(void);
 void mem_non_gc_new(void);
 mword mem_non_gc_insert(void *non_gc_ptr);
+
+void mem_non_gc_reset_pages(mword *page_ptr);
 
 mword *mem_alloc(pyr_cache *this_pyr, mword sfield);
 mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size);

@@ -319,7 +319,7 @@ typedef struct { // pyr_cache#
 
 } pyr_cache;
 
-#define mem_thread_base_page_size 128
+#define mem_thread_base_page_size 32
 
 typedef struct { // mem_thread_base#
 

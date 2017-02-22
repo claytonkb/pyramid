@@ -153,21 +153,6 @@ mword *interp_init_golden_nil(void){ // interp_init_golden_nil#
 }
 
 
-//
-//
-void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
-
-#ifdef INTERP_RESET_TRACE
-_reset_trace;
-#endif
-
-    // Init nil from golden_nil to protect against accidental nil-overwrite
-    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
-    tptr_set_ptr(nil, nil);
-
-}
-
-
 // Initializes the root virtual machine and interpreter-only state...
 //
 pyr_cache *interp_reinit(pyr_cache *this_pyr, mword *golden_nil, int argc, char **argv, char **envp, jmp_buf *cat_ex){ // interp_init#
@@ -259,6 +244,21 @@ _msg("INTERP_RESET_TRACE: COMPLETE");
 #endif
 
     return this_pyr;
+
+}
+
+
+//
+//
+void interp_reinitialize_nil(mword *golden_nil){ // interp_reinitialize_nil#
+
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
+#endif
+
+    // Init nil from golden_nil to protect against accidental nil-overwrite
+    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+    tptr_set_ptr(nil, nil);
 
 }
 

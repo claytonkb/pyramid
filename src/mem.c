@@ -116,7 +116,7 @@ _reset_trace;
 
     int i;
     for(i=0; i<mem_thread_base_page_size; i++){
-        global_this_thread_mem->base_ptr[i] = (mword)nil;
+        ((mword**)(global_this_thread_mem->base_ptr))[i] = UNINIT_PTR;
     }
 
 }
@@ -159,12 +159,30 @@ void *mem_non_gc_alloc(int size){ // mem_non_gc_alloc#
 // 
 mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
 
+    mword *temp;
+    int i;
+
     if(global_this_thread_mem->current_offset
             == (mem_thread_base_page_size-2)){ // Leave a space for the chaining pointer
-        _die; // XXX implement chaining, if needed XXX
+//        _die; // XXX implement chaining, if needed XXX
+
+        ((mword**)(global_this_thread_mem->current_page))[mem_thread_base_page_size-2] 
+            = non_gc_ptr;
+
+        temp = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
+        for(i=0; i<mem_thread_base_page_size; i++){
+            ((mword**)temp)[i] = UNINIT_PTR;
+        }
+
+        ((mword**)(global_this_thread_mem->current_page))[mem_thread_base_page_size-1] 
+            = temp;
+
+        global_this_thread_mem->current_page   = temp;
+        global_this_thread_mem->current_offset = 0;
+
     }
     else{
-        global_this_thread_mem->base_ptr[global_this_thread_mem->current_offset]
+        global_this_thread_mem->current_page[global_this_thread_mem->current_offset]
             = (mword)non_gc_ptr;
     }
 
@@ -187,29 +205,45 @@ mword mem_non_gc_free(void *non_gc_ptr){ // mem_non_gc_free#
 // Returns 1 if teardown succeeded, 0 otherwise
 // 
 //mword mem_non_gc_teardown(void){ // mem_non_gc_teardown#
-mword mem_non_gc_reset(void){ // mem_non_gc_reset#
+void mem_non_gc_reset(void){ // mem_non_gc_reset#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
 
+    mem_non_gc_reset_pages(global_this_thread_mem->base_ptr);
+
+    global_this_thread_mem->sys_alloc_count = 0;
+    global_this_thread_mem->sys_free_count = 0;
+
+    global_this_thread_mem->current_page = global_this_thread_mem->base_ptr;
+    global_this_thread_mem->current_offset = 0;
+
+    int i;
+    for(i=0; i<mem_thread_base_page_size; i++){
+        ((mword**)(global_this_thread_mem->base_ptr))[i] = UNINIT_PTR;
+    }
+
+}
+
+
+//
+//
+void mem_non_gc_reset_pages(mword *page_ptr){ // mem_non_gc_reset_pages#
+
     int i;
 
-    if(global_this_thread_mem->base_ptr
-            == global_this_thread_mem->current_page){
-        for(i=0; i<mem_thread_base_page_size; i++){
-            if(global_this_thread_mem->base_ptr[i] != (mword)nil){
-                mem_sys_free((mword*)global_this_thread_mem->base_ptr[i]);
-            }
-            global_this_thread_mem->base_ptr[i] = (mword)nil;
-        }
-        return 1;
-    }
-    else{
-        _die; // XXX to be implemented...
+    if(((mword**)page_ptr)[mem_thread_base_page_size-1] 
+            != UNINIT_PTR){
+        mem_non_gc_reset_pages(((mword**)page_ptr)[mem_thread_base_page_size-1]);
     }
 
-    return 0;
+    for(i=0; i<mem_thread_base_page_size; i++){
+        if(((mword**)page_ptr)[i] != UNINIT_PTR){
+            mem_sys_free((mword*)page_ptr[i]);
+        }
+    }
+
 
 }
 

@@ -77,7 +77,7 @@ void *mem_sys_alloc(int size){ // mem_sys_alloc#
         _fatal("malloc failed");
     }
 
-    global_this_thread_mem->sys_alloc_count++; // FIXME Wrap this in PROF_MODE guards
+    global_irt->mem->sys_alloc_count++; // FIXME Wrap this in PROF_MODE guards
 
     return alloc_attempt;
 
@@ -91,7 +91,7 @@ void mem_sys_free(void *p){ // mem_sys_free#
 
     free(p); // XXX WAIVER(free) XXX
 
-    global_this_thread_mem->sys_free_count++; // FIXME Wrap this in PROF_MODE guards
+    global_irt->mem->sys_free_count++; // FIXME Wrap this in PROF_MODE guards
 
 }
 
@@ -104,26 +104,28 @@ void mem_non_gc_new(void){ // mem_non_gc_new#
 _reset_trace;
 #endif
 
-    global_this_thread_mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
+//    global_irt->mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
+    global_irt->mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
+    global_irt->mem = global_irt->mem;
 
-    global_this_thread_mem->sys_alloc_count = 0;
-    global_this_thread_mem->sys_free_count = 0;
+    global_irt->mem->sys_alloc_count = 0;
+    global_irt->mem->sys_free_count = 0;
 
     // XXX We can use mem_sys_alloc() now
-    global_this_thread_mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
-    global_this_thread_mem->current_page = global_this_thread_mem->base_ptr;
-    global_this_thread_mem->current_offset = 0;
+    global_irt->mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
+    global_irt->mem->current_page = global_irt->mem->base_ptr;
+    global_irt->mem->current_offset = 0;
 
     int i;
     for(i=0; i<mem_thread_base_page_size; i++){
-        ((mword**)(global_this_thread_mem->base_ptr))[i] = UNINIT_PTR;
+        ((mword**)(global_irt->mem->base_ptr))[i] = UNINIT_PTR;
     }
 
 }
 
 
-// Allocates non-GC memory using sfield
-// XXX This is intended for bootstrap and memory-debug use ONLY XXX
+// XXX DEPRECATE XXX TURN THIS INTO A MACRO XXX
+//
 void *mem_non_gc_alloc2(mword alloc_sfield){ // mem_non_gc_alloc2#
 
     mword alloc_request_size = mem_alloc_size(alloc_sfield)+1;
@@ -162,11 +164,11 @@ mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
     mword *temp;
     int i;
 
-    if(global_this_thread_mem->current_offset
+    if(global_irt->mem->current_offset
             == (mem_thread_base_page_size-2)){ // Leave a space for the chaining pointer
 //        _die; // XXX implement chaining, if needed XXX
 
-        ((mword**)(global_this_thread_mem->current_page))[mem_thread_base_page_size-2] 
+        ((mword**)(global_irt->mem->current_page))[mem_thread_base_page_size-2] 
             = non_gc_ptr;
 
         temp = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
@@ -174,19 +176,19 @@ mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
             ((mword**)temp)[i] = UNINIT_PTR;
         }
 
-        ((mword**)(global_this_thread_mem->current_page))[mem_thread_base_page_size-1] 
+        ((mword**)(global_irt->mem->current_page))[mem_thread_base_page_size-1] 
             = temp;
 
-        global_this_thread_mem->current_page   = temp;
-        global_this_thread_mem->current_offset = 0;
+        global_irt->mem->current_page   = temp;
+        global_irt->mem->current_offset = 0;
 
     }
     else{
-        global_this_thread_mem->current_page[global_this_thread_mem->current_offset]
+        global_irt->mem->current_page[global_irt->mem->current_offset]
             = (mword)non_gc_ptr;
     }
 
-    global_this_thread_mem->current_offset++;
+    global_irt->mem->current_offset++;
 
     return 1;
 
@@ -211,17 +213,14 @@ void mem_non_gc_reset(void){ // mem_non_gc_reset#
 _reset_trace;
 #endif
 
-    mem_non_gc_reset_pages(global_this_thread_mem->base_ptr);
+    mem_non_gc_reset_pages(global_irt->mem->base_ptr);
 
-//    global_this_thread_mem->sys_alloc_count = 0;
-//    global_this_thread_mem->sys_free_count = 0;
-
-    global_this_thread_mem->current_page = global_this_thread_mem->base_ptr;
-    global_this_thread_mem->current_offset = 0;
+    global_irt->mem->current_page = global_irt->mem->base_ptr;
+    global_irt->mem->current_offset = 0;
 
     int i;
     for(i=0; i<mem_thread_base_page_size; i++){
-        ((mword**)(global_this_thread_mem->base_ptr))[i] = UNINIT_PTR;
+        ((mword**)(global_irt->mem->base_ptr))[i] = UNINIT_PTR;
     }
 
 }
@@ -254,22 +253,14 @@ void mem_non_gc_teardown(void){ // mem_non_gc_teardown#
 
     mem_non_gc_reset();
 
-    mem_sys_free(global_this_thread_mem->base_ptr);
+    mem_sys_free(global_irt->mem->base_ptr);
 
 #ifdef PROF_MODE
-    _dd(global_this_thread_mem->sys_alloc_count);
-    _dd(global_this_thread_mem->sys_free_count);
+    _dd(global_irt->mem->sys_alloc_count);
+    _dd(global_irt->mem->sys_free_count);
 #endif
 
-    free(global_this_thread_mem);
-
-}
-
-//
-//
-mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size){ // *mem_alloc2#
-
-    return nil;
+    free(global_irt->mem);
 
 }
 
@@ -435,6 +426,20 @@ inline mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr){ // _cons#
 }
 
 
+// Make a double-linked list cons cell (three entries instead of two)
+//
+mword *_dcons(pyr_cache *this_pyr, mword *car, mword *cdr, mword *cpr){ // _dcons#
+
+    mword **dcons_cell = (mword**)mem_new_cons(this_pyr);
+    ldp(dcons_cell,0) = car;
+    ldp(dcons_cell,1) = cdr;
+    ldp(dcons_cell,2) = cpr;
+
+    return (mword*)dcons_cell;
+
+}
+
+
 //
 //
 void *_mkval(pyr_cache *this_pyr, mword array_size, ...){ // _mkval#
@@ -470,6 +475,33 @@ void *_mkptr(pyr_cache *this_pyr, mword array_size, ...){ // _mkptr#
 
     for(i=0;i<array_size;i++){
         ldp(ptr,i) = va_arg(vl,mword*);
+    }
+
+    va_end(vl);
+
+    return ptr;
+
+}
+
+
+// make "array-of-cons"
+// array_size = number-of-arguments / 2
+//
+void *_mkAOC(pyr_cache *this_pyr, mword array_size, ...){ // _mkAOC#
+
+    void *ptr = (void*)mem_new_ptr(this_pyr, array_size);
+
+    va_list vl;
+    va_start(vl,array_size);
+
+    int i;
+    mword *car;
+    mword *cdr;
+
+    for(i=0;i<array_size;i++){
+        car = va_arg(vl,mword*);
+        cdr = va_arg(vl,mword*);
+        ldp(ptr,i) = _cons(this_pyr, car, cdr);
     }
 
     va_end(vl);
@@ -517,7 +549,8 @@ mword *_mkls(pyr_cache *this_pyr, mword list_size, ...){ // _mkls#
     int i;
 
     mword *last_cons = nil;
-    mword *new_cons = mem_new_ptr(this_pyr, 2);
+//    mword *new_cons = mem_new_ptr(this_pyr, 2);
+    mword *new_cons = _cons(this_pyr, nil, nil);
     mword *head = new_cons;
 
     ldp(new_cons,0) = va_arg(vl,mword*);
@@ -538,5 +571,38 @@ mword *_mkls(pyr_cache *this_pyr, mword list_size, ...){ // _mkls#
 }
 
 
-// Clayton Bauman 2016
+// creates a new circular, doubly-linked list of given size
+// note that the list is created in REVERSE order
+//
+mword *_mkdls(pyr_cache *this_pyr, mword list_size, ...){ // _mkdls#
+
+    va_list vl;
+    va_start(vl,list_size);
+
+    int i;
+
+    mword *last_dcons  = nil;
+    mword *this_dcons  = va_arg(vl,mword*);
+           last_dcons  = (void*)_dcons(this_pyr, this_dcons, last_dcons, nil);
+    mword *first_dcons = last_dcons;
+
+    for(i=1;i<list_size;i++){
+        this_dcons = va_arg(vl,mword*);
+        this_dcons = (void*)_dcons(this_pyr, this_dcons, last_dcons, nil);
+        ldp(last_dcons,2) = this_dcons;
+        last_dcons = this_dcons;
+    }
+
+    va_end(vl);
+
+    // close the ends to form a circle
+    ldp(last_dcons,2)  = first_dcons;
+    ldp(first_dcons,1) = last_dcons;
+
+    return last_dcons;
+
+}
+
+
+// Clayton Bauman 2017
 

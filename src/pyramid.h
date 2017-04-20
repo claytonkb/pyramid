@@ -46,6 +46,10 @@
 #include <windows.h>
 #endif
 
+#include "tags.h"
+#include "symbols.h"
+#include "flags.h"
+
 /*****************************************************************************
  *                                                                           *
  *                         CONSTANTS AND UNITS                               *
@@ -68,6 +72,7 @@
 #define MWORD_BIT_SIZE (MWORD_SIZE * BITS_PER_BYTE)             // MWORD_BIT_SIZE#
 #define HALF_MWORD_SIZE (MWORD_SIZE/2)                          // HALF_MWORD_SIZE#
 #define MWORD_MSB (MWORD_BIT_SIZE-1)                            // MWORD_MSB#
+#define MSB_MASK (1<<MWORD_MSB)                                 // MSB_MASK#
 #define MWORD_LSB 0                                             // MWORD_LSB#
 
 #define NEG_ONE ((mword)-1)                                     // NEG_ONE#
@@ -136,8 +141,28 @@ typedef unsigned mword; // mword#
 
 typedef enum flag_val_enum {CLR, SET, IGN} flag_val; // flag_val#
 typedef enum access_size_sel_enum {BIT_ASIZE, BYTE_ASIZE, MWORD_ASIZE} access_size_sel; // access_size_sel#
+typedef enum sort_type_enum {UNSIGNED, SIGNED, ALPHA_MWORD, ALPHA_BYTE, LEX_MWORD, LEX_BYTE, VAL, CUSTOM} sort_type; // sort_type#
+typedef enum fileout_type_enum {OVERWRITE, APPEND} fileout_type; // fileout_type_enum#
 
 typedef void hash_fn_ptr(char*, char*, char*, mword);
+
+#define mem_thread_base_page_size 32
+
+typedef struct { // mem_thread_base#
+
+    mword *base_ptr;
+    mword *current_page;
+    mword current_offset;
+
+    // statistics
+    mword sys_alloc_count;
+    mword sys_free_count;
+
+} mem_thread_base; 
+
+        /////////////////////////////////////////////////////////
+        // OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD //
+        /////////////////////////////////////////////////////////
 
 typedef struct { // alloc_bank#
 
@@ -154,14 +179,6 @@ typedef struct { // mem_context#
 
     alloc_bank *primary;
     alloc_bank *secondary;
-
-//    mword  mem_sys_alloc_count;
-//    mword  mem_sys_alloc_total;
-//
-//    mword  GC_count;
-//    mword  op_restart_alloc_size;
-//    mword *op_restart_alloc_ptr;
-//    mword  last_GC_tick_count;
 
 } mem_context;
 
@@ -253,6 +270,28 @@ typedef struct {
 #endif
 
 
+typedef struct { // interp_tags#
+    mword *PYR_TAG_ZERO_HASH;
+#define X(a,b) mword *a;
+PYR_TAGS
+#undef X
+} interp_tags;
+
+
+typedef struct { // interp_strings#
+#define X(a,b) mword *a;
+PYR_TAGS
+#undef X
+} interp_strings;
+
+
+typedef struct { // interp_symbols#
+#define X(a,b) mword *a;
+PYR_SYMBOLS
+#undef X
+} interp_symbols;
+
+
 typedef struct { // interp_state#
 
     jmp_buf      *cat_ex;
@@ -281,12 +320,15 @@ typedef struct { // interp_state#
 
     hash_fn_ptr  *hash_fn;
 
-    interp_limits     *limits;
+    interp_limits *limits;
     interp_privileges *privileges;
 
 #ifdef PROF_MODE
-    pyr_profile       *profile;
+    pyr_profile *profile;
 #endif
+
+    interp_tags     *tags;
+    interp_symbols  *symbols;
 
 } interp_state;
 
@@ -319,19 +361,42 @@ typedef struct { // pyr_cache#
 
 } pyr_cache;
 
-#define mem_thread_base_page_size 32
 
-typedef struct { // mem_thread_base#
+typedef struct { // interp_runtime
 
-    mword *base_ptr;
-    mword *current_page;
-    mword current_offset;
+    mem_thread_base         *mem;
 
-    // statistics
-    mword sys_alloc_count;
-    mword sys_free_count;
+    interp_tags             *tags;
+    interp_strings          *strings;
+    interp_symbols          *symbols;
+    interp_flags            *flags; // XXX not to be confused wiith pyr_vm_flags
+    interp_limits           *limits;
+    interp_privileges       *privileges;
 
-} mem_thread_base; 
+    jmp_buf                 *cat_ex;
+    jmp_buf                 *op_restart;
+    int                      argc;
+    char                   **argv;
+    mword                   *interp_argv;
+    char                   **envp;
+
+    mword                   *nil;
+    mword                   *empty_string;
+
+    struct tm               *utc_epoch;
+    mword                    epoch_ms;
+    mword                   *srand;
+    mword                   *dispatch_table;
+
+    mword                    thread_id;
+    mword                    global_tick_count;
+
+    hash_fn_ptr             *hash_fn;
+
+    mword                   *fs;
+
+} interp_runtime; 
+
 
 
 /*****************************************************************************
@@ -340,9 +405,9 @@ typedef struct { // mem_thread_base#
  *                                                                           *
  ****************************************************************************/
 
-mword *nil;                                     // nil#
-mword *GLOBAL_TAG_ZERO_HASH;                    // GLOBAL_TAG_ZERO_HASH#
-mem_thread_base *global_this_thread_mem;        // global_this_thread_mem#
+//mword *nil;                                     // nil#
+interp_runtime *global_irt;                     // global_irt#
+#define nil global_irt->nil
 
 #ifdef DEV_MODE
 
@@ -384,9 +449,15 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 #define vcar(x) ((mword)rdv(x,0))       // vcar#
 #define vcdr(x) ((mword)rdv(x,1))       // vcdr#
+#define vcpr(x) ((mword)rdv(x,2))       // vcpr#
 
 #define pcar(x) ((mword*)rdp(x,0))      // pcar#
 #define pcdr(x) ((mword*)rdp(x,1))      // pcdr#
+#define pcpr(x) ((mword*)rdp(x,2))      // pcpr#
+
+//list-safe car/cdr (not tptr safe):
+#define lcar(x)     (is_nil(x) ? nil : pcar(x)) // lcar#
+#define lcdr(x)     (is_nil(x) ? nil : pcdr(x)) // lcdr#
 
 /////// tptr accessors ///////
 
@@ -423,10 +494,14 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define is_ptr(x)    ((int)sfield((mword*)x) <  0)                  // is_ptr#
 #define is_tptr(x)   ((int)sfield((mword*)x) == 0)                  // is_tptr#
 
-#define is_traversed_U(x)       (sfield(x) & 0x1)                   // is_traversed_U#
-#define is_traversed_V(x)       (sfield(x) & 0x2)                   // is_traversed_V#
-#define is_traversed_U_or_V(x)  (sfield(x) & CTL_MASK)              // is_traversed_U_or_V#
-#define is_traversed_U_and_V(x) (sfield(x) & 0x3)                   // is_traversed_U_and_V#
+#define is_tptr_spec(x)   (!is_val(x) && !is_ptr && !is_nil(x))     // is_tptr_spec#
+
+#define is_conslike(x) (is_ptr(x) && size(x) == 2)                  // is_conslike#
+
+#define is_traversed_U(x)       (!((sfield(x) & 0x1)==0))           // is_traversed_U#
+#define is_traversed_V(x)       (!((sfield(x) & 0x2)==0))           // is_traversed_V#
+#define is_traversed_U_or_V(x)  (!((sfield(x) & CTL_MASK)==0))      // is_traversed_U_or_V#
+#define is_traversed_U_and_V(x) (!((sfield(x) & 0x3)==0))           // is_traversed_U_and_V#
 
 #define is_val_masked(x)     ((~CTL_MASK & (int)sfield((mword*)x)) >  0) // is_val_masked#
 #define is_ptr_masked(x)     ((~CTL_MASK & (int)sfield((mword*)x)) <  0) // is_ptr_masked#
@@ -460,6 +535,15 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 // size is in units of MWORDS
 #define cpy(dest,src,size) memcpy(dest,src,UNITS_MTO8(size)) // cpy#
 
+#define val_gt(left,right) (array_cmp_num(left, right) >  0)
+#define val_ge(left,right) (array_cmp_num(left, right) >= 0)
+#define val_lt(left,right) (array_cmp_num(left, right) <  0)
+#define val_le(left,right) (array_cmp_num(left, right) <= 0)
+#define val_eq(left,right) (array_cmp_num(left, right) == 0)
+#define val_ne(left,right) (array_cmp_num(left, right) != 0)
+
+#define ptr2val(x) sfield(x) = abs(sfield(x))
+
 //#define TOGGLE_FLAG(x) (((x) == IGN) ? (x = IGN) : (((x) == SET) ? (x = CLR) : (x = SET))) // TOGGLE_FLAG#
 
 #define tagcmp(x,y,z) ( (is_tptr(x) || (size(x) >= HASH_SIZE)) ? (memcmp((mword*)x, y, z)) : -1 ) // tagcmp#
@@ -477,12 +561,13 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define mem_alloc_size(x) (x == 0 ? TPTR_SIZE : (abs(x)/MWORD_SIZE))    // mem_alloc_size#
 #define size_masked(x)       (abs(~CTL_MASK & sfield(x))/MWORD_SIZE)    // size_masked#
 
-#define _mktptr(pyr,key,bs) mem_new_tptr(pyr,HASHC(pyr,key),bs) // _mktptr#
+#define _mktptr(pyr,key,bs) mem_new_tptr(pyr,HASHC(pyr,key),bs)         // _mktptr#
+#define _mkbrick(pyr,key,bs) _cons(pyr, _mktptr(pyr,key,key),bs)        // _mkbrick#
 
 #define mem_new_valz(pyr,size) mem_new_val(pyr, size, 0) // mem_new_valz#
 #define mem_sys_free_bs(bs,size) mem_sys_free(bs-1,size) // mem_sys_free_bs#
 
-#define HASHA_FORM(hash_fn,pyr,str,strlen) (hash_fn( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, strlen ))
+#define HASHA_FORM(hash_fn,pyr,str,strlen) (hash_fn( pyr, (char*)global_irt->tags->PYR_TAG_ZERO_HASH, (char*)str, strlen ))
 
 // HASHI# --> Hash a constant string (non-allocating)
 // HASHC# --> Hash a constant string (allocating)
@@ -490,26 +575,23 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 // HASHM# --> Hash a val-array       (allocating)
 
 #ifdef COMPAT_MODE
-#define HASHI(result,str) (pearson16( (char*)result, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
+#define HASHI(result,str) (pearson16( (char*)result, (char*)global_irt->tags->PYR_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
 #define HASHC(pyr,str)    HASHA_FORM(pearson16a, pyr, str, STRLEN(str) )
 #define HASH(pyr,str)     HASHA_FORM(pearson16a, pyr, str, array8_size(pyr,str) )
 #define HASHM(pyr,str)    HASHA_FORM(pearson16a, pyr, str, UNITS_MTO8(array_size(pyr,str)) )
 #else
-#define HASHI(result,str) (pearson_marsaglia16( (char*)result, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
+#define HASHI(result,str) (pearson_marsaglia16( (char*)result, (char*)global_irt->tags->PYR_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
 #define HASHC(pyr,str)    HASHA_FORM(pearson_marsaglia16a, pyr, str, STRLEN(str) )
 #define HASH(pyr,str)     HASHA_FORM(pearson_marsaglia16a, pyr, str, array8_size(pyr,str) )
 #define HASHM(pyr,str)    HASHA_FORM(pearson_marsaglia16a, pyr, str, UNITS_MTO8(array_size(pyr,str) )
 #endif
 
-//#define HASHC(pyr,str) (pearson16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
-//#define HASH(pyr,str)  (pearson16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, array8_size(pyr,str) ))
-//#define HASHM(pyr,str) (pearson16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, array8_size(pyr,str) ))
-//
-//#define HASHC(pyr,str) (pearson_marsaglia16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, STRLEN(str) ))
-//#define HASH(pyr,str) (pearson_marsaglia16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, array8_size(pyr,str) ))
-//#define HASHM(pyr,str) (pearson_marsaglia16a( pyr, (char*)GLOBAL_TAG_ZERO_HASH, (char*)str, array8_size(pyr,str) ))
+#define HASH8(pyr,str) (pearson_hash8(pyr,string_c2b(this_pyr, str, STRLEN(str)))) // HASH8#
+
 
 // signature is HASHM of unloaded bstruct
+
+#define C2B(str) (string_c2b(this_pyr, str, STRLEN(str))) // C2B#
 
 /*****************************************************************************
  *                                                                           *
@@ -517,75 +599,9 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  *                                                                           *
  ****************************************************************************/
 
-#define PYR_TAGS                                                             \
-    X(PYR_TAG_NIL              , "/pyramid/tag/nil")                         \
-    X(PYR_TAG_INTERP_NIL       , "nil")                                      \
-    X(PYR_TAG_EXIST            , "/pyramid/tag/exist")                       \
-    X(PYR_TAG_UNEXIST          , "/pyramid/tag/unexist")                     \
-    X(PYR_TAG_DEF              , "/pyramid/tag/def")                         \
-    X(PYR_TAG_UNDEF            , "/pyramid/tag/undef")                       \
-    X(PYR_TAG_TRUE             , "/pyramid/tag/true")                        \
-    X(PYR_TAG_FALSE            , "/pyramid/tag/false")                       \
-    X(PYR_TAG_ACCEPT           , "/pyramid/tag/accept")                      \
-    X(PYR_TAG_REJECT           , "/pyramid/tag/reject")                      \
-    X(PYR_TAG_PASS             , "/pyramid/tag/pass")                        \
-    X(PYR_TAG_FAIL             , "/pyramid/tag/fail")                        \
-    X(PYR_TAG_NAN              , "/pyramid/tag/nan")                         \
-    X(PYR_TAG_REF              , "/pyramid/tag/ref")                         \
-    X(PYR_TAG_PURE_REF         , "/pyramid/tag/pure_ref")                    \
-    X(PYR_TAG_HASH_TABLE       , "/pyramid/tag/hash_table")                  \
-    X(PYR_TAG_HASH_TABLE_ENTRY , "/pyramid/tag/hash_table_entry")            \
-    X(PYR_TAG_DIRECTORY        , "/pyramid/tag/directory")                   \
-    X(PYR_TAG_PYR_STRING       , "/pyramid/tag/pyramid_string")              \
-    X(PYR_TAG_CSTRING          , "/pyramid/tag/cstring")                     \
-    X(PYR_TAG_STRING_ARRAY     , "/pyramid/tag/string_array")                \
-    X(PYR_TAG_STRING_LIST      , "/pyramid/tag/string_list")                 \
-    X(PYR_TAG_NUMERIC          , "/pyramid/tag/numeric")                     \
-    X(PYR_TAG_ARRAY8           , "/pyramid/tag/array8")                      \
-    X(PYR_TAG_ARRAY1           , "/pyramid/tag/array1")                      \
-    X(PYR_TAG_BVM              , "/pyramid/tag/pyr")                         \
-    X(PYR_TAG_SYM_BVM          , "/pyramid/tag/sym_pyr")                     \
-    X(PYR_TAG_HIBER_BVM        , "/pyramid/tag/hiber_pyr")                   \
-    X(PYR_TAG_SPARSE_BVM       , "/pyramid/tag/sparse_pyr")                  \
-    X(PYR_TAG_READY_BVM        , "/pyramid/tag/ready_pyr")                   \
-    X(PYR_TAG_BVM_CODE         , "/pyramid/tag/pyr_code")                    \
-    X(PYR_TAG_BVM_STACK        , "/pyramid/tag/pyr_stack")                   \
-    X(PYR_TAG_BVM_RSTACK       , "/pyramid/tag/pyr_rstack")                  \
-    X(PYR_TAG_BVM_JUMP_TABLE   , "/pyramid/tag/pyr_jump_table")              \
-    X(PYR_TAG_BVM_SYM_TABLE    , "/pyramid/tag/pyr_sym_table")               \
-    X(PYR_TAG_BVM_STEPS        , "/pyramid/tag/pyr_steps")                   \
-    X(PYR_TAG_EVAL             , "/pyramid/tag/eval")                        \
-    X(PYR_TAG_LOOP             , "/pyramid/tag/loop")                        \
-    X(PYR_TAG_TIMES            , "/pyramid/tag/times")                       \
-    X(PYR_TAG_IFTE             , "/pyramid/tag/ifte")                        \
-    X(PYR_TAG_EACH             , "/pyramid/tag/each")                        \
-    X(PYR_TAG_EACHAR           , "/pyramid/tag/eachar")                      \
-    X(PYR_TAG_WHILE            , "/pyramid/tag/while")                       \
-    X(PYR_TAG_NEST             , "/pyramid/tag/nest")                        \
-    X(PYR_TAG_ALT              , "/pyramid/tag/alt")                         \
-    X(PYR_TAG_SEQ              , "/pyramid/tag/seq")                         \
-    X(PYR_TAG_LET              , "/pyramid/tag/let")                         \
-    X(PYR_TAG_REF_HASH         , "/pyramid/tag/ref_hash")                    \
-    X(PYR_TAG_REF_STRING       , "/pyramid/tag/ref_string")                  \
-    X(PYR_TAG_REF_ARRAY        , "/pyramid/tag/ref_array")                   \
-    X(PYR_TAG_REF_SYM_LOCAL    , "/pyramid/tag/ref_sym_local")               \
-    X(PYR_TAG_REF_SYM_GLOBAL   , "/pyramid/tag/ref_sym_global")              \
-    X(PYR_TAG_COND             , "/pyramid/tag/cond")                        \
-    X(PYR_TAG_TRIE             , "/pyramid/tag/trie")                        \
-    X(PYR_TAG_TRIE_ENTRY       , "/pyramid/tag/trie_entry")                  \
-    X(PYR_TAG_SENTINEL         , "/pyramid/tag/sentinel")                    \
-    X(PYR_TAG_MONKEY           , "/pyramid/tag/monkey")                      \
-    X(PYR_TAG_ROBOT            , "/pyramid/tag/robot")                       \
-    X(PYR_TAG_UNTYPED          , "/pyramid/tag/untyped")                     \
-    X(PYR_TAG_BVM_INITD        , "/pyramid/tag/pyr_initd")                   \
-    X(PYR_SYM_ARGV             , "/pyramid/sym/argv")                        \
-    X(PYR_SYM_PARENT_BVM       , "/pyramid/sym/parent_pyr")                  \
-    X(PYR_SYM_CODE_RESTART_POINT , "/pyramid/sym/code_restart_point")       
-
-#define X(a,b) mword *a;
-PYR_TAGS
-#undef X
-
+//#define X(a,b) mword *a;
+//PYR_TAGS
+//#undef X
 
 /*****************************************************************************
  *                                                                           *
@@ -612,6 +628,7 @@ PYR_TAGS
 #define _warn(x)        fprintf(stderr, "WARNING: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__);  // warn#
 #define _error(x)       fprintf(stderr, "ERROR: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__); // error#
 #define _fatal(x)       fprintf(stderr, "FATAL: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__); _die;  // _fatal#
+#define _pigs_fly       _fatal("Pigs CAN fly...") // _pigs_fly#
 #define _enhance(x)     fprintf(stderr, "ENHANCEMENT: %s in %s at %s line %d\n", x, __func__, __FILE__, __LINE__); // enhance#
 
 #define _timestamp(x)   (time_ms(void) - x->interp->epoch_ms) // _timestamp#

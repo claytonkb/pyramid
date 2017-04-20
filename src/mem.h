@@ -41,7 +41,7 @@ mword mem_non_gc_insert(void *non_gc_ptr);
 void mem_non_gc_reset_pages(mword *page_ptr);
 
 mword *mem_alloc(pyr_cache *this_pyr, mword sfield);
-mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size);
+//mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size);
 
 inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init);
 inline void *mem_new_ptr(pyr_cache *this_pyr, mword size);
@@ -56,10 +56,14 @@ mword *_newstr(pyr_cache *this_pyr, mword size8, char set_char);
 mword *_newbits(pyr_cache *this_pyr, mword size1);
 
 inline mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr);
+mword *_dcons(pyr_cache *this_pyr, mword *car, mword *cdr, mword *cpr);
 
 void *_mkval(pyr_cache *this_pyr, mword array_size, ...);
 void *_mkptr(pyr_cache *this_pyr, mword array_size, ...);
+void *_mkAOC(pyr_cache *this_pyr, mword array_size, ...);
+
 mword *_mkls(pyr_cache *this_pyr, mword list_size, ...);
+mword *_mkdls(pyr_cache *this_pyr, mword list_size, ...);
 
 // mem_alloc                -> vanilla memory-allocation (mword resolution)
 // mem_alloc_align_masked   -> vanilla memory-allocation (byte/bit resolution)

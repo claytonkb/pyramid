@@ -1,33 +1,30 @@
 // sexpr.c
 //
 
-#include "babel.h"
+#include "pyramid.h"
 #include "sexpr.h"
 #include "string.h"
 #include "array.h"
 #include "list.h"
-#include "stack.h"
-#include "utf8.h"
 #include "bstruct.h"
-#include "tptr.h"
 #include "mem.h"
-#include "introspect.h"
+#include "tptr.h"
 
-#define append_sexpr(x) \
-    if(is_nil(curr_sexpr)){         \
-        curr_sexpr = _cons(this_bvm, x, nil);\
-    }\
-    else{\
-        _unshift(this_bvm,                              \
-            curr_sexpr,                                 \
-            x);                            \
+#define append_sexpr(x)                                     \
+    if(is_nil(curr_sexpr)){                                 \
+        curr_sexpr = _cons(this_pyr, x, nil);               \
+    }                                                       \
+    else{                                                   \
+        list_unshift(this_pyr,                              \
+            curr_sexpr,                                     \
+            x);                                             \
     }
 
 
 #define capture_token                                       \
     capture_length = j-i;                                   \
     if(capture_length){                                     \
-        captured_token = _slice(this_bvm, string, i, j);    \
+        captured_token = array_slice(this_pyr, string, i, j); \
         append_sexpr(captured_token);                       \
     }                                                       \
     else{                                                   \
@@ -38,7 +35,7 @@
 #define capture_dquote                                      \
     capture_length = j-i;                                   \
     if(capture_length){                                     \
-        captured_token = _unescape( this_bvm, _slice(this_bvm, string, i, j), '\\');    \
+        captured_token = _unescape( this_pyr, array_slice(this_pyr, string, i, j), '\\');    \
         append_sexpr(captured_token);                       \
     }                                                       \
     else{                                                   \
@@ -49,7 +46,7 @@
 #define capture_squote                                      \
     capture_length = j-i;                                   \
     if(capture_length){                                     \
-        captured_token = _unescape( this_bvm, _slice(this_bvm, string, i, j), '/'); \
+        captured_token = _unescape( this_pyr, array_slice(this_pyr, string, i, j), '/'); \
         append_sexpr(captured_token);                       \
     }                                                       \
     else{                                                   \
@@ -68,7 +65,7 @@
 
 //
 //
-mword *_pre_sexpr(bvm_cache *this_bvm, mword *string, mword *index){ // _pre_sexpr#
+mword *_pre_sexpr(pyr_cache *this_pyr, mword *string, mword *index){ // _pre_sexpr#
 
     mword j;
     j=*index;
@@ -94,17 +91,17 @@ null_context:
         case '{' : 
                 *index = j+1;
 // XXX XXX Was copying entire _sexpr... probably unnecessary XXX XXX
-//                return _cp( this_bvm, _sexpr(this_bvm, string, index, SEXPR_CODE_SYMBOL) );
-                return _sexpr(this_bvm, string, index, _cp(this_bvm, SEXPR_CODE_SYMBOL));
+//                return bstruct_cp( this_pyr, _sexpr(this_pyr, string, index, SEXPR_CODE_SYMBOL) );
+                return _sexpr(this_pyr, string, index, bstruct_cp(this_pyr, global_irt->symbols->SEXPR_CODE_SYMBOL));
         case '(' : 
                 *index = j+1;
-                return _sexpr(this_bvm, string, index, _cp(this_bvm, SEXPR_LIST_SYMBOL) );
-//                return _cp( this_bvm, _sexpr(this_bvm, string, index, SEXPR_LIST_SYMBOL) );
-                //return _sexpr(this_bvm, string, index, SEXPR_LIST_SYMBOL);
+                return _sexpr(this_pyr, string, index, bstruct_cp(this_pyr, global_irt->symbols->SEXPR_LIST_SYMBOL) );
+//                return bstruct_cp( this_pyr, _sexpr(this_pyr, string, index, SEXPR_LIST_SYMBOL) );
+                //return _sexpr(this_pyr, string, index, SEXPR_LIST_SYMBOL);
         case '[' : 
                 *index = j+1;
-                return _sexpr(this_bvm, string, index, nil);
-//                return _cp( this_bvm, _sexpr(this_bvm, string, index, nil) );
+                return _sexpr(this_pyr, string, index, nil);
+//                return bstruct_cp( this_pyr, _sexpr(this_pyr, string, index, nil) );
         case '-' : adv(comment_required);
         default  : parse_error;
     }
@@ -136,7 +133,7 @@ done:
 
 //
 //
-mword *_sexpr(bvm_cache *this_bvm, mword *string, mword *index, mword *sexpr_type){ // _sexpr#
+mword *_sexpr(pyr_cache *this_pyr, mword *string, mword *index, mword *sexpr_type){ // _sexpr#
 
     mword i,j;
     i=j=*index;
@@ -162,20 +159,20 @@ list_context:
         case 0x0d: adv(list_context);
         case '{' : 
                 *index = ++j;
-                append_sexpr(_sexpr(this_bvm, string, index, _cp(this_bvm, SEXPR_CODE_SYMBOL)));
-//                append_sexpr(_cp( this_bvm, _sexpr(this_bvm, string, index, SEXPR_CODE_SYMBOL)));
+                append_sexpr(_sexpr(this_pyr, string, index, bstruct_cp(this_pyr, global_irt->symbols->SEXPR_CODE_SYMBOL)));
+//                append_sexpr(bstruct_cp( this_pyr, _sexpr(this_pyr, string, index, SEXPR_CODE_SYMBOL)));
                 j = *index;
                 goto list_context;
         case '(' : 
                 *index = ++j;
-                append_sexpr(_sexpr(this_bvm, string, index, _cp(this_bvm, SEXPR_LIST_SYMBOL)));
-//                append_sexpr(_cp( this_bvm, _sexpr(this_bvm, string, index, SEXPR_LIST_SYMBOL)));
+                append_sexpr(_sexpr(this_pyr, string, index, bstruct_cp(this_pyr, global_irt->symbols->SEXPR_LIST_SYMBOL)));
+//                append_sexpr(bstruct_cp( this_pyr, _sexpr(this_pyr, string, index, SEXPR_LIST_SYMBOL)));
                 j = *index;
                 goto list_context;
         case '[' :
                 // add a state to check for nil braces []
                 *index = ++j;
-                append_sexpr(_sexpr(this_bvm, string, index, nil));
+                append_sexpr(_sexpr(this_pyr, string, index, nil));
                 j = *index;
                 goto list_context;
         case '-' : adv(comment_or_token);
@@ -262,8 +259,8 @@ done:
 //_trace;
     *index = j;
 
-    if((_len(this_bvm, curr_sexpr) == 1) && (_arcmp((mword*)icar(curr_sexpr), SEXPR_LIST_SYMBOL) == 0)){
-        curr_sexpr = _ptr(this_bvm, _cp(this_bvm, SEXPR_NIL_SYMBOL));
+    if((list_len(this_pyr, curr_sexpr) == 1) && (array_cmp_lex(this_pyr, pcar(curr_sexpr), global_irt->symbols->SEXPR_LIST_SYMBOL, MWORD_ASIZE) == 0)){
+        curr_sexpr = _ptr(this_pyr, bstruct_cp(this_pyr, global_irt->symbols->SEXPR_NIL_SYMBOL));
     }
 
     return curr_sexpr;
@@ -274,44 +271,44 @@ done:
 // input string: array-8 string ... INCLUDING THE QUOTES
 // returns: standard Babel-string
 //
-mword *_unescape(bvm_cache *this_bvm, mword *string, mword escape_char){ // _unescape#
+mword *_unescape(pyr_cache *this_pyr, mword *string, mword escape_char){ // _unescape#
 
     int i,j;
     mword *temp_string;
     mword *final_string;
     mword string_length = size(string);
 
-    if(!string_length){ return _newlfi(this_bvm, 1, 0); } //return the empty string
+    if(!string_length){ return mem_new_val(this_pyr, 1, 0); } //return the empty string
 
-    temp_string = _newlfi(this_bvm, string_length, 0);
+    temp_string = mem_new_val(this_pyr, string_length, 0);
 
     for(i=0,j=0;i<string_length;i++,j++){
 
-        if(rcl(string,i) == escape_char){
-            mword character = rcl(string,i+1);
+        if(rdv(string,i) == escape_char){
+            mword character = rdv(string,i+1);
             if(character == 'n'){
-                rcl(temp_string,j) = 0x0a;
+                rdv(temp_string,j) = 0x0a;
                 i++;
             }
             else if(character == 'r'){
-                rcl(temp_string,j) = 0x0d;
+                rdv(temp_string,j) = 0x0d;
                 i++;
             }
             else if(character == 't'){
-                rcl(temp_string,j) = 0x09;
+                rdv(temp_string,j) = 0x09;
                 i++;
             }
             else if(character == '0'){
 
                 #define ASCII_CODE_CHAR_LENGTH 2
-                mword *ascii_code = _newlfi(this_bvm, ASCII_CODE_CHAR_LENGTH, 0);
+                mword *ascii_code = mem_new_val(this_pyr, ASCII_CODE_CHAR_LENGTH, 0);
 
-                lcl(ascii_code,0) = rcl(string,i+2);
-                lcl(ascii_code,1) = rcl(string,i+3);
+                ldv(ascii_code,0) = rdv(string,i+2);
+                ldv(ascii_code,1) = rdv(string,i+3);
 
-                mword *ascii_value = _radix2cu(this_bvm, _ar2str(this_bvm, ascii_code), 16);
+                mword *ascii_value = _radix2cu(this_pyr, array_to_string(this_pyr, ascii_code), 16);
 
-                lcl(temp_string,j) = rcl(ascii_value,0);
+                ldv(temp_string,j) = rdv(ascii_value,0);
 
                 i+=3;
 
@@ -319,36 +316,36 @@ mword *_unescape(bvm_cache *this_bvm, mword *string, mword escape_char){ // _une
             else if(character == 'u'){
 
                 #define UNICODE_CHAR_LENGTH 4
-                mword *unicode = _newlfi(this_bvm, UNICODE_CHAR_LENGTH, 0);
+                mword *unicode = mem_new_val(this_pyr, UNICODE_CHAR_LENGTH, 0);
 
-                lcl(unicode,0) = rcl(string,i+2);
-                lcl(unicode,1) = rcl(string,i+3);
-                lcl(unicode,2) = rcl(string,i+4);
-                lcl(unicode,3) = rcl(string,i+5);
+                ldv(unicode,0) = rdv(string,i+2);
+                ldv(unicode,1) = rdv(string,i+3);
+                ldv(unicode,2) = rdv(string,i+4);
+                ldv(unicode,3) = rdv(string,i+5);
 
-                mword *unicode_value = _radix2cu(this_bvm, _ar2str(this_bvm, unicode), 16);
+                mword *unicode_value = _radix2cu(this_pyr, array_to_string(this_pyr, unicode), 16);
 
-                lcl(temp_string,j) = rcl(unicode_value,0);
+                ldv(temp_string,j) = rdv(unicode_value,0);
 
                 i+=5;
 
             }
             else{
-                lcl(temp_string,j) = character;
+                ldv(temp_string,j) = character;
                 i++;
             }
 
         }
         else{ //Not an escape sequence
 
-            lcl(temp_string,j) = rcl(string,i);
+            ldv(temp_string,j) = rdv(string,i);
 
         }
 
     }
 
     if(j != string_length){
-        final_string = _slice(this_bvm, temp_string, 0, j);
+        final_string = array_slice(this_pyr, temp_string, 0, j);
     }
     else{
         final_string = temp_string;
@@ -359,48 +356,17 @@ mword *_unescape(bvm_cache *this_bvm, mword *string, mword escape_char){ // _une
 }
 
 
+//    mword *bstring = _str2ar(this_pyr, oi0.data);
+//    result0 = sexpr_op2(this_pyr, bstring);
 //
 //
-mword *sexpr_op(bvm_cache *this_bvm, oinfo *oi){ // sexpr_op#
+mword *sexpr_from_string(pyr_cache *this_pyr, mword *bstring){ // sexpr_from_string#
 
     mword index=0;
-    return _pre_sexpr(this_bvm, oi->data, &index);
+    return _pre_sexpr(this_pyr, string_to_array(this_pyr, bstring), &index);
 
 }
 
 
-//
-//
-mword *sexpr_op2(bvm_cache *this_bvm, mword *bstring){ // sexpr_op#
-
-    mword index=0;
-    return _pre_sexpr(this_bvm, bstring, &index);
-
-}
-
-
-/*****************************************************************************
- *                                                                           *
- *                            SEXPR OPERATORS                                *
- *                                                                           *
- ****************************************************************************/
-
-
-//#define SEXPR_OPERATIONS                                 
-//    result0 = sexpr_op(this_bvm, &oi0);
-//
-//OPERATORA_R1_W1_D(sexpr,
-//        SEXPR_OPERATIONS,
-//        0, OI_MASK_LEAF, 0, 0)
-
-#define SEXPR_OPERATIONS                                 \
-    mword *bstring = _str2ar(this_bvm, oi0.data);        \
-    result0 = sexpr_op2(this_bvm, bstring);
-
-OPERATORA_R1_W1_D(sexpr,
-        SEXPR_OPERATIONS,
-        0, OI_MASK_LEAF, 0, 0)
-
-
-// Clayton Bauman 2014 
+// Clayton Bauman 2017
 

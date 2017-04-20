@@ -4,6 +4,31 @@
 #include "pyramid.h"
 #include "pearson.h"
 #include "mem.h"
+#include "array.h"
+
+
+//
+//
+mword *pearson_hash8(pyr_cache *this_pyr, mword *key){ // pearson_hash8#
+
+   return pearson16a(this_pyr, 
+            (char*)global_irt->tags->PYR_TAG_ZERO_HASH,
+            (char*)key, 
+            array8_size(this_pyr, key));
+
+}
+
+
+//
+//
+mword *pearson_hash(pyr_cache *this_pyr, mword *key){ // pearson_hash#
+
+   return pearson16a(this_pyr, 
+            (char*)global_irt->tags->PYR_TAG_ZERO_HASH,
+            (char*)key, 
+            UNITS_MTO8(size(key)));
+
+}
 
 
 // This is a 16-byte version of Pearson's hash

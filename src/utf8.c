@@ -17,7 +17,7 @@
 
 */
 
-#include "babel.h"
+#include "pyramid.h"
 #include "utf8.h"
 
 static const uint32_t offsetsFromUTF8[6] = {

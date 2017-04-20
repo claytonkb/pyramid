@@ -7,6 +7,15 @@
 #include "array.h"
 #include "introspect.h"
 #include "pearson.h"
+#include "bstruct.h"
+#include "sexpr.h"
+#include "string.h"
+#include "trie.h"
+#include "tptr.h"
+#include "io.h"
+#include "bstruct.h"
+#include "list.h"
+
 
 /*****************************************************************************
  *                                                                           *
@@ -22,6 +31,10 @@
  *                                                                           *
  ****************************************************************************/
 #ifdef DEV_MODE
+
+void util_rsvd(void){
+    _msg("reserved");
+}
 
 #define util_strtok_rest(x)                     \
     x = strtok(NULL, " ");                      \
@@ -41,21 +54,22 @@
 //                util_strtok_dec(cmd_code_str, cmd_code);
 //                util_strtok_dec(cmd_code_str, cmd_code2);
 
-
 //
 //
 void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_metal_prompt#
 
     char *cmd_code_str;
     int cmd_code =0;
-    int cmd_code2=0;
+//    int cmd_code2=0;
 
     char buffer[256];
     int i;
 
     mword *ACC = init_ptr;
-    mword  tempv=0;
+//    mword  tempv=0;
+    char  *tempc = NULL;
     mword *temp=nil;
+//    mword *temp2=nil;
 
     _notify("entering bare metal prompt");
 
@@ -78,261 +92,152 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 util_bare_metal_menu();
                 break;
             case 1:
-                _say("dev one-off");
-
-//                ACC = _val(this_pyr, 0xdeadbee6);
-//                ACC = _th1(this_pyr, ACC, 3);
-//                _mem(ACC);
-//
-//                ACC = _val(this_pyr, 0xdeadbee6);
-//                ACC = _th1(this_pyr, ACC, 2);
-//                _mem(ACC);
-//
-//                ACC = _val(this_pyr, 0xdeadbee6);
-//                ACC = _th1(this_pyr, ACC, 1);
-//                _mem(ACC);
-//
-//                ACC = _val(this_pyr, 0xdeadbee6);
-//                ACC = _th1(this_pyr, ACC, 0);
-//                _mem(ACC);
-
-//                _d( is_nil(nil) );
-
-//                mword start = 45;
-//                mword end = 60;
-//
-//                mword bit_length = end-start;
-//
-//                mword src_start_mword = UNITS_1TOM(start);
-//                mword src_end_mword   = UNITS_1TOM(end);
-//
-//                mword mword_length = src_start_mword-src_end_mword;
-//
-//                mword src_start_modulus  = MODULO_MTO1(start);
-//                mword src_end_modulus    = MODULO_MTO1(end);
-//
-//                mword src_start_split    = MWORD_BIT_SIZE - src_start_modulus;
-//                mword src_end_split      = MWORD_BIT_SIZE - src_end_modulus;
-//
-//                _dd(bit_length);
-//                _dd(src_start_mword);
-//                _dd(src_end_mword);
-//                _dd(mword_length);
-//                _dd(src_start_modulus);
-//                _dd(src_end_modulus);
-//                _dd(src_start_split);
-//                _dd(src_end_split);
-
 //                util_strtok_dec(cmd_code_str, cmd_code);
 //                util_strtok_dec(cmd_code_str, cmd_code2);
 //
-//                ACC = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
-//                ACC = array1_slice(this_pyr, ACC, cmd_code, cmd_code2);
-
-//                    ACC = _mkls(this_pyr, 3, _val(this_pyr, 0xdeadbabe), _val(this_pyr, 0xbeefface), _val(this_pyr, 0xabadcafe)); 
-
-//                ACC = _mkval(this_pyr, 1, LO_BITS(0xdeadbeef, 11));
-
-//                temp = _mkval(this_pyr, 3, 0x11111111, 0x22222222, 0x33333333);
-//                ACC  = _mkval(this_pyr, 3, 0x44444444, 0x55555555, 0x66666666);
+//                       ACC = _mkval(this_pyr, 4, 0xf0f0f0f0, 0x0f0f0f0f, 0xf0f0f0f0, 0x0f0f0f0f);
+//                mword *src = _mkval(this_pyr, 4, 0x77777777, 0x99999999, 0xbbbbbbbb, 0xdddddddd);
 //
-//                ldv(ACC,1) = rdv(temp,0);
+//                array1_move(this_pyr, 
+//                        ACC,
+//                        cmd_code, 
+//                        src,
+//                        cmd_code2);
 
-//                temp = _mkls(this_pyr, 3, _val(this_pyr, 0xdeadbabe), _val(this_pyr, 0xbeefface), _val(this_pyr, 0xabadcafe)); 
+//                temp = _mkls(this_pyr, 3, _val(this_pyr, 0xdeadbabe), _val(this_pyr, 0xbeefface), _val(this_pyr, 0xabadcafe));
+//                ACC = bstruct_cp(this_pyr, temp);
 
-//                ACC = array_th(this_pyr, temp, 1);
+//                ACC = sexpr_from_string(this_pyr, C2B("[val 1 2 3]\n"));
 
-//                ACC = pearson16a(this_pyr, (char*)GLOBAL_TAG_ZERO_HASH, "foo", STRLEN("foo")); 
+//                ACC = _mkbrick(this_pyr, C2B("foo"), _mkval(this_pyr, 4, 0x77777777, 0x99999999, 0xbbbbbbbb, 0xdddddddd));
 
-//                ACC = _mktptr(this_pyr, "foo", nil);
+//                ACC = _mkAOC(this_pyr, 2,
+//                        _val(this_pyr, 0xdeadbabe),
+//                        _val(this_pyr, 0xbeefface),
+//                        _val(this_pyr, 0xcafefade),
+//                        _val(this_pyr, 0xabaddeed));
 
-//                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
-//                ACC = _val(this_pyr, array8_read(temp, tempv++));
+//                ACC = this_pyr->interp->tags->PYR_TAG_TRIE_ENTRY;
+//                ACC = global_irt->tags->PYR_TAG_TRIE;
 
-//                ACC = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
-//                array8_write(ACC, tempv++, 0xdd);
+//                ACC = global_irt->fs;
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "foo"), nil, _val(this_pyr, 0x01234567));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "bar"), nil, _val(this_pyr, 0x89abcdef));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "baz"), nil, _val(this_pyr, 0x00112233));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "aaa"), nil, _val(this_pyr, 0x44556677));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "aab"), nil, _val(this_pyr, 0x8899aabb));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "aac"), nil, _val(this_pyr, 0xccddeeff));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "aad"), nil, _val(this_pyr, 0x01012323));
+//                trie_insert(this_pyr, global_irt->fs, HASH8(this_pyr, "aae"), nil, _val(this_pyr, 0x45456767));
 
-//                temp = _mkval(this_pyr, 3, 0x11223344, 0x55667788, 0x99aabbcc);
-//                ACC = array8_th(this_pyr, temp, tempv++);
+//                map_insert(global_irt->fs, "foo", _val(this_pyr, 0x01234567));
+//                map_insert(global_irt->fs, "bar", _val(this_pyr, 0x89abcdef));
+//                map_insert(global_irt->fs, "baz", _val(this_pyr, 0x00112233));
+//                map_insert(global_irt->fs, "aaa", _val(this_pyr, 0x44556677));
+//                map_insert(global_irt->fs, "aab", _val(this_pyr, 0x8899aabb));
+//                map_insert(global_irt->fs, "aac", _val(this_pyr, 0xccddeeff));
+//                map_insert(global_irt->fs, "aad", _val(this_pyr, 0x01012323));
+//                map_insert(global_irt->fs, "aae", _val(this_pyr, 0x45456767));
 
-//                temp = _val(this_pyr, 0x000a596f0);
-//                ACC = array1_th(this_pyr, temp, tempv++);
+//                trie_remove(this_pyr, global_irt->fs, HASH8(this_pyr, "aac"), nil);
 
-//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 3, 0x11, 0x55, 0x99));
+//                trie_remove(this_pyr, global_irt->fs, HASH8(this_pyr, "aad"), nil);
 
-//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 6, 0x11, 0x55, 0x99, 0x88, 0x66, 0x44));
+//                trie_remove(this_pyr, global_irt->fs, HASH8(this_pyr, "foo"), nil);
+//                trie_remove(this_pyr, global_irt->fs, nil,                    string_c2b(this_pyr, "foo", 100));
+//                ACC = _val(this_pyr, 
+//                        trie_exists(this_pyr, global_irt->fs, HASH8(this_pyr, "bap"), nil));
 
-//                ACC = array_mwords_to_bytes(this_pyr, _mkval(this_pyr, 6, 0x11, 0x55, 0x99, 0x88, 0x66, 0x44));
+//#define trie_exists(pyr, trie, key, secondary_key) (!is_nil(trie_lookup_hash(pyr, trie, key, secondary_key))) // trie_exists#
 
-//                ACC = array_bytes_to_mwords(this_pyr, _mkval(this_pyr, 3, 0xdeadbeef, 0xbadcab, 0xff000000));
+//   result0 = _load(this_bvm, oi0.data, size(oi0.data)); 
 
-//                ACC = array_bits_to_mwords(this_pyr, _mkval(this_pyr, 2, 0x3d, 0xffffffc0));
-
-//                ACC =  _newbits(this_pyr, 17);
-
-//                ACC = _mkval(this_pyr, 1, 0x5a5a5a5a);
-//                array1_write(ACC, tempv++, 0x1);
-
-//                ACC = array_mwords_to_bits(this_pyr, _mkval(this_pyr, 8,
-//                           0x1, 0x0, 0x1, 0x0,
-//                           0x0, 0x1, 0x0, 0x1));
-
-//                ACC = array_cat(this_pyr,
-//                        _mkval(this_pyr, 3, 1, 2, 3),
-//                        _mkval(this_pyr, 3, 4, 5, 6));
-
-//                ACC = array8_cat(this_pyr,
-//                        _mkval(this_pyr, 2, 0xbadcab, 0xff000000),
-//                        _mkval(this_pyr, 2, 0xfacade, 0xff000000));
-
-//                ACC = array1_cat(this_pyr, 
-//                        _mkval(this_pyr, 2, 0x3d, 0xffffffc0),
-//                        _mkval(this_pyr, 2, 0xaa, 0xffffffc0));
-
-//                ACC = array1_cat(this_pyr,
-//                        _mkval(this_pyr, 2, 0xbadcab, 0xff000000),
-//                        _mkval(this_pyr, 2, 0xfacade, 0xff000000));
-
-//                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
-//                ACC  = _mkval(this_pyr, 3, 0, 0, 0);
+//                temp = io_slurp8(this_pyr, "aop.bbl");
+//                temp = bstruct_load(this_pyr, temp, size(temp));
 //
-//                array1_move(this_pyr, ACC, 0, temp, 37);
+//                array_sort(this_pyr, temp, LEX_BYTE);
 
-//                ACC = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+//                ACC = temp;
+//
+//                ACC = _val(this_pyr,
+//                        array_search(this_pyr, temp, C2B("iguana"), LEX_BYTE));
 
-//                ACC = _val(this_pyr, BIT_RANGE(27,5));
+//mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type st){ // array_search#
 
-                util_strtok_dec(cmd_code_str, cmd_code);
-                util_strtok_dec(cmd_code_str, cmd_code2);
+//                array_build_max_heap(ACC);
 
-                       ACC = _mkval(this_pyr, 4, 0xf0f0f0f0, 0x0f0f0f0f, 0xf0f0f0f0, 0x0f0f0f0f);
-                mword *src = _mkval(this_pyr, 4, 0x77777777, 0x99999999, 0xbbbbbbbb, 0xdddddddd);
+//                temp  = _mkval(this_pyr, 4, 3, 1, 0, 0);
+//                temp2 = _mkval(this_pyr, 7, 2, 1, 0, 0, 0, 0, 0);
+////                temp2 = _val(this_pyr, 3);
+//_mem(temp);
+//_say("-------");
+//_mem(temp2);
+//_say("-------");
+//                ACC = _val(this_pyr, array_cmp_num(temp, temp2));
 
-                array1_move(this_pyr, 
-                        ACC,
-                        cmd_code, 
-                        src,
-                        cmd_code2);
+//                temp = io_slurp8(this_pyr, "presidents.bbl");
+//                temp = bstruct_load(this_pyr, temp, size(temp));
+//
+////                ACC = bstruct_cp(this_pyr, temp);
+//                ACC = list_to_ptr_array(this_pyr, trie_entries(this_pyr, temp));
+//                array_sort(this_pyr, ACC, UNSIGNED);
 
-                // implement/test array1 functions...
+//                ACC = global_irt->symbols->SEXPR_IGNORE_SYMBOL;
+
+//                ACC = _val(this_pyr,
+//                        array_ncmp(this_pyr, C2B("foobaz"), 3, C2B("bar"), 2, BYTE_ASIZE));
 
                 break;
             case 2:
                 _notify("exiting bare metal prompt");
                 return;
             case 3:
-                _say("command code inactive");
-                cmd_code_str = strtok(NULL, " ");
-//                _d(cmd_code_str);
-                if(cmd_code_str == NULL){ continue; }
-                cmd_code = atoi(cmd_code_str);
-                _d(cmd_code);
-                break;
-            case 4:
                 _interp_reset(this_pyr);
                 break;
-            case 5:
-                _say("command code inactive");
-                break;
-            case 6:
-                _say("command code inactive");
-                break;
-            case 7:
-                _say("command code inactive");
-                break;
-            case 8:
-                _say("command code inactive");
-                break;
-            case 9:
+            case 4:
                 _d(ACC);
                 break;
-            case 10:
+            case 5:
                 _d(sfield(ACC));
                 break;
-            case 11:
+            case 6:
                 _mem(ACC);
                 break;
-            case 12:
+            case 7:
                 temp = _bs2str(this_pyr, ACC);
                 _say((char*)temp);
+                break;
+            case 8:
+                temp = _bs2gv(this_pyr, ACC);
+                io_spit(this_pyr, "test.dot", temp, BYTE_ASIZE, OVERWRITE);
+                _say("_bs2gv(ACC) ==> test.dot");
+                break;
+            case 9:
+                tempc = cmd_code_str + strlen(cmd_code_str) + 1;
+                _say((char*)tempc);
+                ACC = sexpr_from_string(this_pyr, string_c2b(this_pyr, tempc, 300));
+                break;
+            case 10:
+                ACC = this_pyr->self;
+                _say("ACC <== this_pyr->self");
+                break;
+            case 11:
+                ACC = nil;
+                _say("ACC <== nil");
+                break;
+            case 12:
+                cmd_code_str = strtok(NULL, " ");
+                if(cmd_code_str == NULL){ continue; }
+                ACC = (mword*)strtoul((char*)cmd_code_str,NULL,16);
+                _say("ACC <== p");
                 break;
             case 13:
                 ACC = init_ptr;
                 _say("ACC <== init_ptr");
                 break;
             case 14:
-                ACC = this_pyr->self;
-                _say("ACC <== this_pyr->self");
-                break;
-            case 15:
-                ACC = nil;
-                _say("ACC <== nil");
-                break;
-            case 16:
-                cmd_code_str = strtok(NULL, " ");
-                if(cmd_code_str == NULL){ continue; }
-                ACC = (mword*)strtoul((char*)cmd_code_str,NULL,16);
-                _say("ACC <== p");
-                break;
-            case 17:
-                cmd_code_str = strtok(NULL, " ");
-                if(cmd_code_str == NULL){ continue; }
-                tempv = strtoul((char*)cmd_code_str,NULL,10);
-                ACC = rdp(ACC,tempv);
-                _say("ACC <== rdp(ACC,n)");
-                break;
-            case 18:
-                ACC = pcar(ACC);
-                _say("ACC <== pcar(ACC)");
-                break;
-            case 19:
-                ACC = pcdr(ACC);
-                _say("ACC <== pcdr(ACC)");
-                break;
-            case 20:
-                ACC = tcar(ACC);
-                _say("ACC <== tcar(ACC)");
-                break;
-            case 21:
-                temp = mem_new_val(this_pyr,2,0);
-                ldp(temp,0) = ACC;
-                ldv(temp,1) = MWORD_SIZE;
-                ACC = temp;
-                _say("ACC <== rel_offset_ptr(ACC)");
-                break;
-            case 22:
-                cmd_code_str = strtok(NULL, " ");
-                if(cmd_code_str == NULL){ continue; }
-                tempv = strtoul((char*)cmd_code_str,NULL,10);
-                _d(rov(ACC,tempv));
-                break;
-            case 23:
-                cmd_code_str = strtok(NULL, " ");
-                if(cmd_code_str == NULL){ continue; }
-                tempv = strtoul((char*)cmd_code_str,NULL,10);
-                trop(ACC,tempv);
-                _say("trop(ACC,n)");
-                break;
-            case 24:
-                trot(ACC);
-                _say("trot(ACC)");
-                break;
-            case 25:
-                _d(ros(ACC));
-                break;
-            case 26:
-                tempv = ACC[0] + ACC[1];
-                _mem((mword*)tempv);
-                break;
-            case 27:
-                ldv(ACC,1) = MWORD_SIZE;
-                _say("reset rel_offset_ptr(ACC)");
-                break;
-            case 28:
-                cmd_code_str = strtok(NULL, " ");
-                if(cmd_code_str == NULL){ continue; }
-                tempv = strtoul((char*)cmd_code_str,NULL,16);
-                _d(rov(ACC,UNITS_8TOM(tempv)));
+                ACC = global_dev_overrides;
+                _say("ACC <== global_dev_overrides");
                 break;
             default:
                 _say("unrecognized command code");
@@ -371,35 +276,21 @@ void util_get_line(char *buffer, FILE *stream){ // util_get_line#
 //
 void util_bare_metal_menu(void){
 
-    _say("0     -> list command codes");
-    _say("1     -> dev one-off");
-    _say("2     -> exit bare metal");
-    _say("3 n   -> _dev(n)");
-    _say("4     -> hard reset");
-    _say("5 f v -> set flag f to value v");
-    _say("6     -> hard run GC");
-    _say("7     -> _mem( prev-allocation ) (iterates)");
-    _say("8     -> reset command code 7");
-    _say("9     -> _d(ACC)");
-    _say("10    -> _d(sfield(ACC))");
-    _say("11    -> _mem(ACC)");
-    _say("12    -> _bs2str(ACC)");
-    _say("13    -> ACC <== init_ptr");
-    _say("14    -> ACC <== this_pyr->self");
-    _say("15    -> ACC <== nil");
-    _say("16 p  -> ACC <== p");
-    _say("17 n  -> ACC <== rdp(ACC,n)");
-    _say("18    -> ACC <== pcar(ACC)");
-    _say("19    -> ACC <== pcdr(ACC)");
-    _say("20    -> ACC <== tcar(ACC)");
-    _say("21    -> ACC <== rel_offset_ptr(ACC)");
-    _say("22 n  -> _d(rov(ACC,n))");
-    _say("23 n  -> trop(ACC,n)");
-    _say("24    -> trot(ACC)");
-    _say("25    -> _d(ros(ACC))");
-    _say("26    -> _mem(ro(ACC))");
-    _say("27    -> reset rel_offset_ptr(ACC)");
-    _say("28 h  -> _d(rov(ACC,hex_offset))");
+    _say(   "0     .....    list command codes\n"
+            "1     .....    dev one-off\n"
+            "2     .....    exit bare metal\n"
+            "3     .....    hard reset\n"
+            "4     .....    _d(ACC)\n"
+            "5     .....    _d(sfield(ACC))\n"
+            "6     .....    _mem(ACC)\n"
+            "7     .....    _bs2str(ACC)\n"
+            "8     .....    _bs2gv(ACC)\n"
+            "9 S   .....    ACC <== sexpr(S)\n"
+            "10    .....    ACC <== this_pyr->self\n"
+            "11    .....    ACC <== nil\n"
+            "12 p  .....    ACC <== p\n"
+            "13    .....    ACC <== init_ptr\n"
+            "14    .....    ACC <== global_dev_overrides");
 
 }
 

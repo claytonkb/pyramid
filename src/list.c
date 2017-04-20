@@ -1,149 +1,28 @@
 // list.c
 //
 
-#include "babel.h"
+#include "pyramid.h"
 #include "list.h"
 #include "bstruct.h"
 #include "tptr.h"
-#include "operator.h"
 #include "array.h"
 #include "string.h"
-
-
-// creates a new list of given size
-// note that the list is created in REVERSE order:
-// _newls(this_bvm, 3, _val(this_bvm,3), _val(this_bvm,2), _val(this_bvm,1)) --> (1 2 3)
-//
-mword *_mkls(bvm_cache *this_bvm, mword list_size, ...){ // _mkls#
-
-    va_list vl;
-    va_start(vl,list_size);
-
-    int i;
-
-    mword *last_cons = nil;
-
-    for(i=0;i<list_size;i++){
-        last_cons = (void*)_cons(this_bvm, va_arg(vl,mword*), last_cons);
-    }
-
-    va_end(vl);
-
-    return last_cons;
-
-}
-
-
-// creates a new circular, doubly-linked list of given size
-// note that the list is created in REVERSE order
-//
-mword *_mkdls(bvm_cache *this_bvm, mword list_size, ...){ // _mkdls#
-
-    va_list vl;
-    va_start(vl,list_size);
-
-    int i;
-
-    mword *last_dcons  = nil;
-    mword *this_dcons  = va_arg(vl,mword*);
-           last_dcons  = (void*)_dcons(this_bvm, this_dcons, last_dcons, nil);
-    mword *first_dcons = last_dcons;
-
-    for(i=1;i<list_size;i++){
-        this_dcons = va_arg(vl,mword*);
-        this_dcons = (void*)_dcons(this_bvm, this_dcons, last_dcons, nil);
-        lci(last_dcons,2) = this_dcons;
-        last_dcons = this_dcons;
-    }
-
-    va_end(vl);
-
-    // close the ends to form a circle
-    lci(last_dcons,2)  = first_dcons;
-    lci(first_dcons,1) = last_dcons;
-
-    return last_dcons;
-
-}
+#include "mem.h"
 
 
 //
 //
-mword *_cons(bvm_cache *this_bvm, mword *car, mword *cdr){ // _cons#
-
-    mword **cons_cell = (mword**)_new_cons(this_bvm);
-    lci(cons_cell,0) = car;
-    lci(cons_cell,1) = cdr;
-
-    return (mword*)cons_cell;
-
-}
-
-
-// Make a double-linked list cons cell (three entries instead of two)
-//
-mword *_dcons(bvm_cache *this_bvm, mword *car, mword *cdr, mword *cpr){ // _dcons#
-
-    mword **dcons_cell = (mword**)_new_dcons(this_bvm);
-    lci(dcons_cell,0) = car;
-    lci(dcons_cell,1) = cdr;
-    lci(dcons_cell,2) = cpr;
-
-    return (mword*)dcons_cell;
-
-}
-
-
-// insert into double-list
-//
-mword *_insdls(bvm_cache *this_bvm, mword *src_list, mword *dest_list){ // _insdls#
+mword *list_insert(pyr_cache *this_pyr, mword *src_list, mword *dest_list){ // list_insert#
 
     if(is_nil(dest_list)){
         return src_list;
     }
     
-    if(is_nil(src_list)){
-        return dest_list;
-    }
+    mword *next_dest_list = pcdr(dest_list);
+    mword *end_src_list   = list_find_end(this_pyr, src_list);
 
-    mword *next_dest_list = (mword*)icdr(dest_list);
-    mword *end_src_list   = _dlist_end(this_bvm, src_list);
-
-    lci(dest_list,    1) = src_list;
-    lci(end_src_list, 1) = next_dest_list;
-    lci(src_list,     2) = dest_list;
-
-    if(is_nil(next_dest_list)){
-        return dest_list;
-    }
-
-    lci(next_dest_list,2) = end_src_list;
-
-    return dest_list;
-
-}
-
-
-// insert into double-list
-//
-mword *_insdls_prev(bvm_cache *this_bvm, mword *src_list, mword *dest_list){ // _insdls_prev#
-
-    if(is_nil(dest_list)){
-        return src_list;
-    }
-
-    if(is_nil(src_list)){
-        return dest_list;
-    }
-
-    mword *prev_dest_list = (mword*)icpr(dest_list);
-    mword *end_src_list   = _dlist_end(this_bvm, src_list);
-
-    lci(end_src_list,  1) = dest_list;
-    lci(dest_list,     2) = end_src_list;
-    lci(src_list,      2) = prev_dest_list;
-
-    lci(prev_dest_list,1) = src_list;
+    ldp(dest_list,1)      = src_list;
+    ldp(end_src_list,1)   = next_dest_list;
 
     return dest_list;
 
@@ -152,29 +31,10 @@ mword *_insdls_prev(bvm_cache *this_bvm, mword *src_list, mword *dest_list){ // 
 
 //
 //
-mword *_insls(bvm_cache *this_bvm, mword *src_list, mword *dest_list){ // _insls#
+mword *list_unshift(pyr_cache *this_pyr, mword *list, mword *bs){ // list_unshift#
 
-    if(is_nil(dest_list)){
-        return src_list;
-    }
-    
-    mword *next_dest_list = (mword*)icdr(dest_list);
-    mword *end_src_list   = _list_end(this_bvm, src_list);
-
-    lci(dest_list,1)      = src_list;
-    lci(end_src_list,1)   = next_dest_list;
-
-    return dest_list;
-
-}
-
-
-//
-//
-mword *_unshift(bvm_cache *this_bvm, mword *list, mword *bs){ // _unshift#
-
-    mword *endls = _list_end(this_bvm, list);
-    lci(endls,1) = _cons(this_bvm,  bs, nil );
+    mword *endls = list_find_end(this_pyr, list);
+    ldp(endls,1) = _cons(this_pyr,  bs, nil );
 
     return list;
 
@@ -183,30 +43,18 @@ mword *_unshift(bvm_cache *this_bvm, mword *list, mword *bs){ // _unshift#
 
 //
 //
-mword *_unshift_op(bvm_cache *this_bvm, mword *list, mword *bs){ // _unshift_op#
-
-    mword *endls = _list_end(this_bvm, list);
-    lci(endls,1) = bs;
-
-    return list;
-
-}
-
-
-//
-//
-mword *_shift(bvm_cache *this_bvm, mword *list){ // _shift#
+mword *list_shift(pyr_cache *this_pyr, mword *list){ // list_shift#
 
     if(is_nil(list)) return nil;
 
-    if(_len(this_bvm,list) < 2) return list;
+    if(list_len(this_pyr,list) < 2) return list;
 
-    mword *endls = _list_next_to_end(this_bvm, list);
+    mword *endls = list_find_next_to_end(this_pyr, list);
 
     if(is_nil(endls)) return nil;
 
-    mword *temp = (mword*)rci(endls,1);
-    lci(endls,1) = nil;
+    mword *temp = rdp(endls,1);
+    ldp(endls,1) = nil;
 
     return temp;
 
@@ -216,21 +64,21 @@ mword *_shift(bvm_cache *this_bvm, mword *list){ // _shift#
 // NOTE: _push does not update list to point to the new head, it
 // is the caller's responsibility to maintain this
 //
-void _push(bvm_cache *this_bvm, mword *list, mword *bs){ // _push#
+void list_push(pyr_cache *this_pyr, mword *list, mword *bs){ // list_push#
 
-    lci(bs,1) = list;
+    ldp(bs,1) = list;
 
 }
 
 
 //
 //
-mword *_pop(bvm_cache *this_bvm, mword *list){ // _pop#
+mword *list_pop(pyr_cache *this_pyr, mword *list){ // list_pop#
 
     if(is_nil(list)) return nil;
 
-    mword *temp = (mword*)icdr(list);
-    lci(list,1) = nil;
+    mword *temp = pcdr(list);
+    ldp(list,1) = nil;
 
     return temp;
 
@@ -239,25 +87,10 @@ mword *_pop(bvm_cache *this_bvm, mword *list){ // _pop#
 
 //
 //
-mword *_dlist_end(bvm_cache *this_bvm, mword *list){ // _dlist_end#
+mword *list_find_end(pyr_cache *this_pyr, mword *list){ // list_find_end#
 
-    mword *head = list;
-    
-    while(!is_nil(cdr(list)) && head != cdr(list)){
-        list = (mword*)cdr(list);
-    }
-
-    return list;
-    
-}
-
-
-//
-//
-mword *_list_end(bvm_cache *this_bvm, mword *list){ // _list_end#
-
-    while(!is_nil(cdr(list))){
-        list = (mword*)cdr(list);
+    while(!is_nil(pcdr(list))){
+        list = pcdr(list);
     }
     return list;
     
@@ -266,10 +99,10 @@ mword *_list_end(bvm_cache *this_bvm, mword *list){ // _list_end#
 
 //
 //
-mword *_list_next_to_end(bvm_cache *this_bvm, mword *list){ // *_list_next_to_end#
+mword *list_find_next_to_end(pyr_cache *this_pyr, mword *list){ // *list_find_next_to_end#
 
-    while(!is_nil(cdr(cdr(list)))){
-        list = (mword*)cdr(list);
+    while(!is_nil(pcdr(pcdr(list)))){
+        list = pcdr(list);
     }
     return list;
     
@@ -278,13 +111,13 @@ mword *_list_next_to_end(bvm_cache *this_bvm, mword *list){ // *_list_next_to_en
 
 //
 //
-mword _len(bvm_cache *this_bvm, mword *list){ // _len#
+mword list_len(pyr_cache *this_pyr, mword *list){ // list_len#
 
     mword length = 0;
 
     while(!is_nil(list)){
         length++;
-        list = (mword*)cdr(list);
+        list = pcdr(list);
     }
 
     return length;
@@ -294,83 +127,24 @@ mword _len(bvm_cache *this_bvm, mword *list){ // _len#
 
 //
 //
-mword _len_dlist(bvm_cache *this_bvm, mword *list){ // _len_dlist#
-
-    mword length = 0;
-    mword *head = list;
-
-    while(!is_nil(list)){
-        length++;
-        if(head == cdr(list)){
-            break; }
-        list = (mword*)cdr(list);
-    }
-
-    return length;
-
-}
-
-
-//
-//
-mword *_bons(bvm_cache *this_bvm, mword *list){ // _bons#
+mword *list_to_ptr_array(pyr_cache *this_pyr, mword *list){ // list_to_ptr_array#
 
     mword *head = list;
-    mword *arr = (mword*)_newin(this_bvm, _len(this_bvm, list));
+    mword *arr = mem_new_ptr(this_pyr, list_len(this_pyr, list));
     mword *curr_node;
 
     int i=0;
 
     while(!is_nil(list)){
-        curr_node = (mword*)car(list);
+        curr_node = pcar(list);
         if(curr_node == head){
-            lci(arr,i) = arr;
+            ldp(arr,i) = arr;
         }
         else{
-            lci(arr,i) = curr_node;
+            ldp(arr,i) = curr_node;
         }        
         i++;
-        list = (mword*)cdr(list);
-    }
-
-    return arr;
-
-}
-
-//FIXME (CLEANUP): _ls2lf should use len() instead of re-writing it
-//
-mword *_ls2lf(bvm_cache *this_bvm, mword *list){ // _ls2lf#
-
-    mword *head = list;
-    int total_size=0;
-    int list_length=0; // We don't use _len because we're already traversing the list
-
-    while(!is_nil(list)){
-        if(!is_leaf((mword*)icar(list))){
-            _fatal("can't cat leaf and inte arrays"); //FIXME: Exception
-        }
-        total_size += size(car(list));
-        list_length++;
-        list = (mword*)cdr(list);        
-    }
-
-    if(!list_length){
-        return (mword*)_newlfi(this_bvm, 1, 0);
-    }
-
-    mword *arr = (mword*)_newlfi(this_bvm, total_size, 0);
-
-    list = head;
-
-    int i=0;
-    int element_size;
-    while(!is_nil(list)){
-
-        element_size = size(car(list));
-        memmove(arr+i, (mword*)car(list), (size_t)UNITS_MTO8(element_size));
-        i += element_size;
-        list = (mword*)cdr(list);
-
+        list = pcdr(list);
     }
 
     return arr;
@@ -380,26 +154,26 @@ mword *_ls2lf(bvm_cache *this_bvm, mword *list){ // _ls2lf#
 
 //
 //
-mword *_lscat8(bvm_cache *this_bvm, mword *list){ // _lscat8#
+mword *list_to_val_array(pyr_cache *this_pyr, mword *list){ // list_to_val_array#
 
     mword *head = list;
     int total_size=0;
     int list_length=0; // We don't use _len because we're already traversing the list
 
     while(!is_nil(list)){
-        if(!is_leaf((mword*)icar(list))){
+        if(!is_val(pcar(list))){
             _fatal("can't cat leaf and inte arrays"); //FIXME: Exception
         }
-        total_size += _arlen8(this_bvm, (mword*)icar(list));
+        total_size += size(pcar(list));
         list_length++;
-        list = (mword*)cdr(list);        
+        list = pcdr(list);        
     }
 
     if(!list_length){
-        return (mword*)_newlfi(this_bvm, 1, 0);
+        return mem_new_val(this_pyr, 1, 0);
     }
 
-    char *arr = (char*)_newstr(this_bvm, total_size, ' ');
+    mword *arr = mem_new_val(this_pyr, total_size, 0);
 
     list = head;
 
@@ -407,25 +181,25 @@ mword *_lscat8(bvm_cache *this_bvm, mword *list){ // _lscat8#
     int element_size;
     while(!is_nil(list)){
 
-        element_size = _arlen8(this_bvm, (mword*)icar(list));
-        memmove(arr+i, (char*)icar(list), (size_t)element_size);
+        element_size = size(pcar(list));
+        memmove(arr+i, pcar(list), (size_t)UNITS_MTO8(element_size));
         i += element_size;
-        list = (mword*)cdr(list);
+        list = pcdr(list);
 
     }
 
-    return (mword*)arr;
+    return arr;
 
 }
 
 
+// equiv to Lisp's cdrn
 //
-//
-mword *_cdri(bvm_cache *this_bvm, mword *list, mword i){ // _cdri#
+mword *list_cdri(pyr_cache *this_pyr, mword *list, mword i){ // list_cdri#
 
     while(i > 0){
         i--;
-        list = (mword*)cdr(list);
+        list = pcdr(list);
     }
 
     return list;
@@ -435,84 +209,58 @@ mword *_cdri(bvm_cache *this_bvm, mword *list, mword i){ // _cdri#
 
 //
 //
-mword *_ith(bvm_cache *this_bvm, mword *list, mword i){ // _ith#
+mword *list_ith(pyr_cache *this_pyr, mword *list, mword i){ // list_ith#
 
-    list = _cdri(this_bvm, list, i);
+    list = list_cdri(this_pyr, list, i);
 
-    return (mword*)car(list);
-
-}
-
-
-// This function assumes the dlist is well-formed
-//
-mword *_reverse_dlist(bvm_cache *this_bvm, mword *list, mword *head, mword direction){ // _reverse_dlist#
-
-    if(is_nil(list))
-        return nil;
-
-    mword *next = rci(list,1+direction);
-    mword *prev = rci(list,2-direction);
-
-    lci(list,2-direction) = next;
-    lci(list,1+direction) = prev;
-
-//    mword *next = rci(list,1);
-//    mword *prev = rci(list,2);
-//
-//    lci(list,2) = next;
-//    lci(list,1) = prev;
-
-    if(next == head || is_nil(next))
-        return list;
-
-    return _reverse_dlist(this_bvm, next, head, direction);
+    return pcar(list);
 
 }
 
 
+
 //
 //
-mword *_reverse(bvm_cache *this_bvm, mword *list, mword *new_cdr){ // _reverse#
+mword *list_reverse(pyr_cache *this_pyr, mword *list, mword *new_cdr){ // list_reverse#
 
-    mword *temp = (mword*)cdr(list);
+    mword *temp = pcdr(list);
 
-    lci(list,1) = new_cdr;
+    ldp(list,1) = new_cdr;
 
     if(is_nil(temp))
         return list;
 
-    return _reverse(this_bvm, temp, list);
+    return list_reverse(this_pyr, temp, list);
 
 }
 
 
 //
 //
-mword *_split(bvm_cache *this_bvm, mword *list, mword *indices){ // _split#
+mword *list_split(pyr_cache *this_pyr, mword *list, mword *indices){ // list_split#
 
-    return _rsplit(this_bvm, list,indices,0);
+    return list_split_r(this_pyr, list,indices,0);
 
 }
 
 
 //
 //
-mword *_rsplit(bvm_cache *this_bvm, mword *list, mword *indices, mword count){ // _rsplit#
+mword *list_split_r(pyr_cache *this_pyr, mword *list, mword *indices, mword count){ // list_split_r#
 
     mword *orig_list = list;
 
-    if (is_nil(indices)) return _cons(this_bvm,  orig_list, nil );
+    if (is_nil(indices)) return _cons(this_pyr,  orig_list, nil );
 
     if (is_nil(list)) return nil;// 
 
-    mword curr_index = icar(icar(indices));
+    mword curr_index = vcar(pcar(indices));
 
-    if (curr_index < count) return _cons(this_bvm,  orig_list, nil );
+    if (curr_index < count) return _cons(this_pyr,  orig_list, nil );
 
-    if (curr_index == 0) return _cons(this_bvm,  nil, _cons(this_bvm,  orig_list, nil ) );
+    if (curr_index == 0) return _cons(this_pyr,  nil, _cons(this_pyr,  orig_list, nil ) );
 
-    indices = (mword*)cdr(indices);
+    indices = pcdr(indices);
 
     //if (is_nil(list)) return list;
     
@@ -532,22 +280,22 @@ mword *_rsplit(bvm_cache *this_bvm, mword *list, mword *indices, mword count){ /
         count++;
 
         prev_list = list;
-        list = (mword*)cdr(list);
+        list = pcdr(list);
 
     }
 
-    if(!is_nil(cdr(prev_list))){
-        lci(prev_list,1) = nil;
+    if(!is_nil(pcdr(prev_list))){
+        ldp(prev_list,1) = nil;
     }
 
-    return _cons(this_bvm,  orig_list, _rsplit(this_bvm, list, indices, count) );
+    return _cons(this_pyr,  orig_list, list_split_r(this_pyr, list, indices, count) );
 
 }
 
 
+// XXX Isn't this just a special case of list_split? XXX
 //
-//
-mword *_list_cut(bvm_cache *this_bvm, mword *list, mword index){ // _list_cut#
+mword *list_cut(pyr_cache *this_pyr, mword *list, mword index){ // list_cut#
 
     mword *temp;
 
@@ -557,21 +305,185 @@ mword *_list_cut(bvm_cache *this_bvm, mword *list, mword index){ // _list_cut#
 
     if(index == 1){
 
-        temp = (mword*)icdr(list);
-        lci(list,1) = nil;
+        temp = pcdr(list);
+        ldp(list,1) = nil;
 
         return temp;
 
     }
 
-    return _list_cut(this_bvm,  (mword*)icdr(list), index-1 );
+    return list_cut(this_pyr, pcdr(list), index-1 );
 
 }
 
 
 //
 //
-mword *_dlist_cut(bvm_cache *this_bvm, mword *list, mword index, mword direction){ // _dlist_cut#
+mword *list_append(pyr_cache *this_pyr, mword *lists){ // list_append#
+
+    if(is_nil(pcdr(lists)))
+        return pcar(lists);
+        //return lists;
+
+    return list_append_direct(this_pyr, list_ith(this_pyr, lists,0),list_append(this_pyr, pcdr(lists)));
+
+}
+
+
+///
+//
+mword *list_append_direct(pyr_cache *this_pyr, mword *head_list, mword *tail_list){ // list_append_direct#
+
+    mword *endls = list_find_end(this_pyr, head_list);
+
+    ldp(endls,1) = tail_list;
+
+    return head_list;
+
+}
+
+
+/*****************************************************************************
+ *                                                                           *
+ *                           DOUBLE-LINKED LIST                              *
+ *                                                                           *
+ ****************************************************************************/
+
+
+//
+//
+mword *dlist_append_direct(pyr_cache *this_pyr, mword *head_list, mword *tail_list){ // dlist_append_direct#
+
+    mword *endls = dlist_find_end(this_pyr, head_list);
+
+    ldp(endls,     1) = tail_list;
+    ldp(tail_list, 2) = endls;
+
+    return head_list;
+
+}
+
+
+// insert into double-list
+//
+mword *dlist_insert(pyr_cache *this_pyr, mword *src_list, mword *dest_list){ // dlist_insert#
+
+    if(is_nil(dest_list)){
+        return src_list;
+    }
+    
+    if(is_nil(src_list)){
+        return dest_list;
+    }
+
+    mword *next_dest_list = pcdr(dest_list);
+    mword *end_src_list   = dlist_find_end(this_pyr, src_list);
+
+    ldp(dest_list,    1) = src_list;
+    ldp(end_src_list, 1) = next_dest_list;
+    ldp(src_list,     2) = dest_list;
+
+    if(is_nil(next_dest_list)){
+        return dest_list;
+    }
+
+    ldp(next_dest_list,2) = end_src_list;
+
+    return dest_list;
+
+}
+
+
+// insert into double-list
+//
+mword *dlist_insert_prev(pyr_cache *this_pyr, mword *src_list, mword *dest_list){ // dlist_insert_prev#
+
+    if(is_nil(dest_list)){
+        return src_list;
+    }
+
+    if(is_nil(src_list)){
+        return dest_list;
+    }
+
+    mword *prev_dest_list = pcpr(dest_list);
+    mword *end_src_list   = dlist_find_end(this_pyr, src_list);
+
+    ldp(end_src_list,  1) = dest_list;
+    ldp(dest_list,     2) = end_src_list;
+    ldp(src_list,      2) = prev_dest_list;
+
+    ldp(prev_dest_list,1) = src_list;
+
+    return dest_list;
+
+}
+
+
+//
+//
+mword *dlist_find_end(pyr_cache *this_pyr, mword *list){ // dlist_find_end#
+
+    mword *head = list;
+    
+    while(!is_nil(pcdr(list)) && head != pcdr(list)){
+        list = pcdr(list);
+    }
+
+    return list;
+    
+}
+
+
+//
+//
+mword dlist_len(pyr_cache *this_pyr, mword *list){ // dlist_len#
+
+    mword length = 0;
+    mword *head = list;
+
+    while(!is_nil(list)){
+        length++;
+        if(head == pcdr(list)){
+            break; }
+        list = pcdr(list);
+    }
+
+    return length;
+
+}
+
+
+// This function assumes the dlist is well-formed
+//
+mword *dlist_reverse(pyr_cache *this_pyr, mword *list, mword *head, mword direction){ // dlist_reverse#
+
+    if(is_nil(list))
+        return nil;
+
+    mword *next = rdp(list,1+direction);
+    mword *prev = rdp(list,2-direction);
+
+    ldp(list,2-direction) = next;
+    ldp(list,1+direction) = prev;
+
+//    mword *next = rdp(list,1);
+//    mword *prev = rdp(list,2);
+//
+//    ldp(list,2) = next;
+//    ldp(list,1) = prev;
+
+    if(next == head || is_nil(next))
+        return list;
+
+    return dlist_reverse(this_pyr, next, head, direction);
+
+}
+
+
+//
+//
+mword *dlist_cut(pyr_cache *this_pyr, mword *list, mword index, mword direction){ // dlist_cut#
 
     mword *temp;
 
@@ -580,231 +492,26 @@ mword *_dlist_cut(bvm_cache *this_bvm, mword *list, mword index, mword direction
     if(index == 0) return list;
 
     if(direction == CDR_DIRECTION){
-        temp = rci(list,1);
+        temp = rdp(list,1);
     }
     else{ //if(direction == CPR_DIRECTION)
-        temp = rci(list,2);
+        temp = rdp(list,2);
     }
 
     if(index == 1){
 
-        lci(list,1+direction) = nil;
-        lci(temp,2-direction) = nil;
+        ldp(list,1+direction) = nil;
+        ldp(temp,2-direction) = nil;
 
         return temp;
 
     }
 
-    return _dlist_cut(this_bvm, temp, index-1, direction);
+    return dlist_cut(this_pyr, temp, index-1, direction);
 
 }
 
 
-//
-//
-mword *_append(bvm_cache *this_bvm, mword *lists){ // _append#
-
-    if(is_nil(icdr(lists)))
-        return (mword*)icar(lists);
-        //return lists;
-
-    return _append_direct(this_bvm, _ith(this_bvm, lists,0),_append(this_bvm, (mword*)icdr(lists)));
-
-}
-
-
-///
-//
-mword *_append_direct(bvm_cache *this_bvm, mword *head_list, mword *tail_list){ // _append_direct#
-
-    mword *endls = _list_end(this_bvm, head_list);
-
-    lci(endls,1) = tail_list;
-
-    return head_list;
-
-}
-
-
-//
-//
-mword *_append_direct_dlist(bvm_cache *this_bvm, mword *head_list, mword *tail_list){ // _append_direct_dlist#
-
-    mword *endls = _dlist_end(this_bvm, head_list);
-
-    lci(endls,     1) = tail_list;
-    lci(tail_list, 2) = endls;
-
-    return head_list;
-
-}
-
-
-//
-//
-mword *_ar2ls(bvm_cache *this_bvm, mword *arr){ // _ar2ls#
-
-    mword *last_cons = (mword*)nil;
-    int i;
-    mword *entry;
-
-    if(is_inte(arr)){
-        for(i=size(arr)-1;i>=0;i--){
-            last_cons = _cons(this_bvm, (mword*)rci(arr,i),last_cons);
-        }
-    }
-    else{
-        for(i=size(arr)-1;i>=0;i--){
-            entry = _newlfi(this_bvm, 1, 0);
-            *entry = rcl(arr,i);
-            last_cons = _cons(this_bvm, entry,last_cons);
-        }
-    }
-
-    return last_cons;
-
-}
-
-
-/*****************************************************************************
- *                                                                           *
- *                              LIST OPERATORS                               *
- *                                                                           *
- ****************************************************************************/
-
-
-#define ITH_RD_OPERATIONS \
-    result0 = _ith(this_bvm, oi1.data, *oi0.data);
-
-OPERATORA_R2_W1_D(ith_rd, ITH_RD_OPERATIONS, 
-        nil, OI_MASK_LEAF, 0, 0,
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define LEN_D_OPERATIONS \
-    result0 = _val(this_bvm, _len_dlist(this_bvm, oi0.data));
-
-OPERATORA_R1_W1_D(len_d, LEN_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define AR2LS_D_OPERATIONS \
-    result0 = _ar2ls(this_bvm, oi0.data);
-
-OPERATORA_R1_W1_D(ar2ls_d, AR2LS_D_OPERATIONS, nil, OI_MASK_INTE|OI_MASK_LEAF, 0, 0)
-
-
-#define BONS_D_OPERATIONS \
-    result0 = _bons(this_bvm, oi0.data);
-
-OPERATORA_R1_W1_D(bons_d, BONS_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define CAR_RD_OPERATIONS \
-    result0 = lcar(oi0.data);
-
-OPERATORA_R1_W1_D(car_rd, CAR_RD_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define CDR_RD_OPERATIONS \
-    result0 = lcdr(oi0.data);
-
-OPERATORA_R1_W1_D(cdr_rd, CDR_RD_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define CONS_D_OPERATIONS \
-    result0 = _cons(this_bvm, oi1.data, oi0.data);
-
-OPERATORA_R2_W1_D(cons_d, CONS_D_OPERATIONS, 
-        nil, OI_MASK_ANY, 0, 0,
-        nil, OI_MASK_ANY, 0, 0)
-
-
-#define UNCONS_D_OPERATIONS \
-    result0 = lcar(oi0.data); \
-    result1 = lcdr(oi0.data);
-
-OPERATORA_R1_W2_D(uncons_d, UNCONS_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define SHIFT_D_OPERATIONS \
-    result0 = oi0.data; \
-    result1 = _shift(this_bvm, oi0.data);
-
-OPERATORA_R1_W2_D(shift_d, SHIFT_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define UNSHIFT_D_OPERATIONS \
-    result0 = _unshift_op(this_bvm, oi1.data, oi0.data);
-
-//    result0 = _unshift(this_bvm, oi1.data, rci(oi0.data,0));
-
-OPERATORA_R2_W1_D(unshift_d, UNSHIFT_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0,
-        nil, OI_MASK_ANY, 0, 0)
-
-
-//#define UNSHIFT_RD_OPERATIONS 
-//    result0 = _unshift(this_bvm, oi1.data, rci(oi0.data,0));
-//
-//OPERATOR_R2_W1_D(unshift_d, UNSHIFT_RD_OPERATIONS, 
-//        nil, OI_MASK_INTE, 0, 0,
-//        nil, OI_MASK_ANY, 0, 0)
-
-
-#define POP_D_OPERATIONS \
-    result0 = _pop(this_bvm, oi0.data); \
-    result1 = oi0.data; 
-
-OPERATORA_R1_W2_D(pop_d, POP_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define PUSH_D_OPERATIONS \
-    _push(this_bvm, oi1.data, oi0.data); \
-    result0 = oi0.data;
-
-OPERATORA_R2_W1_D(push_d, PUSH_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0,
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define LS2LF_D_OPERATIONS \
-    result0 = _ls2lf(this_bvm, oi0.data);
-
-OPERATORA_R1_W1_D(ls2lf_d, LS2LF_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define SPLIT_D_OPERATIONS \
-    result0 = _split(this_bvm, oi1.data, oi0.data);
-
-OPERATORA_R2_W1_D(split_d, SPLIT_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0,
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define APPEND_D_OPERATIONS \
-    result0 = _append(this_bvm, oi0.data);
-
-OPERATORA_R1_W1_D(append_d, APPEND_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-#define INS_D_OPERATIONS \
-    result0 = _insls(this_bvm, oi0.data, oi1.data);
-
-OPERATORA_R2_W1_D(ins_d, INS_D_OPERATIONS, 
-        nil, OI_MASK_INTE, 0, 0,
-        nil, OI_MASK_INTE, 0, 0)
-
-
-#define REVERSE_D_OPERATIONS \
-    result0 = _reverse(this_bvm, oi0.data, nil);
-
-OPERATORA_R1_W1_D(rev_d, REVERSE_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
-
-
-//mword *_reverse(bvm_cache *this_bvm, mword *list, mword *new_cdr){ // _reverse#
 
 //list operators
 //--------------
@@ -818,5 +525,5 @@ OPERATORA_R1_W1_D(rev_d, REVERSE_D_OPERATIONS, nil, OI_MASK_INTE, 0, 0)
 //(a b c d)     shift   --> (a b c) (d)
 
 
-// Clayton Bauman 2014
+// Clayton Bauman 2017
 

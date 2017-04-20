@@ -4,15 +4,22 @@
 #include "pyramid.h"
 #include "array.h"
 #include "mem.h"
+#include "utf8.h"
+#include "bstruct.h"
+#include "list.h"
 
-//#include "bstruct.h"
 //#include "operator.h"
 //#include "pbp.h"
 //#include "introspect.h"
 //#include "string.h"
 //#include "lib_babel.h"
 //#include "logic.h"
-//#include "list.h"
+
+#define  key_AOP(x,y) vcar(pcar(rdp(x,y)))
+#define data_AOP(x,y) vcar(pcar(rdp(x,y)))
+
+#define  key_AOP2(x,y) pcar(rdp(x,y))
+#define data_AOP2(x,y) pcar(rdp(x,y))
 
 
 /*****************************************************************************
@@ -384,7 +391,7 @@ mword *array_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array_cat#
         result = (char*)mem_new_ptr(this_pyr, UNITS_8TOM(s_left+s_right));
     }
     else{ //FIXME: Throw an exception
-        _fatal("cannot concatenate leaf array and interior array");
+        _fatal("cannot concatenate val-array and ptr-array");
     }
 
     memcpy(result,        left,  s_left);
@@ -472,28 +479,61 @@ mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array1_cat
 
 //
 //
-int array_cmp_lex(mword *left, mword *right){ // array_cmp_lex#
+int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size){ // array_cmp_lex#
 
-    mword left_size  = size(left);
-    mword right_size = size(right);
+    mword left_size;
+    mword right_size;
 
-    array_cmp_size_check(left_size, right_size);
+    if(access_size == MWORD_ASIZE){
+        left_size  = UNITS_MTO8(size(left));
+        right_size = UNITS_MTO8(size(right));
+    }
+    else{ // access_size == BYTE_ASIZE
+        left_size  = array8_size(this_pyr, left);
+        right_size = array8_size(this_pyr, right);
+    }
 
-    return memcmp(left, right, UNITS_MTO8(left_size));
+//    array_cmp_size_check(left_size, right_size);
+
+    if(left_size > right_size){
+        return 1;
+    }
+    else if(left_size < right_size){
+        return -1;
+    }
+
+    return memcmp(left, right, left_size);
 
 }
 
 
+// LLLLLLLLLLL
+//     RRRRRRRR
+//     \---/
+//       n
 //
-//
-int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right){ // array8_cmp_lex#
+int array_ncmp(pyr_cache *this_pyr, mword *left, mword left_offset, mword *right, mword length, access_size_sel access_size){
 
-    mword left_size  = array8_size(this_pyr, left);
-    mword right_size = array8_size(this_pyr, right);
+    mword left_size;
+    mword right_size;
 
-    array_cmp_size_check(left_size, right_size);
+    if(access_size == MWORD_ASIZE){
+        left_size  = UNITS_MTO8(size(left) - left_offset);
+        right_size = UNITS_MTO8(size(right));
+        length     = UNITS_MTO8(length);
+    }
+    else{ // access_size == BYTE_ASIZE
+        left_size  = array8_size(this_pyr, left) - left_offset;
+        right_size = array8_size(this_pyr, right);
+    }
 
-    return memcmp(left, right, left_size);
+    if( (length > left_size)
+            ||
+        (length > right_size)){
+        return 0;
+    }
+
+    return (memcmp(((char*)left + left_offset), right, length) == 0);
 
 }
 
@@ -533,6 +573,72 @@ int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_
     return result;
 
 }
+
+
+// Multi-word numerical comparison
+//
+int array_cmp_num(mword *left, mword *right){ // array_cmp_num#
+
+    mword acc = 0;
+    mword left_size  = size(left);
+    mword right_size = size(right);
+
+    int i = left_size-1;
+
+    if(left_size > right_size){
+        for(i=left_size-1; i>=right_size; i--){ // Ignore leading zeroes...
+            acc += (rdp(left,i) != 0);
+        }
+        if(acc != 0){
+            return 1;
+        }
+    }
+    else if(left_size < right_size){
+        for(i=right_size-1; i>=left_size; i--){ // Ignore leading zeroes...
+            acc += (rdp(right,i) != 0);
+        }
+        if(acc != 0){
+            return -1;
+        }
+    }
+
+    for(;i>=0;i--){
+        if(rdp(left,i) > rdp(right,i)){ 
+            return 1;
+        }
+        if(rdp(left,i) < rdp(right,i)){ 
+            return -1;
+        }
+    }
+
+    return 0; // They are numerically equal
+
+}
+
+
+
+// Multi-word signed numerical comparison
+//
+int array_cmp_num_signed(mword *left, mword *right){ // array_cmp_num_signed#
+
+    mword left_size  = size(left);
+    mword right_size = size(right);
+
+    mword left_sign  = rdv(left,left_size-1)   & MSB_MASK;
+    mword right_sign = rdv(right,right_size-1) & MSB_MASK;
+
+    if(left_sign && !right_sign){ // left is negative, right is non-negative
+        return -1;
+    }
+    else if(!left_sign && right_sign){ // left is non-negative, right is negative
+        return 1;
+    }
+    else{ // both left and right have the same sign
+        return array_cmp_num(left, right);
+    }
+
+}
+
 
 
 /*****************************************************************************
@@ -818,18 +924,19 @@ mword *array_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ /
     mword *result=nil;
 
     mword arr_size = size(array);
-    end = MAX(end, arr_size);
+    end = MIN(end, arr_size);
+    arr_size = end-start;
 
     if(end>start){
 
         if(is_val(array)){
-            result = mem_new_val(this_pyr, end-start, 0);
+            result = mem_new_val(this_pyr, arr_size, 0);
         }
         else{
-            result = mem_new_ptr(this_pyr, end-start);
+            result = mem_new_ptr(this_pyr, arr_size);
         }
 
-        array_move(this_pyr, result, 0, array, start, end-start, MWORD_ASIZE);
+        array_move(this_pyr, result, 0, array, start, arr_size, MWORD_ASIZE);
 
     }
 
@@ -889,470 +996,551 @@ void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src
 
 // ETC:
 
-// mword *array_heapify(pyr_cache *this_pyr, ...
-// mword *array_sort(pyr_cache *this_pyr, ...
-// mword *array_find_val(pyr_cache *this_pyr, ...
-// mword *array_find_ptr(pyr_cache *this_pyr, ...
-// mword *array_to_list(pyr_cache *this_pyr, ...
+// In-place mergesort of an array
+//
+void array_sort(pyr_cache *this_pyr, mword *array, sort_type st){ // array_sort#
+
+    array_sort_r(this_pyr, 0, size(array), array, st);
+
+}
 
 
 //
 //
-////
-////
-////
-////
-//mword _cxr1(pyr_cache *this_pyr, mword *arr, mword off){ // _cxr1#
-//
-//    mword mword_select = off / MWORD_BIT_SIZE;
-//    mword bit_offset   = off % MWORD_BIT_SIZE;
-//
-//    if(mword_select > (size(arr)-1)){
-//        _fatal("_cxr1 error");
-//    }
-//
-//    mword result = (rdv(arr,mword_select) & (1<<bit_offset)) >> bit_offset;
-//
-////    return (rdv(arr,mword_select) & (1<<bit_offset)) >> bit_offset;
-//    return result;
-//
-//}
-//
-//
-//// In-place mergesort of an array
-////
-//void _msort(pyr_cache *this_pyr, mword *array){ // _msort#
-//
-//    _rmsort(this_pyr, 0, size(array), array);
-//
-//}
-//
-//
-////
-////
-//void _rmsort(pyr_cache *this_pyr, mword left, mword right, mword *array){ // _rmsort#
-//
-//    // base case, array is already sorted
-//    if (right - left <= 1){
-//        return;
-//    }
-//
-//    // set up bounds to slice array into
-//    mword left_start  = left;
-//    mword left_end    = (left+right)/2;
-//    mword right_start = left_end;
-//    mword right_end   = right;
-//
-//    // sort left half
-//    _rmsort(this_pyr, left_start, left_end, array);
-//
-//    // sort right half
-//    _rmsort(this_pyr, right_start, right_end, array);
-//
-//    // merge sorted halves back together
-//    _merge(this_pyr, array, left_start, left_end, right_start, right_end);
-//
-//}
-//
-//
-////
-////
-//void _merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end){ // _merge#
-//
-//    // calculate temporary array sizes
-//    mword left_length  = left_end  - left_start;
-//    mword right_length = right_end - right_start;
-//
-//    // declare temporary arrays
-//    mword *left_half  = mem_new_val(this_pyr,left_length,0);
-//    mword *right_half = mem_new_val(this_pyr,right_length,0);
-//
-//    mword r = 0; // right_half index
-//    mword l = 0; // left_half index
-//    mword i = 0; // array index
-//
-//    // copy left half of array into left_half
-//    for (i = left_start; i < left_end; i++, l++){
-//        left_half[l] = array[i];
-//    }
-//
-//    // copy right half of array into right_half
-//    for (i = right_start; i < right_end; i++, r++){
-//        right_half[r] = array[i];
-//    }
-//
-//    // merge left_half and right_half back into array
-//    for ( i = left_start, r = 0, l = 0; l < left_length && r < right_length; i++){
-//
-//        if ( left_half[l] < right_half[r] ){
-//            array[i] = left_half[l++];
-//        }
-//        else {
-//            array[i] = right_half[r++];
-//        }
-//    }
-//
-//    // copy over leftovers of whichever temporary array hasn't finished
-//    for ( ; l < left_length; i++, l++){
-//        array[i] = left_half[l];
-//    }
-//
-//    for ( ; r < right_length; i++, r++){
-//        array[i] = right_half[r];
-//    }
-//
-//}
-//
-//
-//// In-place mergesort of a ptr-array
-////
-//void array_ptr_sort(pyr_cache *this_pyr, mword *array, mword *comparator){ // array_ptr_sort#
-//
-//    mword *temp;
-//
-//    if(is_val(array)){
-//
-//        array_rptr_sort(this_pyr, 0, size(array), array, nil, ARRAY_SORT_TYPE_LEAF);
-//
-//    }
-//    else{
-//
-//        temp = _cp(this_pyr, comparator);
-//        _append_direct(this_pyr, temp, _cons(this_pyr, _cp(this_pyr, bpdl_return_opcode), nil));
-//        array_rptr_sort(this_pyr, 0, size(array), array, lib_code_to_pyr(this_pyr, temp, this_pyr->soft_root), ARRAY_SORT_TYPE_NON_LEAF);
-//
-//    }
-//
-//}
-//
-//
-////
-////
-//void array_rptr_sort(pyr_cache *this_pyr, mword left, mword right, mword *array, mword *comparator, mword sort_type){ // array_rptr_sort#
-//
-//    // base case, array is already sorted
-//    if(right - left <= 1){
-//        return;
-//    }
-//
-//    // set up bounds to slice array into
-//    mword left_start  = left;
-//    mword left_end    = (left+right)/2;
-//    mword right_start = left_end;
-//    mword right_end   = right;
-//
-//    // sort left half
-//    array_rptr_sort(this_pyr, left_start, left_end, array, comparator, sort_type);
-//
-//    // sort right half
-//    array_rptr_sort(this_pyr, right_start, right_end, array, comparator, sort_type);
-//
-//    // merge sorted halves back together
-//    array_ptr_sort_merge(this_pyr, array, left_start, left_end, right_start, right_end, comparator, sort_type);
-//
-//}
-//
-//
-////
-////
-//void array_ptr_sort_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, mword *comparator, mword sort_type){ // array_ptr_sort_merge#
-//
-//    // calculate temporary array sizes
-//    mword left_length  = left_end  - left_start;
-//    mword right_length = right_end - right_start;
-//
-//    // declare temporary arrays
-//    mword *left_half  = _newin(this_pyr,left_length);
-//    mword *right_half = _newin(this_pyr,right_length);
-//
-//    mword r = 0; // right_half index
-//    mword l = 0; // left_half index
-//    mword i = 0; // array index
-//
-//    // copy left half of array into left_half
-////    for (i = left_start; i < left_end; i++, l++){
-////        left_half[l] = array[i];
-////    }
-////
-////    // copy right half of array into right_half
-////    for (i = right_start; i < right_end; i++, r++){
-////        right_half[r] = array[i];
-////    }
-//
-//    memcpy(left_half,  (array+left_start),  UNITS_MTO8(left_length));  // XXX WAIVER(memcpy) XXX //
-//    memcpy(right_half, (array+right_start), UNITS_MTO8(right_length)); // XXX WAIVER(memcpy) XXX //
-//
-//    mword *comparison_result;
-//    mword *arg_list;
-//
-//    if(sort_type == ARRAY_SORT_TYPE_LEAF){
-//
-//        // merge left_half and right_half back into array
-//        for( i = left_start, r = 0, l = 0; l < left_length && r < right_length; i++){
-//
-//            if ( left_half[l] < right_half[r] ){
-//                array[i] = left_half[l++];
-//            }
-//            else {
-//                array[i] = right_half[r++];
-//            }
-//
-//        }
-//
-//    }
-//    else{ // if(sort_type == ARRAY_SORT_TYPE_NON_LEAF)
-//
-//        // merge left_half and right_half back into array
-//        for( i = left_start, r = 0, l = 0; l < left_length && r < right_length; i++){
-//
-//            arg_list = _mkls(this_pyr, 2, left_half[l], right_half[r]);
-//            this_pyr->flags->MC_GC_INTERP_BLOCKING = FLAG_SET;
-//            comparison_result = lib_babelr(this_pyr, comparator, arg_list);
-//            this_pyr->flags->MC_GC_INTERP_BLOCKING = FLAG_CLR;
-//
-//            if( is_false(comparison_result) ){
-//                array[i] = left_half[l++];
-//            }
-//            else {
-//                array[i] = right_half[r++];
-//            }
-//
-//        }
-//
-//    }
-//
-//    if(l<left_length){
-//        memcpy((array+i), (left_half+l), UNITS_MTO8(left_length-l));   // XXX WAIVER(memcpy) XXX //
-//    }
-//
-//    if(r<right_length){
-//        memcpy((array+i), (right_half+r), UNITS_MTO8(right_length-r)); // XXX WAIVER(memcpy) XXX //
-//    }
-//
-//}
-//
-//
-//
-//
-//
-//
-///*****************************************************************************
-// *                                                                           *
-// *                                ARRAY-M                                    *
-// *                                                                           *
-// ****************************************************************************/
-//
-//
-////
-////
-//// FIXME: cut --> reimplement as two _slice's (left and right)
-//
-//
-////
-////
-//mword *_arcat(pyr_cache *this_pyr, mword *left, mword *right){ // _arcat#
-//
-//    mword *result;
-//
-//    mword size_left  = size(left);
-//    mword size_right = size(right);
-//
-//    if      ( is_val(right)  &&  is_val(left) ){
-//        result = mem_new_val(this_pyr,  size_left + size_right, 0 );
-//    }
-//    else if ( is_ptr(right)  &&  is_ptr(left) ){
-//        result = _newin(this_pyr,  size_left + size_right );
-//    }
-//    else{ //FIXME: Throw an exception
-//        _fatal("cannot concatenate leaf array and interior array");
-//    }
-//
-//    mword i,j;
-//    for(    i=0;
-//            i<size_left;
-//            i++
-//        ){
-//
-//        ldp((mword*)result,i) = rdp(left,i);
-//
-//    }
-//
-//    for(    i=0,j=size_left;
-//            i<size_right;
-//            i++,j++
-//        ){
-//
-//        ldp(result,j) = rdp(right,i);
-//
-//    }
-//
-//    return result;
-//
-//}
-//
-//
-////// Babelized wrapper around memmove()
-//////
-////void move(mword *dest, mword dest_index, mword *src, mword src_index, mword size){  // move#
-////
-////    mword  src_size = size(src );
-////    mword dest_size = size(dest);
-////
-////     src_index =  src_index %  src_size;
-////    dest_index = dest_index % dest_size;
-////
-////    mword  src_headroom = ( src_size -  src_index);
-////    mword dest_headroom = (dest_size - dest_index);
-////
-////    mword size_limit = (src_headroom < dest_headroom) ? src_headroom : dest_headroom;
-////
-////    size = (size < size_limit) ? size : size_limit;
-////
-////    //void * memmove( void * destination, const void * source, size_t num );
-////    memmove( dest+dest_index, src+src_index, (size_t)UNITS_MTO8(size) );
-////
-////}
-//
-//
-////
-////
-//mword *_ar2bytes(pyr_cache *this_pyr, mword *array){ // _ar2bytes#
-//
-//    if(is_nil(array)){
-//        return mem_new_val(this_pyr, 1, 0);
-//    }
-//
-//    mword arsize = size(array);
-//
-//    char *result = (char*)_newstr(this_pyr, arsize, ' ');
-//
-//    int i;
-//    for(i=0;i<arsize;i++){
-//        result[i] = (rdv(array,i) & 0xff);
-//    }
-//
-//    return (mword *)result;
-//
-//}
-//
-//
-//// XXX The return-value from this function contains unsafe pointers!!! XXX
-//// XXX internal interp use ONLY                                        XXX
-//// XXX If you pass tag=nil, returns ALL tags in bs                     XXX
-//// XXX PERF: A _tags2ar (like _bs2ar) would be more efficient          XXX
-////
-//mword *array_find_val(pyr_cache *this_pyr, mword *bs, mword *val){ // array_find_val#
-//
-//    mword *span_array     = _bs2ar(this_pyr, bs);
-//    mword size_span_array = size(span_array);
-//    mword size_inte;
-//    mword *val_list       = nil;
-//    mword *curr_span_elem;
-//    mword *curr_inte_elem;
-//
-//
-////_dump(span_array);
-//
-//    int i,j;
-//    for(i=0; i<size_span_array; i++){
-//
-//        curr_span_elem = rdp(span_array,i);
-//
-//        if(is_ptr(curr_span_elem)){ // check each element
-//
-//            size_inte = size(curr_span_elem);
-//
-//            for(j=0;j<size_inte;j++){
-//
-//                curr_inte_elem = rdp(curr_span_elem,j);
-//
-//                if(is_nil(curr_inte_elem)){
-//                    continue;
-//                }
-//
-//                if(is_val(curr_inte_elem)){
-//
-//                    if( !_arcmp(curr_inte_elem, val) ){
-//
-//                        // push onto val_list
-//                        if(is_nil(val_list)){
-//                            val_list = _cons(this_pyr, (curr_span_elem+j), nil);
-//                        }
-//                        else{
-//                            _unshift(this_pyr, val_list, (curr_span_elem+j));
-//                        }
-//
-//                    }
-//
-//                }
-//
-//            }
-//
-//        }
-//
-//    }
-//
-//    return val_list;
-//
-//}
-//
-//
-//// XXX The return-value from this function contains unsafe pointers!!! XXX
-//// XXX internal interp use ONLY                                        XXX
-//// XXX If you pass tag=nil, returns ALL tags in bs                     XXX
-//// XXX PERF: A _tags2ar (like _bs2ar) would be more efficient          XXX
-////
-//mword *array_find_ptr(pyr_cache *this_pyr, mword *bs, mword *ptr){ // array_find_ptr#
-//
-//    mword *span_array     = _bs2ar(this_pyr, bs);
-//    mword size_span_array = size(span_array);
-//    mword size_inte;
-//    mword *ptr_list       = nil;
-//    mword *curr_span_elem;
-//    mword *curr_inte_elem;
-//
-//    int i,j;
-//    for(i=0; i<size_span_array; i++){
-//
-//        curr_span_elem = rdp(span_array,i);
-//
-//        if(is_ptr(curr_span_elem)){ // check each element
-//
-//            size_inte = size(curr_span_elem);
-//
-//            for(j=0;j<size_inte;j++){
-//
-//                curr_inte_elem = rdp(curr_span_elem,j);
-//
-//                if(is_nil(curr_inte_elem)){
-//                    continue;
-//                }
-//
-//                if(is_ptr(curr_inte_elem)){
-//
-//                    if( !_arcmp(curr_inte_elem, ptr) ){
-//
-//                        // push onto ptr_list
-//                        if(is_nil(ptr_list)){
-//                            ptr_list = _cons(this_pyr, (curr_span_elem+j), nil);
-//                        }
-//                        else{
-//                            _unshift(this_pyr, ptr_list, (curr_span_elem+j));
-//                        }
-//
-//                    }
-//
-//                }
-//
-//            }
-//
-//        }
-//
-//    }
-//
-//    return ptr_list;
-//
-//}
+void array_sort_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st){ // array_sort_r#
 
-// Clayton Bauman 2016
+    // base case, array is already sorted
+    if (right - left <= 1){
+        return;
+    }
+
+    // set up bounds to slice array into
+    mword left_start  = left;
+    mword left_end    = (left+right)/2;
+    mword right_start = left_end;
+    mword right_end   = right;
+
+    // sort left half
+    array_sort_r(this_pyr, left_start, left_end, array, st);
+
+    // sort right half
+    array_sort_r(this_pyr, right_start, right_end, array, st);
+
+    // merge sorted halves back together
+    array_merge(this_pyr, array, left_start, left_end, right_start, right_end, st);
+
+}
+
+
+// XXX smoke-tested
+//
+void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, sort_type st){ // array_merge#
+
+    // calculate temporary array sizes
+    mword left_length  = left_end  - left_start;
+    mword right_length = right_end - right_start;
+
+    // declare temporary arrays
+    mword *left_half  = mem_new_val(this_pyr,left_length,0);
+    mword *right_half = mem_new_val(this_pyr,right_length,0);
+
+    mword r = 0; // right_half index
+    mword l = 0; // left_half index
+    mword i = 0; // array index
+
+    // copy left half of array into left_half
+    for(i = left_start; i<left_end; i++, l++){
+        left_half[l] = array[i];
+    }
+
+    // copy right half of array into right_half
+    for(i = right_start; i<right_end; i++, r++){
+        right_half[r] = array[i];
+    }
+
+    // merge left_half and right_half back into array
+    if(is_val(array) || (st == VAL)){ // st == VAL means "sort ptr-array as a val-array"
+        for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+            if(left_half[l] < right_half[r]){
+                array[i] = left_half[l++];
+            }
+            else{
+                array[i] = right_half[r++];
+            }
+        }
+    }
+    else{ // array-of-pairs
+        if(st == UNSIGNED){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if(val_lt(key_AOP2(left_half,l), key_AOP2(right_half,r))){ // numeric
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else if(st == SIGNED){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if((array_cmp_num_signed(key_AOP2(left_half,l), key_AOP2(right_half,r)) < 0)){
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else if(st == ALPHA_MWORD){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if((array_cmp_alpha(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), MWORD_ASIZE) < 0)){
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else if(st == ALPHA_BYTE){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if((array_cmp_alpha(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), BYTE_ASIZE) < 0)){
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else if(st == LEX_MWORD){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if((array_cmp_lex(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), MWORD_ASIZE) < 0)){
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else if(st == LEX_BYTE){
+            for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
+                if((array_cmp_lex(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), BYTE_ASIZE) < 0)){
+                    array[i] = left_half[l++];
+                }
+                else{
+                    array[i] = right_half[r++];
+                }
+            }
+        }
+        else{
+            _pigs_fly;
+        }
+    }
+
+    // copy over leftovers of whichever temporary array hasn't finished
+    for(; l<left_length; i++, l++){
+        array[i] = left_half[l];
+    }
+
+    for (; r<right_length; i++, r++){
+        array[i] = right_half[r];
+    }
+
+}
+
+
+// XXX Can this be made into a macro?
+//
+void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size){ // array_trunc#
+
+    if(is_val(operand)){
+        sfield(operand) = (new_size*MWORD_SIZE);
+    }
+    else if(is_ptr(operand)){ //is_ptr
+        sfield(operand) = (int)-1*(new_size*MWORD_SIZE);
+    }
+    //tptrs can't be trunc'd
+
+}
+
+
+//
+//
+mword *array_to_string(pyr_cache *this_pyr, mword *array){ // array_to_string#
+
+    if(is_nil(array)){
+        return mem_new_val(this_pyr, 1, 0);
+    }
+
+    mword *result;
+    #define MAX_UTF8_CHAR_SIZE 4
+
+    mword arsize = size(array);
+    int temp_buffer_size = MAX_UTF8_CHAR_SIZE * (arsize);
+
+    //free'd below
+    char *temp_buffer = mem_sys_alloc( temp_buffer_size );
+    
+    mword utf8_length = (mword)u8_toutf8(temp_buffer, temp_buffer_size, (uint32_t *)array, arsize) - 1;
+
+    mword arlength = (utf8_length / 4) + 1;
+
+    if(utf8_length % 4){
+        arlength++;
+    }
+
+    result = mem_new_val(this_pyr, arlength,0);
+    memcpy(result, temp_buffer, utf8_length);
+    mem_sys_free(temp_buffer);
+
+    ldv(result,arlength-1) = array8_enc_align(this_pyr, utf8_length);
+
+    return result;
+
+}
+
+
+// XXX The return-value from this function contains unsafe pointers!!! XXX
+// XXX internal interp use ONLY                                        XXX
+// XXX If you pass tag=nil, returns ALL tags in bs                     XXX
+// XXX PERF: A _tags2ar (like bstruct_to_array) would be more efficient          XXX
+//
+mword *array_find_val(pyr_cache *this_pyr, mword *bs, mword *val){ // array_find_val#
+
+    mword *span_array     = bstruct_to_array(this_pyr, bs);
+    mword size_span_array = size(span_array);
+    mword size_ptr;
+    mword *val_list       = nil;
+    mword *curr_span_elem;
+    mword *curr_ptr_elem;
+
+    int i,j;
+    for(i=0; i<size_span_array; i++){
+
+        curr_span_elem = rdp(span_array,i);
+
+        if(is_ptr(curr_span_elem)){ // check each element
+
+            size_ptr = size(curr_span_elem);
+
+            for(j=0;j<size_ptr;j++){
+
+                curr_ptr_elem = rdp(curr_span_elem,j);
+
+                if(is_nil(curr_ptr_elem)){
+                    continue;
+                }
+
+                if(is_val(curr_ptr_elem)){
+
+                    if( !array_cmp_lex(this_pyr, curr_ptr_elem, val, MWORD_ASIZE) ){
+
+                        // push onto val_list
+                        if(is_nil(val_list)){
+                            val_list = _cons(this_pyr, (curr_span_elem+j), nil);
+                        }
+                        else{
+                            list_unshift(this_pyr, val_list, (curr_span_elem+j));
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return val_list;
+
+}
+
+
+// XXX The return-value from this function contains unsafe pointers!!! XXX
+// XXX internal interp use ONLY                                        XXX
+// XXX If you pass tag=nil, returns ALL tags in bs                     XXX
+// XXX PERF: A _tags2ar (like bstruct_to_array) would be more efficient          XXX
+//
+mword *array_find_ptr(pyr_cache *this_pyr, mword *bs, mword *ptr){ // array_find_ptr#
+
+    mword *span_array     = bstruct_to_array(this_pyr, bs);
+    mword size_span_array = size(span_array);
+    mword size_ptr;
+    mword *ptr_list       = nil;
+    mword *curr_span_elem;
+    mword *curr_ptr_elem;
+
+    int i,j;
+    for(i=0; i<size_span_array; i++){
+
+        curr_span_elem = rdp(span_array,i);
+
+        if(is_ptr(curr_span_elem)){ // check each element
+
+            size_ptr = size(curr_span_elem);
+
+            for(j=0;j<size_ptr;j++){
+
+                curr_ptr_elem = rdp(curr_span_elem,j);
+
+                if(is_nil(curr_ptr_elem)){
+                    continue;
+                }
+
+                if(is_ptr(curr_ptr_elem)){
+
+                    if( !array_cmp_lex(this_pyr, curr_ptr_elem, ptr, MWORD_ASIZE) ){
+
+                        // push onto ptr_list
+                        if(is_nil(ptr_list)){
+                            ptr_list = _cons(this_pyr, (curr_span_elem+j), nil);
+                        }
+                        else{
+                            list_unshift(this_pyr, ptr_list, (curr_span_elem+j));
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    }
+
+    return ptr_list;
+
+}
+
+
+//
+//
+mword *array_to_list(pyr_cache *this_pyr, mword *arr){ // array_to_list#
+
+    mword *last_cons = nil;
+    int i;
+    mword *entry;
+
+    if(is_ptr(arr)){
+        for(i=size(arr)-1;i>=0;i--){
+            last_cons = _cons(this_pyr, rdp(arr,i),last_cons);
+        }
+    }
+    else{
+        for(i=size(arr)-1;i>=0;i--){
+            entry = mem_new_val(this_pyr, 1, 0);
+            *entry = rdv(arr,i);
+            last_cons = _cons(this_pyr, entry,last_cons);
+        }
+    }
+
+    return last_cons;
+
+}
+
+
+//
+//
+void array_build_max_heap(mword *array){
+
+    mword array_size = size(array);
+    int i = array_size;
+    i = (i%2) ? (i/2) : ((i/2)-1);
+
+    for(;i>=0;i--){
+        array_max_heapify(array, i, array_size);
+    }
+
+}
+
+
+//
+//
+void array_max_heapify(mword *array, mword i, mword array_size){
+
+    mword left  = 2*i+1;
+    mword right = 2*i+2;
+    mword largest = i;
+
+    mword *temp;
+
+    if( (left < array_size)
+            && 
+        val_gt(key_AOP2(array,left), key_AOP2(array,largest)) ){
+        largest = left;
+    }
+
+    if( (right < array_size) 
+            && 
+        val_gt(key_AOP2(array,right), key_AOP2(array,largest)) ){
+        largest = right;
+    }
+
+    if(largest != i){
+        temp = rdp(array,i);
+        ldp(array,i) = rdp(array,largest);
+        ldp(array,largest) = temp;
+        array_max_heapify(array, largest, array_size);
+    }
+
+}
+
+
+// array must be in sorted order (non-decreasing)
+// XXX smoke-tested ONLY XXX
+//
+mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type st){ // array_search#
+
+    int array_size = size(array);
+    int i;
+
+    mword target_val;
+
+    if(array_size < 4){ // linear search
+        if(is_val(array) || (st == VAL)){
+            target_val = vcar(target);
+            for(i=0; i<array_size; i++){
+                if(rdv(array,i) == target_val){
+                    return i;
+                }
+            }
+            return -1; // we didn't find what you were looking for...
+        }
+        else{ // is_ptr(array)
+            if(st == SIGNED || st == UNSIGNED){ // numeric
+                for(i=0; i<array_size; i++){
+                    if(array_eq_num(key_AOP2(array,i), target)){
+                        return i;
+                    }
+                }
+            }
+            else if(st == ALPHA_MWORD || st == LEX_MWORD){
+                for(i=0; i<array_size; i++){
+                    if(array_eq(this_pyr, key_AOP2(array,i), target)){
+                        return i;
+                    }
+                }
+            }
+            else if(st == ALPHA_BYTE || st == LEX_BYTE){
+                for(i=0; i<array_size; i++){
+                    if(array8_eq(this_pyr, key_AOP2(array,i), target)){
+                        return i;
+                    }
+                }
+            }
+            return -1; // we didn't find what you were looking for...
+        }
+    }
+
+    int shift       =   array_size >> 1;
+    int guess_index =   shift;
+        shift       >>= 1;
+
+    mword last_guess_index = -1;
+
+    if(is_val(array) || (st == VAL)){
+        mword guess;
+        target_val = vcar(target);
+        while(1){
+            if(guess_index == last_guess_index
+                    || guess_index < 0
+                    || guess_index >= array_size){
+                break;
+            }
+            guess = rdv(array,guess_index);
+            last_guess_index = guess_index;
+            if(guess < target_val){
+                guess_index += shift;
+            }
+            else if(guess > target_val){
+                guess_index -= shift;
+            }
+            else if(guess == target_val){
+                return guess_index;
+            }
+            shift >>= 1;
+            shift = (shift == 0) ? 1 : shift;
+        }
+        return -1; // we didn't find what you were looking for...
+    }
+    else{
+        mword *guess;
+        if(st == SIGNED || st == UNSIGNED){ // numeric
+            while(1){
+                if(guess_index == last_guess_index
+                        || guess_index < 0
+                        || guess_index >= array_size){
+                    break;
+                }
+                guess = key_AOP2(array,guess_index);
+                last_guess_index = guess_index;
+                if(array_lt_num(guess, target)){
+                    guess_index += shift;
+                }
+                else if(array_gt_num(guess, target)){
+                    guess_index -= shift;
+                }
+                else if(array_eq_num(guess, target)){
+                    return guess_index;
+                }
+                shift >>= 1;
+                shift = (shift == 0) ? 1 : shift;
+            }
+        }
+        else if(st == ALPHA_MWORD || st == LEX_MWORD){
+            while(1){
+                if(guess_index == last_guess_index
+                        || guess_index < 0
+                        || guess_index >= array_size){
+                    break;
+                }
+                guess = key_AOP2(array,guess_index);
+                last_guess_index = guess_index;
+                if(array_lt(this_pyr, guess, target)){
+                    guess_index += shift;
+                }
+                else if(array_gt(this_pyr, guess, target)){
+                    guess_index -= shift;
+                }
+                else if(array_eq(this_pyr, guess, target)){
+                    return guess_index;
+                }
+                shift >>= 1;
+                shift = (shift == 0) ? 1 : shift;
+            }
+        }
+        else if(st == ALPHA_BYTE || st == LEX_BYTE){
+            while(1){
+                if(guess_index == last_guess_index
+                        || guess_index < 0
+                        || guess_index >= array_size){
+                    break;
+                }
+                guess = key_AOP2(array,guess_index);
+                last_guess_index = guess_index;
+                if(array8_lt(this_pyr, guess, target)){
+                    guess_index += shift;
+                }
+                else if(array8_gt(this_pyr, guess, target)){
+                    guess_index -= shift;
+                }
+                else if(array8_eq(this_pyr, guess, target)){
+                    return guess_index;
+                }
+                shift >>= 1;
+                shift = (shift == 0) ? 1 : shift;
+            }
+        }
+        return -1; // we didn't find what you were looking for...
+    }
+
+    _pigs_fly;
+
+    return -1; // we didn't find what you were looking for...
+
+}
+
+
+// Clayton Bauman 2017
 

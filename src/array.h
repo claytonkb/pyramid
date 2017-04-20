@@ -9,6 +9,7 @@
 
 #define array8_aligned(x) ((x) % BITS_PER_BYTE == 0)
 
+mword *array_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 mword *array_th(pyr_cache *this_pyr, mword *bs, mword entry);
 
 mword array8_read(mword *array, mword offset);
@@ -38,9 +39,31 @@ mword *array8_cat(pyr_cache *this_pyr, mword *left, mword *right);
 mword *array_cat(pyr_cache *this_pyr, mword *left, mword *right);
 mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right);
 
-int array_cmp_lex(mword *left, mword *right);
-int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
+int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
+int array_ncmp(pyr_cache *this_pyr, mword *left, mword left_offset, mword *right, mword length, access_size_sel access_size);
+
+//int array_cmp_lex(mword *left, mword *right);
+//int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
+
+#define array_eq_num(l, r)  (array_cmp_num(l, r) == 0)
+#define array_lt_num(l, r)  (array_cmp_num(l, r) <  0)
+#define array_gt_num(l, r)  (array_cmp_num(l, r) >  0)
+
+#define array_eq(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) == 0)
+#define array8_eq(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  == 0)
+
+#define array_lt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) <  0)
+#define array8_lt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  <  0)
+
+#define array_gt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) >  0)
+#define array8_gt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  >  0)
+
 int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
+//int array_cmp(mword *left, mword *right);
+int array_cmp_num(mword *left, mword *right);
+int array_cmp_num_signed(mword *left, mword *right);
+
+//#define array_cmp(x, y) array_cmp_lex(x, y) // array_cmp#
 
 void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword src_index, mword size_arg, access_size_sel access_size);
 void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg);
@@ -52,11 +75,28 @@ void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src,
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
 
-#define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
-#define  _arcmp(x,y,z)  array_cmp_lex(x, y, z)
+void array_sort(pyr_cache *this_pyr, mword *array, sort_type st);
+void array_sort_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st);
+void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, sort_type st);
 
-#define _areq8(x,y,z) (array8_cmp_lex(x, y, z) == 0)
-#define  _areq(x,y,z)  (array_cmp_lex(x, y, z) == 0)
+void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
+
+mword *array_to_string(pyr_cache *this_pyr, mword *array);
+
+mword *array_find_val(pyr_cache *this_pyr, mword *bs, mword *val);
+mword *array_find_ptr(pyr_cache *this_pyr, mword *bs, mword *ptr);
+mword *array_to_list(pyr_cache *this_pyr, mword *arr);
+
+void array_build_max_heap(mword *array);
+void array_max_heapify(mword *array, mword i, mword array_size);
+
+mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type st);
+
+//#define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
+//#define  _arcmp(x,y)  array_cmp_lex(x, y)
+//
+//#define _areq8(x,y,z) (array8_cmp_lex(x, y, z) == 0)
+//#define  _areq(x,y)  (array_cmp_lex(x, y) == 0)
 
 //mword  _alignment_word8(pyr_cache *this_pyr, mword size8);
 ////void   _trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
@@ -117,5 +157,5 @@ void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src
 
 #endif //ARRAY_H
 
-// Clayton Bauman 2016
+// Clayton Bauman 2017
 

@@ -6,7 +6,7 @@
 
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp);
 
-void interp_init_once(void);
+void interp_init_once(pyr_cache *this_pyr);
 void interp_init_zero_hash(void);
 void interp_init_nil_mem(void);
 
@@ -18,17 +18,16 @@ pyr_cache *interp_init_flags(pyr_cache *this_pyr);
 pyr_cache *interp_init_limits(pyr_cache *this_pyr);
 pyr_cache *interp_init_privileges(pyr_cache *this_pyr);
 
-
 void interp_exit(pyr_cache *this_pyr);
 
+void interp_init_symbols(pyr_cache *this_pyr);
+
 mword *interp_load_root_bvm(pyr_cache *this_pyr);
+mword *interp_load_dev_overrides(pyr_cache *this_pyr);
 
 mword *interp_init_load_from_file(pyr_cache *this_pyr, char *filename);
-FILE *io_open_file(pyr_cache *this_pyr, mword *filename);
-mword io_file_size(pyr_cache *this_pyr, FILE *file);
-pyr_cache *io_close_file(pyr_cache *this_pyr, FILE *file);
 
 #endif //INTERP_H
 
-// Clayton Bauman 2013
+// Clayton Bauman 2017
 

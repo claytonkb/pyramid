@@ -6,6 +6,9 @@
 #include "mem.h"
 #include "pearson.h"
 #include "util.h"
+#include "io.h"
+#include "trie.h"
+#include "string.h"
 
 
 //
@@ -45,7 +48,7 @@ _reset_trace;
     clock_t wall_clock_time;
     wall_clock_time = clock();
 
-    interp_init_once();
+    interp_init_once(this_pyr);
 
     mword *golden_nil = interp_init_golden_nil();
 
@@ -67,7 +70,9 @@ _reset_trace;
 
     interp_reinit(this_pyr, golden_nil, argc, argv, envp, &cat_ex);
 
+#ifdef DEV_MODE
     util_bare_metal_prompt(this_pyr, nil);
+#endif
 
 //    _pre_interp(this_pyr);
 //
@@ -88,11 +93,14 @@ _reset_trace;
 
 //
 //
-void interp_init_once(void){ // interp_init_once#
+void interp_init_once(pyr_cache *this_pyr){ // interp_init_once#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
+
+    global_irt = malloc(sizeof(interp_runtime)); // XXX WAIVER(malloc) XXX //
+    global_irt->tags = malloc(sizeof(interp_tags));  // XXX WAIVER(malloc) XXX //
 
     interp_init_zero_hash();
     interp_init_nil_mem();
@@ -109,10 +117,10 @@ void interp_init_zero_hash(void){ // interp_init_zero_hash#
 _reset_trace;
 #endif
 
-    GLOBAL_TAG_ZERO_HASH = malloc(UNITS_MTO8(HASH_ALLOC_SIZE)); // XXX WAIVER(malloc) XXX // Cannot use mem_sys_alloc before mem_non_gc_new
-    ldv(GLOBAL_TAG_ZERO_HASH,0) = UNITS_MTO8(HASH_SIZE);
-    GLOBAL_TAG_ZERO_HASH++;
-    memset((char*)GLOBAL_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
+    global_irt->tags->PYR_TAG_ZERO_HASH = malloc(UNITS_MTO8(HASH_ALLOC_SIZE)); // XXX WAIVER(malloc) XXX // Cannot use mem_sys_alloc before mem_non_gc_new
+    ldv(global_irt->tags->PYR_TAG_ZERO_HASH ,0) = UNITS_MTO8(HASH_SIZE);
+    global_irt->tags->PYR_TAG_ZERO_HASH++;
+    memset((char*)global_irt->tags->PYR_TAG_ZERO_HASH, 0, UNITS_MTO8(HASH_SIZE));
 
 }
 
@@ -170,7 +178,12 @@ _reset_trace;
     // init this_pyr->interp  //
     ////////////////////////////
 
+    global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
+
     this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_state)); // XXX WAIVER(mem_sys_alloc) XXX //
+//    this_pyr->interp->tags      = mem_non_gc_alloc(sizeof(interp_tags));  // XXX WAIVER(mem_sys_alloc) XXX //
+//    this_pyr->interp->symbols   = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     this_pyr->interp->cat_ex    = cat_ex;
 
     this_pyr->interp->op_restart        = (jmp_buf*)UNINIT_VAL;
@@ -232,11 +245,28 @@ _reset_trace;
     this_pyr->interp->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
 
-#define X(a, b) a = HASHC(this_pyr, b);
+//#define X(a, b) a = HASHC(this_pyr, b);
+//PYR_TAGS    
+//#undef X
+
+//#define X(a, b) this_pyr->interp->tags->a = HASHC(this_pyr, b);
+
+#define X(a, b) global_irt->tags->a = HASHC(this_pyr, b);
 PYR_TAGS    
 #undef X
 
+#define X(a, b) global_irt->strings->a = string_c2b(this_pyr, b, 1000); 
+PYR_TAGS    
+#undef X
+
+    interp_init_symbols(this_pyr);
+
     this_pyr->self = interp_load_root_bvm(this_pyr);
+
+    global_dev_overrides = interp_load_dev_overrides(this_pyr);
+    global_dev_overrides++;
+
+    global_irt->fs = trie_new(this_pyr);
 
     this_pyr->flags->INTERP_BOOT_IN_PROGRESS = CLR;
 
@@ -372,7 +402,9 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
     mem_non_gc_teardown();
 
     free(nil-1);
-    free(GLOBAL_TAG_ZERO_HASH-1);
+    free(global_irt->tags->PYR_TAG_ZERO_HASH);
+    free(global_irt->tags);
+    free(global_irt);
 
 #ifdef DEV_MODE
     _say("PYRAMID: exiting normally");
@@ -383,9 +415,48 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
 
 //
 //
-mword *interp_load_root_bvm(pyr_cache *this_pyr){
+void interp_init_symbols(pyr_cache *this_pyr){ // interp_init_symbols#
 
-    return interp_init_load_from_file(this_pyr, "rt/root.bbl");
+    // XXX Unless MC_ALLOC_NON_GC is set, this could break XXX
+    global_irt->symbols->SEXPR_IGNORE_SYMBOL   = _mkval( this_pyr, 6, 0x69, 0x67, 0x6e, 0x6f, 0x72, 0x65 );
+    global_irt->symbols->SEXPR_QUOTE_SYMBOL    = _mkval( this_pyr, 5, 0x71, 0x75, 0x6f, 0x74, 0x65 );
+    global_irt->symbols->SEXPR_SEXPR_SYMBOL    = _mkval( this_pyr, 5, 0x73, 0x65, 0x78, 0x70, 0x72 );
+    global_irt->symbols->SEXPR_BYTES_SYMBOL    = _mkval( this_pyr, 5, 0x62, 0x79, 0x74, 0x65, 0x73 );
+    global_irt->symbols->SEXPR_LIST_SYMBOL     = _mkval( this_pyr, 4, 0x6c, 0x69, 0x73, 0x74 );
+    global_irt->symbols->SEXPR_CODE_SYMBOL     = _mkval( this_pyr, 4, 0x63, 0x6f, 0x64, 0x65 );
+    global_irt->symbols->SEXPR_HASH_SYMBOL     = _mkval( this_pyr, 4, 0x68, 0x61, 0x73, 0x68 );
+    global_irt->symbols->SEXPR_OPER_SYMBOL     = _mkval( this_pyr, 4, 0x6f, 0x70, 0x65, 0x72 );
+    global_irt->symbols->SEXPR_TPTR_SYMBOL     = _mkval( this_pyr, 4, 0x74, 0x70, 0x74, 0x72 );
+    global_irt->symbols->SEXPR_VAL_SYMBOL      = _mkval( this_pyr, 3, 0x76, 0x61, 0x6c );
+    global_irt->symbols->SEXPR_PTR_SYMBOL      = _mkval( this_pyr, 3, 0x70, 0x74, 0x72 );
+    global_irt->symbols->SEXPR_TAG_SYMBOL      = _mkval( this_pyr, 3, 0x74, 0x61, 0x67 );
+    global_irt->symbols->SEXPR_REF_SYMBOL      = _mkval( this_pyr, 3, 0x72, 0x65, 0x66 );
+    global_irt->symbols->SEXPR_NIL_SYMBOL      = _mkval( this_pyr, 3, 0x6e, 0x69, 0x6c );
+    global_irt->symbols->SEXPR_SYM_SYMBOL      = _mkval( this_pyr, 3, 0x73, 0x79, 0x6d );
+    global_irt->symbols->SEXPR_BS_SYMBOL       = _mkval( this_pyr, 2, 0x62, 0x73 );
+    global_irt->symbols->SEXPR_QW_SYMBOL       = _mkval( this_pyr, 2, 0x71, 0x77 );
+    global_irt->symbols->SEXPR_SQUOTE_SYMBOL   = _mkval( this_pyr, 1, 0x27 );
+    global_irt->symbols->SEXPR_DQUOTE_SYMBOL   = _mkval( this_pyr, 1, 0x22 );
+
+}
+
+
+//
+//
+mword *interp_load_root_bvm(pyr_cache *this_pyr){ // interp_load_root_bvm#
+
+//    return interp_init_load_from_file(this_pyr, "rt/root.bbl");
+    return io_slurp8(this_pyr, "rt/root.bbl");
+
+}
+
+
+//
+//
+mword *interp_load_dev_overrides(pyr_cache *this_pyr){ // interp_load_dev_overrides#
+
+//    return interp_init_load_from_file(this_pyr, "dev/overrides.bbl");
+    return io_slurp8(this_pyr, "dev/overrides.bbl");
 
 }
 
@@ -398,7 +469,7 @@ mword *interp_init_load_from_file(pyr_cache *this_pyr, char *filename){ // inter
 _trace;
 #endif
 
-    FILE *f = io_open_file(this_pyr, (mword*)filename);
+    FILE *f = io_open_file(this_pyr, (mword*)filename, "rb");
     mword file_size = io_file_size(this_pyr, f);
 
     mword *file_buffer = _newstr(this_pyr, file_size, ' ');
@@ -410,50 +481,6 @@ _trace;
     io_close_file(this_pyr, f);
 
     return file_buffer;
-
-}
-
-
-//
-//
-FILE *io_open_file(pyr_cache *this_pyr, mword *filename){ // io_open_file#
-
-    FILE*  file;
-
-//    char *bfilename = (char*)string_b2c(this_pyr, filename);
-
-    file = fopen( (char*)filename, "rb" );
-
-    // FIXME: set a flag instead? cat_ex is overkill...
-    if(file==NULL){ 
-        _fatal((char*)filename);
-    }
-
-    return file;
-
-}
-
-
-//
-//
-mword io_file_size(pyr_cache *this_pyr, FILE *file){ // io_file_size#
-
-    fseek(file, 0L, SEEK_END);
-    mword size = ftell(file);
-    rewind(file);
-
-    return size;
-
-}
-
-
-//
-//
-pyr_cache *io_close_file(pyr_cache *this_pyr, FILE *file){ // io_close_file#
-
-    fclose(file); // Return value can be checked to see if there were any issues closing the file...
-
-    return this_pyr;
 
 }
 

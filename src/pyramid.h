@@ -421,7 +421,7 @@ typedef struct { // interp_runtime
  *                                                                           *
  ****************************************************************************/
 
-//mword *nil;                                     // nil#
+//mword *nil;                                   // nil#
 interp_runtime *global_irt;                     // global_irt#
 #define nil global_irt->nil
 
@@ -444,7 +444,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  ****************************************************************************/
 
 /////// sfield accessor ///////
-
 #define sfield(x) (*((mword*)x-1))      // sfield#
 
 /////// pointer-deref accessors ///////
@@ -615,9 +614,7 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  *                                                                           *
  ****************************************************************************/
 
-//#define X(a,b) mword *a;
-//PYR_TAGS
-//#undef X
+
 
 /*****************************************************************************
  *                                                                           *

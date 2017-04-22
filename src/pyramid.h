@@ -359,6 +359,22 @@ typedef struct { // pyr_cache#
 
     interp_state *interp;
 
+    ///////////////////////////////
+    // PYRAMID VIRTUAL PROCESSOR //
+    ///////////////////////////////
+
+    //dispatcher      --> points to the dispatch_table (all builtins)
+    //code_table      --> points to the code_table (all user code)
+    //frame_ptr       --> (see above)
+    //rstack_ptr      --> (see above)
+    //dstack_cache    --> working operand stack
+    //register_file   --> working registers
+    //mem_alloc       --> handles heap allocation
+    //thread_pool     --> list of free (available) threads
+    //stream_table    --> open I/O streams
+    //file_table      --> open files (memory-mapped)
+    //flags           --> processor flags
+
 } pyr_cache;
 
 

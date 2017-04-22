@@ -368,5 +368,41 @@ mword *sexpr_from_string(pyr_cache *this_pyr, mword *bstring){ // sexpr_from_str
 }
 
 
+////
+////
+//mword *sexpr_array_from_string(pyr_cache *this_pyr, mword *bstring){ // sexpr_array_from_string#
+//
+//    mword index=0;
+//    mword *sexpr = _pre_sexpr(this_pyr, string_to_array(this_pyr, bstring), &index);
+//
+//    return sexpr_array_from_string_r(this_pyr, sexpr, nil, nil);
+//
+//}
+//
+//
+//mword *sexpr_array_from_string_r(pyr_cache *this_pyr, mword *sexpr, mword *sexpr_array, mword *sexpr_array_head){ // sexpr_array_from_string_r#
+//
+//    if(is_nil(sexpr))
+//        return list_to_ptr_array(this_pyr, sexpr_array_head);
+//    
+//    if(is_nil(sexpr_array_head)){
+//        mword *new_sexpr_array = _cons(this_pyr, pearson_hash(this_pyr, bstruct_unload(this_pyr, pcar(sexpr)), nil));
+//        return sexpr_array_from_string_r(this_pyr,
+//                pcdr(sexpr),
+//                new_sexpr_array,
+//                new_sexpr_array);
+//    }
+//    else{
+//        if(is_ptr(pcar(sexpr))){ // nested list
+//            return sexpr_array_from_string_r(this_pyr, pcar(sexpr), nil, nil);
+//        }
+//        else{
+//            sexpr_array = _cons(this_pyr, sexpr_array, pcar(sexpr));
+//            return sexpr_array_from_string_r(this_pyr, pcdr(sexpr), sexpr_array, sexpr_array_head);
+//        }
+//    }
+//
+//}
+
 // Clayton Bauman 2017
 

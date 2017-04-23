@@ -23,6 +23,12 @@ _prn(" >>MEM_DEBUG<< ");
 
 #ifdef DEV_MODE
 _prn(" >>DEV_MODE<< ");
+#ifdef PYRAMID_64_BIT
+_prn(" >>64-BIT<< ");
+#endif
+#ifdef PYRAMID_32_BIT
+_prn(" >>32-BIT<< ");
+#endif
 #endif
 
 #ifdef PROF_MODE

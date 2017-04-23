@@ -11,8 +11,7 @@
  *                                                                           *
  ****************************************************************************/
 
-//#define TARGET LINUX 
-#define TARGET WINDOWS 
+#define PYRAMID_WINDOWS_BUILD
 
 #define DEV_MODE
 #define COMPAT_MODE
@@ -40,8 +39,9 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <time.h>
+#include <stdint.h>
 
-#if TARGET == WINDOWS
+#ifdef PYRAMID_WINDOWS_BUILD
 #define WINVER 0x0500
 #include <windows.h>
 #endif
@@ -55,6 +55,12 @@
  *                         CONSTANTS AND UNITS                               *
  *                                                                           *
  ****************************************************************************/
+
+#if UINTPTR_MAX == 0xffffffff
+#define PYRAMID_32_BIT
+#elif UINTPTR_MAX == 0xffffffffffffffff
+#define PYRAMID_64_BIT
+#endif
 
 // exit flags
 #define NORMAL_EXIT_CODE    0                                   // NORMAL_EXIT_CODE#
@@ -138,6 +144,13 @@
  ****************************************************************************/
 
 typedef unsigned mword; // mword#
+
+// mword#
+#ifdef PYRAMID_32_BIT
+typedef uint32_t mword;
+#elif PYRAMID_64_BIT
+typedef uint64_t mword;
+#endif
 
 typedef enum flag_val_enum {CLR, SET, IGN} flag_val; // flag_val#
 typedef enum access_size_sel_enum {BIT_ASIZE, BYTE_ASIZE, MWORD_ASIZE} access_size_sel; // access_size_sel#

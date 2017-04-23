@@ -11,7 +11,7 @@
  *                                                                           *
  ****************************************************************************/
 
-#define PYRAMID_WINDOWS_BUILD
+//#define PYRAMID_WINDOWS_BUILD
 
 #define DEV_MODE
 #define COMPAT_MODE
@@ -143,12 +143,14 @@
  *                                                                           *
  ****************************************************************************/
 
-typedef unsigned mword; // mword#
+//typedef unsigned mword; // mword#
 
 // mword#
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
-#elif PYRAMID_64_BIT
+#endif
+
+#ifdef PYRAMID_64_BIT
 typedef uint64_t mword;
 #endif
 

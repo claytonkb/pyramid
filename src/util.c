@@ -242,6 +242,9 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 ACC = global_dev_overrides;
                 _say("ACC <== global_dev_overrides");
                 break;
+             case 15:
+                util_show_geometries();
+                break;
             default:
                 _say("unrecognized command code");
                 util_bare_metal_menu();
@@ -293,11 +296,77 @@ void util_bare_metal_menu(void){
             "11    .....    ACC <== nil\n"
             "12 p  .....    ACC <== p\n"
             "13    .....    ACC <== init_ptr\n"
-            "14    .....    ACC <== global_dev_overrides");
+            "14    .....    ACC <== global_dev_overrides"
+            "15    .....    show pyramid constants and geometries");
+
+}
+
+
+//
+//
+void util_show_geometries(void){ // util_show_geometries#
+
+#ifdef MEM_DEBUG
+_prn(" >>MEM_DEBUG<< ");
+#endif
+
+#ifdef DEV_MODE
+_prn(" >>DEV_MODE<< ");
+#ifdef PYRAMID_64_BIT
+_prn(" >>64-BIT<< ");
+#endif
+#ifdef PYRAMID_32_BIT
+_prn(" >>32-BIT<< ");
+#endif
+#endif
+
+#ifdef PROF_MODE
+_prn(" >>PROF_MODE<< ");
+#endif
+
+#ifdef COMPAT_MODE
+_prn(" >>COMPAT_MODE<< ");
+#endif
+
+#ifdef CHK_MODE
+_prn(" >>CHK_MODE<< ");
+#endif
+
+_prn("\n");
+
+//"val = 0x%" PRIx64 "\n"
+
+fprintf(stderr, "MWORD_SIZE %" PRId64 "\n", MWORD_SIZE);
+fprintf(stderr, "MWORD_BIT_SIZE %" PRId64 "\n", MWORD_BIT_SIZE);
+fprintf(stderr, "HALF_MWORD_SIZE %" PRId64 "\n", HALF_MWORD_SIZE);
+fprintf(stderr, "MWORD_MSB %" PRId64 "\n", MWORD_MSB);
+fprintf(stderr, "MSB_MASK %" PRId64 "\n", MSB_MASK);
+fprintf(stderr, "MWORD_LSB %" PRId64 "\n", MWORD_LSB);
+fprintf(stderr, "NEG_ONE %" PRId64 "\n", NEG_ONE);
+fprintf(stderr, "FMAX %" PRId64 "\n", FMAX);
+fprintf(stderr, "MASK_1_BYTE %" PRId64 "\n", MASK_1_BYTE);
+fprintf(stderr, "MASK_1_BIT %" PRId64 "\n", MASK_1_BIT);
+fprintf(stderr, "HASH_BIT_SIZE %" PRId64 "\n", HASH_BIT_SIZE);
+fprintf(stderr, "HASH_BYTE_SIZE %" PRId64 "\n", HASH_BYTE_SIZE);
+fprintf(stderr, "HASH_SIZE %" PRId64 "\n", HASH_SIZE);
+fprintf(stderr, "HASH_ALLOC_SIZE %" PRId64 "\n", HASH_ALLOC_SIZE);
+fprintf(stderr, "TAG_SIZE %" PRId64 "\n", TAG_SIZE);
+fprintf(stderr, "INTERP_TAG_SIZE %" PRId64 "\n", INTERP_TAG_SIZE);
+fprintf(stderr, "TPTR_SIZE %" PRId64 "\n", TPTR_SIZE);
+fprintf(stderr, "TPTR_ALLOC_SIZE %" PRId64 "\n", TPTR_ALLOC_SIZE);
+fprintf(stderr, "TPTR_TAG_OFFSET %" PRId64 "\n", TPTR_TAG_OFFSET);
+fprintf(stderr, "TPTR_PTR_OFFSET %" PRId64 "\n", TPTR_PTR_OFFSET);
+fprintf(stderr, "TPTR_SFIELD %" PRId64 "\n", TPTR_SFIELD);
+fprintf(stderr, "UNINIT_VAL %" PRIx64 "\n", UNINIT_VAL);
+fprintf(stderr, "UNINIT_PTR %" PRIx64 "\n", UNINIT_PTR);
+fprintf(stderr, "UNINIT_VAL_64 %" PRIx64 "\n", UNINIT_VAL_64);
+fprintf(stderr, "UNINIT_PTR_64 %" PRIx64 "\n", UNINIT_PTR_64);
+fprintf(stderr, "CTL_MASK %" PRId64 "\n", CTL_MASK);
+
 
 }
 
 #endif
 
-// Clayton Bauman 2016
+// Clayton Bauman 2017
 

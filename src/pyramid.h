@@ -40,6 +40,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifdef PYRAMID_WINDOWS_BUILD
 #define WINVER 0x0500
@@ -134,6 +135,9 @@
 
 #define UNINIT_VAL 0xdeadface                                   // Placeholder-value   indicating non-initialization
 #define UNINIT_PTR nil                                          // Placeholder-pointer indicating non-initialization
+
+#define UNINIT_VAL_64 0xabaddeeddeadbabe                        // Placeholder-value   indicating non-initialization
+#define UNINIT_PTR_64 nil                                       // Placeholder-pointer indicating non-initialization
 
 #define CTL_MASK (MWORD_SIZE-1)                                 // CTL_MASK#
 

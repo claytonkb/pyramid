@@ -15,6 +15,7 @@ void util_rsvd(void);
 void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr);
 void util_get_line(char *buffer, FILE *stream);
 void util_bare_metal_menu(void);
+void util_show_geometries(void);
 #endif
 
 #endif //UTIL_H

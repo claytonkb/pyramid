@@ -79,8 +79,8 @@
 #define MWORD_BIT_SIZE (MWORD_SIZE * BITS_PER_BYTE)             // MWORD_BIT_SIZE#
 #define HALF_MWORD_BIT_SIZE (MWORD_BIT_SIZE/2)                  // HALF_MWORD_SIZE#
 #define MWORD_MSB (MWORD_BIT_SIZE-1)                            // MWORD_MSB#
-#define MSB_MASK (1<<MWORD_MSB)                                 // MSB_MASK#
-#define MWORD_LSB 0                                             // MWORD_LSB#
+#define MSB_MASK ((mword)1<<MWORD_MSB)                                 // MSB_MASK#
+#define MWORD_LSB (mword)0                                             // MWORD_LSB#
 
 #define NEG_ONE ((mword)-1)                                     // NEG_ONE#
 #define FMAX    NEG_ONE                                         // FMAX#
@@ -110,16 +110,16 @@
 #define MWORD_MUX(A, B, sel) (((A) & sel) | ((B) & (~sel)))
 #define BIT_MERGE(A, B, sel) ldv(A,0) = MWORD_MUX(B, rdv(A,0), sel);
 
-#define MASK_1_BYTE 0xff                                        // MASK_1_BYTE#
-#define MASK_1_BIT  0x01                                        // MASK_1_BIT#
+#define MASK_1_BYTE (mword)0xff                                        // MASK_1_BYTE#
+#define MASK_1_BIT  (mword)0x01                                        // MASK_1_BIT#
 
-#define HASH_BIT_SIZE 128                                       // HASH_BIT_SIZE#
-#define HASH_BYTE_SIZE (HASH_BIT_SIZE/BITS_PER_BYTE)            // HASH_BYTE_SIZE#
-#define HASH_SIZE UNITS_1TOM(HASH_BIT_SIZE)                     // HASH_SIZE#
+#define HASH_BIT_SIZE (mword)128                                       // HASH_BIT_SIZE#
+#define HASH_BYTE_SIZE (mword)(HASH_BIT_SIZE/BITS_PER_BYTE)            // HASH_BYTE_SIZE#
+#define HASH_SIZE (mword)UNITS_1TOM(HASH_BIT_SIZE)                     // HASH_SIZE#
 #define HASH_ALLOC_SIZE (HASH_SIZE+1)                           // HASH_ALLOC_SIZE#
 
 #define TAG_SIZE (HASH_SIZE*MWORD_SIZE)                         // TAG_SIZE#
-#define INTERP_TAG_SIZE 1                                       // INTERP_TAG_SIZE#
+#define INTERP_TAG_SIZE (mword)1                                       // INTERP_TAG_SIZE#
 
 // NB: Can use INTERP_TAG_SIZE only when certain we are operating on an
 // interpreter-generated tag
@@ -128,10 +128,10 @@
 #define TPTR_SIZE (HASH_SIZE+3)                                 // TPTR_SIZE#
 #define TPTR_ALLOC_SIZE TPTR_SIZE                               // TPTR_ALLOC_SIZE#
 
-#define TPTR_TAG_OFFSET  0                                      // TPTR_TAG_OFFSET#
+#define TPTR_TAG_OFFSET  (mword)0                                      // TPTR_TAG_OFFSET#
 #define TPTR_PTR_OFFSET  (HASH_SIZE+1)                          // TPTR_PTR_OFFSET#
 
-#define TPTR_SFIELD 0
+#define TPTR_SFIELD (mword)0
 
 #define CTL_MASK (MWORD_SIZE-1)                                 // CTL_MASK#
 
@@ -152,19 +152,40 @@
 // mword#
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
-#define dpr "%I32d"
-#define xpr "%I32x"
 #define UNINIT_VAL UNINIT_VAL_32
 #define UNINIT_PTR UNINIT_PTR_32
 #endif
 
 #ifdef PYRAMID_64_BIT
 typedef uint64_t mword;
-#define dpr "%I64d"
-#define xpr "%I64x"
 #define UNINIT_VAL UNINIT_VAL_64
 #define UNINIT_PTR UNINIT_PTR_64
 #endif
+
+#ifdef PYRAMID_WINDOWS_BUILD
+#ifdef PYRAMID_32_BIT
+#define dpr "%I32d"
+#define xpr "%I32x"
+#define x0pr "%08I32x"
+#endif
+#ifdef PYRAMID_64_BIT
+#define dpr "%I64d"
+#define xpr "%I64x"
+#define x0pr "%016I64x"
+#endif
+#else // !PYRAMID_WINDOWS_BUILD
+#ifdef PYRAMID_32_BIT
+#define dpr "%d"
+#define xpr "%x"
+#define x0pr "%08x"
+#endif
+#ifdef PYRAMID_64_BIT
+#define dpr "%ld"
+#define xpr "%lx"
+#define x0pr "%016lx"
+#endif
+#endif
+
 
 typedef enum flag_val_enum {CLR, SET, IGN} flag_val; // flag_val#
 typedef enum access_size_sel_enum {BIT_ASIZE, BYTE_ASIZE, MWORD_ASIZE} access_size_sel; // access_size_sel#
@@ -659,8 +680,10 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define _reset_trace    fprintf(stderr, "INTERP_RESET_TRACE: %s() in %s line %d\n", __func__, __FILE__, __LINE__);   // _trace#
 
 #define QUOTEME(x)      #x
-#define _d(x)           fprintf(stderr, "%s %08x\n", QUOTEME(x), (mword)x); // d#
-#define _dd(x)          fprintf(stderr, "%s %d\n",   QUOTEME(x), (mword)x); // dd#
+//#define _d(x)           fprintf(stderr, "%s %08x\n", QUOTEME(x), (mword)x); // d#
+#define _d(x)           fprintf(stderr, "%s " x0pr "\n", QUOTEME(x), (mword)x); // d#
+//#define _dd(x)          fprintf(stderr, "%s %d\n",   QUOTEME(x), (mword)x); // dd#
+#define _dd(x)          fprintf(stderr, "%s " dpr "\n",   QUOTEME(x), (mword)x); // dd#
 #define _dw(x)          fprintf(stderr, "%s %08x ",  QUOTEME(x), (mword)x); // dw#
 
 #define _die            fprintf(stderr, "Died at %s line %d\n", __FILE__, __LINE__); exit(DIE_EXIT_CODE);  // die#
@@ -688,16 +711,45 @@ FILE *dev_log; // dev_log#
 int dev_i;     // dev_i#
 
 // #define _mem#
-#define _mem(x)                                                     \
-    fprintf(stderr, "---- %08x\n", sfield(x));                      \
-    for(dev_i=0; dev_i<alloc_size(x)-1; dev_i++){                   \
-        if(dev_i>=0){                                               \
-            fprintf(stderr, "%04x ", (unsigned)dev_i*MWORD_SIZE);   \
-        }                                                           \
-        fprintf(stderr, "%08x\n", rdv(x,dev_i));                    \
+#define _mem32(x)                                                     \
+    fprintf(stderr, "-------- " x0pr "\n", sfield(x));                \
+    for(dev_i=0; dev_i<alloc_size(x)-1; dev_i++){                     \
+        if(dev_i>=0){                                                 \
+            fprintf(stderr, x0pr " ", (unsigned)dev_i*MWORD_SIZE);    \
+        }                                                             \
+        fprintf(stderr, x0pr "\n", rdv(x,dev_i));                     \
     }
 
+#define _mem64(x)                                                     \
+    fprintf(stderr, "---------------- " x0pr "\n", sfield(x));    \
+    for(dev_i=0; dev_i<alloc_size(x)-1; dev_i++){                     \
+        if(dev_i>=0){                                                 \
+            fprintf(stderr, x0pr " ", (unsigned)dev_i*MWORD_SIZE);    \
+        }                                                             \
+        fprintf(stderr, x0pr "\n", rdv(x,dev_i));                     \
+    }
+
+#ifdef PYRAMID_32_BIT
+#define _mem _mem32
 #endif
+
+#ifdef PYRAMID_64_BIT
+#define _mem _mem64
+#endif
+
+#endif
+
+
+//#define _mem(x)
+//    fprintf(stderr, "---- %08x\n", sfield(x));
+//    for(dev_i=0; dev_i<alloc_size(x)-1; dev_i++){ 
+//        if(dev_i>=0){
+//            fprintf(stderr, "%04x ", (unsigned)dev_i*MWORD_SIZE); 
+//        }            
+//        fprintf(stderr, "%08x\n", rdv(x,dev_i));    
+//    }
+
+
 
 #endif //PYRAMID_H
 

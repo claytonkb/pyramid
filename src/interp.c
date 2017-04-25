@@ -15,37 +15,8 @@
 //
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp){ // interp_pyramid#
 
-// XXX //SECURITY// **DO NOT REMOVE** FOLLOWING LINES //SECURITY// XXX //
-
-#ifdef MEM_DEBUG
-_prn(" >>MEM_DEBUG<< ");
-#endif
-
-#ifdef DEV_MODE
-_prn(" >>DEV_MODE<< ");
-#ifdef PYRAMID_64_BIT
-_prn(" >>64-BIT<< ");
-#endif
-#ifdef PYRAMID_32_BIT
-_prn(" >>32-BIT<< ");
-#endif
-#endif
-
-#ifdef PROF_MODE
-_prn(" >>PROF_MODE<< ");
-#endif
-
-#ifdef COMPAT_MODE
-_prn(" >>COMPAT_MODE<< ");
-#endif
-
-#ifdef CHK_MODE
-_prn(" >>CHK_MODE<< ");
-#endif
-
-_prn("\n");
-
-// XXX //SECURITY// **DO NOT REMOVE** ABOVE LINES     //SECURITY// XXX //
+    // XXX //SECURITY// **DO NOT REMOVE** //SECURITY// XXX //
+    interp_boilerplate();
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
@@ -96,6 +67,40 @@ _reset_trace;
 
 }
 
+
+//
+//
+void interp_boilerplate(void){
+
+#ifdef MEM_DEBUG
+_prn(" >>MEM_DEBUG<< ");
+#endif
+
+#ifdef DEV_MODE
+_prn(" >>DEV_MODE<< ");
+#ifdef PYRAMID_64_BIT
+_prn(" >>64-BIT<< ");
+#endif
+#ifdef PYRAMID_32_BIT
+_prn(" >>32-BIT<< ");
+#endif
+#endif
+
+#ifdef PROF_MODE
+_prn(" >>PROF_MODE<< ");
+#endif
+
+#ifdef COMPAT_MODE
+_prn(" >>COMPAT_MODE<< ");
+#endif
+
+#ifdef CHK_MODE
+_prn(" >>CHK_MODE<< ");
+#endif
+
+_prn("\n");
+
+}
 
 //
 //

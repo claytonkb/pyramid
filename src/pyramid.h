@@ -77,7 +77,7 @@
 
 #define MWORD_SIZE sizeof(mword)                                // MWORD_SIZE#
 #define MWORD_BIT_SIZE (MWORD_SIZE * BITS_PER_BYTE)             // MWORD_BIT_SIZE#
-#define HALF_MWORD_SIZE (MWORD_SIZE/2)                          // HALF_MWORD_SIZE#
+#define HALF_MWORD_BIT_SIZE (MWORD_BIT_SIZE/2)                  // HALF_MWORD_SIZE#
 #define MWORD_MSB (MWORD_BIT_SIZE-1)                            // MWORD_MSB#
 #define MSB_MASK (1<<MWORD_MSB)                                 // MSB_MASK#
 #define MWORD_LSB 0                                             // MWORD_LSB#
@@ -133,13 +133,13 @@
 
 #define TPTR_SFIELD 0
 
-#define UNINIT_VAL 0xdeadface                                   // Placeholder-value   indicating non-initialization
-#define UNINIT_PTR nil                                          // Placeholder-pointer indicating non-initialization
-
-#define UNINIT_VAL_64 0xabaddeeddeadbabe                        // Placeholder-value   indicating non-initialization
-#define UNINIT_PTR_64 nil                                       // Placeholder-pointer indicating non-initialization
-
 #define CTL_MASK (MWORD_SIZE-1)                                 // CTL_MASK#
+
+#define UNINIT_VAL_32 0xdeadbeef                                // Placeholder-value   indicating non-initialization
+#define UNINIT_PTR_32 nil                                       // Placeholder-pointer indicating non-initialization
+
+#define UNINIT_VAL_64 0xabadfaceabaddeed
+#define UNINIT_PTR_64 nil                                       // Placeholder-pointer indicating non-initialization
 
 /*****************************************************************************
  *                                                                           *
@@ -152,10 +152,18 @@
 // mword#
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
+#define dpr "%I32d"
+#define xpr "%I32x"
+#define UNINIT_VAL UNINIT_VAL_32
+#define UNINIT_PTR UNINIT_PTR_32
 #endif
 
 #ifdef PYRAMID_64_BIT
 typedef uint64_t mword;
+#define dpr "%I64d"
+#define xpr "%I64x"
+#define UNINIT_VAL UNINIT_VAL_64
+#define UNINIT_PTR UNINIT_PTR_64
 #endif
 
 typedef enum flag_val_enum {CLR, SET, IGN} flag_val; // flag_val#

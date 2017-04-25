@@ -336,32 +336,43 @@ _prn("\n");
 
 //"val = 0x%" PRIx64 "\n"
 
-fprintf(stderr, "MWORD_SIZE %" PRId64 "\n", MWORD_SIZE);
-fprintf(stderr, "MWORD_BIT_SIZE %" PRId64 "\n", MWORD_BIT_SIZE);
-fprintf(stderr, "HALF_MWORD_SIZE %" PRId64 "\n", HALF_MWORD_SIZE);
-fprintf(stderr, "MWORD_MSB %" PRId64 "\n", MWORD_MSB);
-fprintf(stderr, "MSB_MASK %" PRId64 "\n", MSB_MASK);
-fprintf(stderr, "MWORD_LSB %" PRId64 "\n", MWORD_LSB);
-fprintf(stderr, "NEG_ONE %" PRId64 "\n", NEG_ONE);
-fprintf(stderr, "FMAX %" PRId64 "\n", FMAX);
-fprintf(stderr, "MASK_1_BYTE %" PRId64 "\n", MASK_1_BYTE);
-fprintf(stderr, "MASK_1_BIT %" PRId64 "\n", MASK_1_BIT);
-fprintf(stderr, "HASH_BIT_SIZE %" PRId64 "\n", HASH_BIT_SIZE);
-fprintf(stderr, "HASH_BYTE_SIZE %" PRId64 "\n", HASH_BYTE_SIZE);
-fprintf(stderr, "HASH_SIZE %" PRId64 "\n", HASH_SIZE);
-fprintf(stderr, "HASH_ALLOC_SIZE %" PRId64 "\n", HASH_ALLOC_SIZE);
-fprintf(stderr, "TAG_SIZE %" PRId64 "\n", TAG_SIZE);
-fprintf(stderr, "INTERP_TAG_SIZE %" PRId64 "\n", INTERP_TAG_SIZE);
-fprintf(stderr, "TPTR_SIZE %" PRId64 "\n", TPTR_SIZE);
-fprintf(stderr, "TPTR_ALLOC_SIZE %" PRId64 "\n", TPTR_ALLOC_SIZE);
-fprintf(stderr, "TPTR_TAG_OFFSET %" PRId64 "\n", TPTR_TAG_OFFSET);
-fprintf(stderr, "TPTR_PTR_OFFSET %" PRId64 "\n", TPTR_PTR_OFFSET);
-fprintf(stderr, "TPTR_SFIELD %" PRId64 "\n", TPTR_SFIELD);
-fprintf(stderr, "UNINIT_VAL %" PRIx64 "\n", UNINIT_VAL);
-fprintf(stderr, "UNINIT_PTR %" PRIx64 "\n", UNINIT_PTR);
-fprintf(stderr, "UNINIT_VAL_64 %" PRIx64 "\n", UNINIT_VAL_64);
-fprintf(stderr, "UNINIT_PTR_64 %" PRIx64 "\n", UNINIT_PTR_64);
-fprintf(stderr, "CTL_MASK %" PRId64 "\n", CTL_MASK);
+#ifdef PYRAMID_32_BIT
+#define dpr PRId32
+#define xpr PRIx32
+#endif
+
+#ifdef PYRAMID_64_BIT
+#define dpr PRId64
+#define xpr PRIx64
+#endif
+
+
+fprintf(stderr, "MWORD_SIZE %" dpr "\n", MWORD_SIZE);
+fprintf(stderr, "MWORD_BIT_SIZE %" dpr "\n", MWORD_BIT_SIZE);
+fprintf(stderr, "HALF_MWORD_SIZE %" dpr "\n", HALF_MWORD_SIZE);
+fprintf(stderr, "MWORD_MSB %" dpr "\n", MWORD_MSB);
+fprintf(stderr, "MSB_MASK %" dpr "\n", MSB_MASK);
+fprintf(stderr, "MWORD_LSB %" dpr "\n", MWORD_LSB);
+fprintf(stderr, "NEG_ONE %" dpr "\n", NEG_ONE);
+fprintf(stderr, "FMAX %" dpr "\n", FMAX);
+fprintf(stderr, "MASK_1_BYTE %" dpr "\n", MASK_1_BYTE);
+fprintf(stderr, "MASK_1_BIT %" dpr "\n", MASK_1_BIT);
+fprintf(stderr, "HASH_BIT_SIZE %" dpr "\n", HASH_BIT_SIZE);
+fprintf(stderr, "HASH_BYTE_SIZE %" dpr "\n", HASH_BYTE_SIZE);
+fprintf(stderr, "HASH_SIZE %" dpr "\n", HASH_SIZE);
+fprintf(stderr, "HASH_ALLOC_SIZE %" dpr "\n", HASH_ALLOC_SIZE);
+fprintf(stderr, "TAG_SIZE %" dpr "\n", TAG_SIZE);
+fprintf(stderr, "INTERP_TAG_SIZE %" dpr "\n", INTERP_TAG_SIZE);
+fprintf(stderr, "TPTR_SIZE %" dpr "\n", TPTR_SIZE);
+fprintf(stderr, "TPTR_ALLOC_SIZE %" dpr "\n", TPTR_ALLOC_SIZE);
+fprintf(stderr, "TPTR_TAG_OFFSET %" dpr "\n", TPTR_TAG_OFFSET);
+fprintf(stderr, "TPTR_PTR_OFFSET %" dpr "\n", TPTR_PTR_OFFSET);
+fprintf(stderr, "TPTR_SFIELD %" dpr "\n", TPTR_SFIELD);
+fprintf(stderr, "UNINIT_VAL %" xpr "\n", (mword)UNINIT_VAL);
+fprintf(stderr, "UNINIT_PTR %" xpr "\n", (mword)UNINIT_PTR);
+fprintf(stderr, "UNINIT_VAL_64 %" xpr "\n", (mword)UNINIT_VAL_64);
+fprintf(stderr, "UNINIT_PTR_64 %" xpr "\n", (mword)UNINIT_PTR_64);
+fprintf(stderr, "CTL_MASK %" dpr "\n", CTL_MASK);
 
 
 }

@@ -5,7 +5,7 @@ pyramid_clean(){
 pyramid_build(){
     gcc src/pyramid.c src/mem.c src/interp.c src/pearson.c src/util.c \
     src/array.c src/introspect.c src/tptr.c src/io.c src/bstruct.c \
-    src/string.c src/list.c src/utf8.c src/sexpr.c src/trie.c\
+    src/string.c src/list.c src/utf8.c src/sexpr.c src/trie.c src/tables.c\
     -Wall -o bin/pyramid;
 }
 

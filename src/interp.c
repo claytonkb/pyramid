@@ -11,6 +11,15 @@
 #include "string.h"
 
 
+// Build verb_table:
+//  verb_table = mem_new_ptr(this_pyr, num_verbs);
+//  for each tag, fn_ptr:
+//      cons(tag, fn_ptr)
+//      add to verb_table
+//  update global_irt->verb_table
+//
+
+
 //
 //
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp){ // interp_pyramid#
@@ -429,6 +438,7 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
 void interp_init_symbols(pyr_cache *this_pyr){ // interp_init_symbols#
 
     // XXX Unless MC_ALLOC_NON_GC is set, this could break XXX
+    // FIXME: Use quoted char's FIXME
     global_irt->symbols->SEXPR_IGNORE_SYMBOL   = _mkval( this_pyr, 6, 0x69, 0x67, 0x6e, 0x6f, 0x72, 0x65 );
     global_irt->symbols->SEXPR_QUOTE_SYMBOL    = _mkval( this_pyr, 5, 0x71, 0x75, 0x6f, 0x74, 0x65 );
     global_irt->symbols->SEXPR_SEXPR_SYMBOL    = _mkval( this_pyr, 5, 0x73, 0x65, 0x78, 0x70, 0x72 );

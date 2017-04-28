@@ -4,8 +4,8 @@
         [tag "/pyramid/tag/operand" val 2]
         [tag "/pyramid/tag/operand" val 3]
         [tag "/pyramid/tag/operator" 
-            hash "/pyramid/tag/+"]]
-repl !
+            hash "/pyramid/tag/add_op"]]
+
 dup --
     unload "code_block.bbl" spitm 
     --

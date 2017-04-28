@@ -5,9 +5,13 @@
 #define TAGS_H 
 
 #ifdef COMPAT_MODE
-#define PYR_TAGS                                                             \
+#define PYR_TAGS                                                           \
+    X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                \
+    X(PYR_TAG_OPERAND          , "/pyramid/tag/operand")                   \
+    X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")                  \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                    \
     X(PYR_TAG_NIL              , "/babel/tag/nil")                         \
-    X(PYR_TAG_INTERP_NIL       , "nil")                                      \
+    X(PYR_TAG_INTERP_NIL       , "nil")                                    \
     X(PYR_TAG_EXIST            , "/babel/tag/exist")                       \
     X(PYR_TAG_UNEXIST          , "/babel/tag/unexist")                     \
     X(PYR_TAG_DEF              , "/babel/tag/def")                         \
@@ -24,7 +28,7 @@
     X(PYR_TAG_HASH_TABLE       , "/babel/tag/hash_table")                  \
     X(PYR_TAG_HASH_TABLE_ENTRY , "/babel/tag/hash_table_entry")            \
     X(PYR_TAG_DIRECTORY        , "/babel/tag/directory")                   \
-    X(PYR_TAG_PYR_STRING       , "/babel/tag/babel_string")              \
+    X(PYR_TAG_PYR_STRING       , "/babel/tag/babel_string")                \
     X(PYR_TAG_CSTRING          , "/babel/tag/cstring")                     \
     X(PYR_TAG_STRING_ARRAY     , "/babel/tag/string_array")                \
     X(PYR_TAG_STRING_LIST      , "/babel/tag/string_list")                 \
@@ -71,6 +75,10 @@
     X(PYR_SYM_CODE_RESTART_POINT , "/babel/sym/code_restart_point")       
 #else
 #define PYR_TAGS                                                             \
+    X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                \
+    X(PYR_TAG_OPERAND          , "/pyramid/tag/operand")                   \
+    X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")                  \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                    \
     X(PYR_TAG_NIL              , "/pyramid/tag/nil")                         \
     X(PYR_TAG_INTERP_NIL       , "nil")                                      \
     X(PYR_TAG_EXIST            , "/pyramid/tag/exist")                       \

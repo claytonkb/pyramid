@@ -417,7 +417,7 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
     mem_non_gc_teardown();
 
     free(nil-1);
-//    free(global_irt->tags->PYR_TAG_ZERO_HASH);
+    free(global_irt->tags->PYR_TAG_ZERO_HASH-1);
     free(global_irt->tags);
     free(global_irt);
 

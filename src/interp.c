@@ -9,6 +9,7 @@
 #include "io.h"
 #include "trie.h"
 #include "string.h"
+#include "bstruct.h"
 
 
 // Build verb_table:
@@ -279,7 +280,7 @@ PYR_TAGS
     global_dev_overrides = interp_load_dev_overrides(this_pyr);
     global_dev_overrides++;
 
-    global_irt->fs = trie_new(this_pyr);
+    global_irt->env = interp_load_pyr_env(this_pyr);
 
     this_pyr->flags->INTERP_BOOT_IN_PROGRESS = CLR;
 
@@ -471,8 +472,17 @@ mword *interp_load_root_bvm(pyr_cache *this_pyr){ // interp_load_root_bvm#
 //
 mword *interp_load_dev_overrides(pyr_cache *this_pyr){ // interp_load_dev_overrides#
 
-//    return interp_init_load_from_file(this_pyr, "dev/overrides.bbl");
     return io_slurp8(this_pyr, "dev/overrides.bbl");
+
+}
+
+
+//
+//
+mword *interp_load_pyr_env(pyr_cache *this_pyr){ // interp_load_pyr_env#
+
+    mword *temp = io_slurp8(this_pyr, "env/pyr_env.bbl");
+    return bstruct_load(this_pyr, temp, size(temp));
 
 }
 

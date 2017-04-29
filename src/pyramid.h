@@ -379,7 +379,7 @@ typedef struct { // interp_runtime
 
     hash_fn_ptr             *hash_fn;
 
-    mword                   *fs;
+    mword                   *env;
 
 } interp_runtime; 
 

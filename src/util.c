@@ -188,12 +188,11 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = _val(this_pyr,
 //                        array_ncmp(this_pyr, C2B("foobaz"), 3, C2B("bar"), 2, BYTE_ASIZE));
 
-                ACC = io_slurp8(this_pyr, "code_block.bbl");
-                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _say("code_block.bbl loaded");
-//                _d(ACC);
+//                ACC = io_slurp8(this_pyr, "code_block.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("code_block.bbl loaded");
 
-
+                ACC = global_irt->env;
 
                 break;
             case 2:

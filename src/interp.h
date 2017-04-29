@@ -25,6 +25,7 @@ void interp_init_symbols(pyr_cache *this_pyr);
 
 mword *interp_load_root_bvm(pyr_cache *this_pyr);
 mword *interp_load_dev_overrides(pyr_cache *this_pyr);
+mword *interp_load_pyr_env(pyr_cache *this_pyr);
 
 mword *interp_init_load_from_file(pyr_cache *this_pyr, char *filename);
 

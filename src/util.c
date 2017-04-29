@@ -301,7 +301,7 @@ void util_bare_metal_menu(void){
             "11    .....    ACC <== nil\n"
             "12 p  .....    ACC <== p\n"
             "13    .....    ACC <== init_ptr\n"
-            "14    .....    ACC <== global_dev_overrides"
+            "14    .....    ACC <== global_dev_overrides\n"
             "15    .....    show pyramid constants and geometries");
 
 }

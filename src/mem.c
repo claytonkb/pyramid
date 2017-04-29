@@ -24,7 +24,8 @@ _trace;
     mem_bank_alloc(m->primary,   init_mem_size);
     mem_bank_alloc(m->secondary, init_mem_size);
 
-    this_pyr->interp->mem = m;
+//    this_pyr->interp->mem = m;
+    this_pyr->mem = m;
 
 }
 

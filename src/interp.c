@@ -19,7 +19,6 @@
 //  update global_irt->verb_table
 //
 
-
 //
 //
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp){ // interp_pyramid#
@@ -50,7 +49,8 @@ _reset_trace;
     }
     else if(val==INTERP_RESET){
 //        interp_exit(this_pyr);
-        mem_destroy(this_pyr->interp->mem);
+
+        mem_destroy(this_pyr->mem);
         _say("INTERP_RESET: pyramid");
     }
 
@@ -201,9 +201,8 @@ _reset_trace;
     global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
 
-    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_state)); // XXX WAIVER(mem_sys_alloc) XXX //
-//    this_pyr->interp->tags      = mem_non_gc_alloc(sizeof(interp_tags));  // XXX WAIVER(mem_sys_alloc) XXX //
-//    this_pyr->interp->symbols   = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
+    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_runtime)); // XXX WAIVER(mem_sys_alloc) XXX //
+
     this_pyr->interp->cat_ex    = cat_ex;
 
     this_pyr->interp->op_restart        = (jmp_buf*)UNINIT_VAL;
@@ -231,21 +230,21 @@ _reset_trace;
     ////////////////////////////
 
     this_pyr->self              = UNINIT_PTR;
-    this_pyr->code_ptr          = UNINIT_PTR;
-    this_pyr->rstack_ptr        = UNINIT_PTR;
-    this_pyr->dstack_ptr        = UNINIT_PTR;
-    this_pyr->soft_root         = UNINIT_PTR;
-    this_pyr->local_root        = UNINIT_PTR;
-    this_pyr->local_path        = UNINIT_PTR;
-    this_pyr->local_pwd         = UNINIT_PTR;
-
-    this_pyr->thread_id         = UNINIT_VAL;
-    this_pyr->steps             = UNINIT_VAL;
-    this_pyr->advance_type      = UNINIT_VAL;
-    this_pyr->bvm_initd         = UNINIT_VAL;
-
-    this_pyr->dstack_depth      = UNINIT_VAL;
-    this_pyr->dstack_diameter   = UNINIT_VAL;
+//    this_pyr->code_ptr          = UNINIT_PTR;
+//    this_pyr->rstack_ptr        = UNINIT_PTR;
+//    this_pyr->dstack_ptr        = UNINIT_PTR;
+//    this_pyr->soft_root         = UNINIT_PTR;
+//    this_pyr->local_root        = UNINIT_PTR;
+//    this_pyr->local_path        = UNINIT_PTR;
+//    this_pyr->local_pwd         = UNINIT_PTR;
+//
+//    this_pyr->thread_id         = UNINIT_VAL;
+//    this_pyr->steps             = UNINIT_VAL;
+//    this_pyr->advance_type      = UNINIT_VAL;
+//    this_pyr->bvm_initd         = UNINIT_VAL;
+//
+//    this_pyr->dstack_depth      = UNINIT_VAL;
+//    this_pyr->dstack_diameter   = UNINIT_VAL;
 
     ////////////////////////////////
     // init this_pyr->interp->mem //
@@ -264,12 +263,6 @@ _reset_trace;
 #ifdef PROF_MODE
     this_pyr->interp->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
-
-//#define X(a, b) a = HASHC(this_pyr, b);
-//PYR_TAGS    
-//#undef X
-
-//#define X(a, b) this_pyr->interp->tags->a = HASHC(this_pyr, b);
 
 #define X(a, b) global_irt->tags->a = HASHC(this_pyr, b);
 PYR_TAGS    
@@ -405,6 +398,7 @@ _reset_trace;
     p->BVM_EXEC_ALLOWED   = SET;
     p->BVM_FORK_ALLOWED   = SET;
 
+
     this_pyr->interp->privileges = p;
 
     return this_pyr;
@@ -417,7 +411,8 @@ _reset_trace;
 void interp_exit(pyr_cache *this_pyr){ // interp_exit#
 
     // Complete mem teardown
-    mem_destroy(this_pyr->interp->mem);
+
+    mem_destroy(this_pyr->mem);
 
     mem_non_gc_teardown();
 

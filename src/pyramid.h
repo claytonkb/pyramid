@@ -211,7 +211,6 @@ typedef struct { // mem_thread_base#
         /////////////////////////////////////////////////////////
         // OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD //
         /////////////////////////////////////////////////////////
-
 typedef struct { // alloc_bank#
 
     mword *base_ptr;
@@ -340,93 +339,15 @@ PYR_SYMBOLS
 } interp_symbols;
 
 
-typedef struct { // interp_state#
+///////////////////////////////////
+// PYRAMID INTERPRETER RUNTIME   //
+///////////////////////////////////
 
-    jmp_buf      *cat_ex;
-    jmp_buf      *op_restart;
-    int           argc;
-    char        **argv;
-    char        **envp;
-    mword        *interp_argv;
-    mem_context  *mem;
-
-    mword        *jump_table; // full jump_table
-
-    mword        *nil;
-    mword        *empty_string;
-
-    mword        *cold_null_BVM;
-    mword        *warm_null_BVM;
-
-    struct tm    *utc_epoch;
-    mword         epoch_ms;
-    mword        *srand;
-
-    mword         null_hash[HASH_SIZE];
-    mword         thread_counter;
-    mword         global_tick_count;
-
-    hash_fn_ptr  *hash_fn;
-
-    interp_limits *limits;
-    interp_privileges *privileges;
+typedef struct { // interp_runtime
 
 #ifdef PROF_MODE
     pyr_profile *profile;
 #endif
-
-    interp_tags     *tags;
-    interp_symbols  *symbols;
-
-} interp_state;
-
-
-typedef struct { // pyr_cache#
-
-    mword *self;
-
-    mword *code_ptr;
-
-    mword *rstack_ptr;
-    mword *dstack_ptr;
-
-    mword *soft_root;
-    mword *local_root;
-    mword *local_path;
-    mword *local_pwd;
-
-    mword thread_id;
-    mword bvm_initd;
-    mword steps;
-    mword advance_type;
-
-    mword dstack_depth;
-    mword dstack_diameter;
-
-    interp_flags *flags;
-
-    interp_state *interp;
-
-    ///////////////////////////////
-    // PYRAMID VIRTUAL PROCESSOR //
-    ///////////////////////////////
-
-    //dispatcher      --> points to the dispatch_table (all builtins)
-    //code_table      --> points to the code_table (all user code)
-    //frame_ptr       --> (see above)
-    //rstack_ptr      --> (see above)
-    //dstack_cache    --> working operand stack
-    //register_file   --> working registers
-    //mem_alloc       --> handles heap allocation
-    //thread_pool     --> list of free (available) threads
-    //stream_table    --> open I/O streams
-    //file_table      --> open files (memory-mapped)
-    //flags           --> processor flags
-
-} pyr_cache;
-
-
-typedef struct { // interp_runtime
 
     mem_thread_base         *mem;
 
@@ -453,6 +374,7 @@ typedef struct { // interp_runtime
     mword                   *dispatch_table;
 
     mword                    thread_id;
+    mword                    thread_counter;
     mword                    global_tick_count;
 
     hash_fn_ptr             *hash_fn;
@@ -461,6 +383,40 @@ typedef struct { // interp_runtime
 
 } interp_runtime; 
 
+
+///////////////////////////////////
+// PYRAMID VIRTUAL MACHINE CACHE //
+///////////////////////////////////
+
+typedef struct { // pyr_cache#
+
+    mword *self;
+    mem_context  *mem;
+
+    interp_flags *flags;
+
+    interp_runtime *interp;
+
+} pyr_cache;
+
+
+/////////////////////////
+// PYRAMID VIRTUAL CPU //
+/////////////////////////
+
+typedef struct { // pyr_cpu#
+
+    mword *noun_table;
+    mword *verb_table;
+    mword *std_code_table;
+    mword *user_code_table;
+    mword *reg_file;
+    mword *rstack;
+    mword *cpu_env;
+    void  *jit_tcc;
+    void  *parent_env;
+
+} pyr_cpu;
 
 
 /*****************************************************************************

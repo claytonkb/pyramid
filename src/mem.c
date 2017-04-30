@@ -281,18 +281,23 @@ inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 //
 mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
 
+    mword *return_ptr;
+
     // mem_alloc is non-reentrant... this is enforced with the MEM_ALLOC_BLOCKING flag
-    if(this_pyr->flags->MEM_ALLOC_BLOCKING == SET){
-        _fatal("this_pyr->flags->MEM_ALLOC_BLOCKING == SET");
+    if(global_irt->flags->MEM_ALLOC_BLOCKING == SET){
+        _fatal("global_irt->flags->MEM_ALLOC_BLOCKING == SET");
     }
 
-    if(this_pyr->flags->MEM_ALLOC_NON_GC == SET){
+    if(global_irt->flags->MEM_ALLOC_NON_GC == SET){
         mword *result = mem_non_gc_alloc(UNITS_MTO8(mem_alloc_size(alloc_sfield)+1));
         result++;
         sfield(result) = alloc_sfield;
         return result;
     }
 
+    mword alloc_request_size = mem_alloc_size(alloc_sfield)+1; // +1 is for s-field
+
+#if 0
     _d(global_irt->gc_mem->primary->base_ptr);
     _d(global_irt->gc_mem->primary->bound_ptr);
     _d(global_irt->gc_mem->primary->alloc_ptr);
@@ -302,9 +307,23 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
     _d(global_irt->gc_mem->secondary->bound_ptr);
     _d(global_irt->gc_mem->secondary->alloc_ptr);
     _dd(global_irt->gc_mem->secondary->size);
+#endif
 
-    _die;
-    return nil;
+    alloc_bank *b = global_irt->gc_mem->primary;
+
+//    global_irt->flags->MEM_ALLOC_BLOCKING = FLAG_SET;
+
+    if((b->alloc_ptr - alloc_request_size) <= b->base_ptr){
+        _fatal("memory bank empty");
+    }
+
+    b->alloc_ptr -= alloc_request_size;
+    return_ptr = b->alloc_ptr+1;
+    sfield(return_ptr) = alloc_sfield;
+
+//    global_irt->flags->MEM_ALLOC_BLOCKING = FLAG_CLR;
+
+    return return_ptr;
 
 }
 

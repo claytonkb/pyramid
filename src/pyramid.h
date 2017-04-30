@@ -227,6 +227,9 @@ typedef struct { // mem_context#
     alloc_bank *primary;
     alloc_bank *secondary;
 
+    mword alloc_count;
+    mword free_count;
+
 } mem_context;
 
 
@@ -396,7 +399,7 @@ typedef struct { // pyr_cache#
 //    mem_context     *mem;
 
     mword           *pyr_cpu_array;
-    interp_flags    *flags;
+//    interp_flags    *flags;
     interp_runtime  *interp;
 
 } pyr_cache;
@@ -545,8 +548,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 //X(PYR_TAG_ACCEPT           
 //X(PYR_TAG_REJECT           
 
-
-
 /*****************************************************************************
  *                                                                           *
  *                              PRIMITIVES                                   *
@@ -653,8 +654,10 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 #define _timestamp(x)   (time_ms(void) - x->interp->epoch_ms) // _timestamp#
 
-#define _cat_except(x)    _trace; longjmp(*(x->interp->cat_ex),CAT_EXCEPT); // _cat_except#
-#define _interp_reset(x)          longjmp(*(x->interp->cat_ex),INTERP_RESET); // _interp_reset#
+//#define _cat_except(x)    _trace; longjmp(*(x->interp->cat_ex),CAT_EXCEPT); // _cat_except#
+//#define _interp_reset(x)          longjmp(*(x->interp->cat_ex),INTERP_RESET); // _interp_reset#
+#define _cat_except(x)    _trace; longjmp(*(global_irt->cat_ex),CAT_EXCEPT); // _cat_except#
+#define _interp_reset          longjmp(*(global_irt->cat_ex),INTERP_RESET); // _interp_reset#
 
 /*****************************************************************************
  *                                                                           *

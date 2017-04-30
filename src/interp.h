@@ -5,6 +5,8 @@
 #define INTERP_H
 
 int interp_pyramid(pyr_cache *this_pyr, int argc, char **argv, char **envp);
+void interp_core(pyr_cache *this_pyr);
+
 void interp_boilerplate(void);
 
 void interp_init_once(pyr_cache *this_pyr);

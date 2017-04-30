@@ -12,13 +12,12 @@
 #include "bstruct.h"
 
 
-// Build verb_table:
-//  verb_table = mem_new_ptr(this_pyr, num_verbs);
-//  for each tag, fn_ptr:
-//      cons(tag, fn_ptr)
-//      add to verb_table
-//  update global_irt->verb_table
-//
+/*****************************************************************************
+ *                                                                           *
+ *                         INTERPRETER EXECUTION                             *
+ *                                                                           *
+ ****************************************************************************/
+
 
 //
 //
@@ -78,9 +77,25 @@ _reset_trace;
 }
 
 
+// Main entry-point to interpreter execution environment
+//
+void interp_core(pyr_cache *this_pyr){ // interp_core#
+
+    _die;
+
+}
+
+
+/*****************************************************************************
+ *                                                                           *
+ *                      INTERPRETER INITIALIZATION                           *
+ *                                                                           *
+ ****************************************************************************/
+
+
 //
 //
-void interp_boilerplate(void){
+void interp_boilerplate(void){ // interp_boilerplate#
 
 #ifdef MEM_DEBUG
 _prn(" >>MEM_DEBUG<< ");
@@ -195,75 +210,54 @@ _reset_trace;
 
     interp_reinitialize_nil(golden_nil);
 
-    ////////////////////////////
-    // init this_pyr->interp  //
-    ////////////////////////////
+    //////////////////////
+    // init global_irt  //
+    //////////////////////
 
     global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
 
-    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_runtime));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->cat_ex    = cat_ex;
 
-    this_pyr->interp->cat_ex    = cat_ex;
+    global_irt->op_restart        = (jmp_buf*)UNINIT_VAL;
+    global_irt->thread_counter    = 0;
+    global_irt->global_tick_count = 0;
 
-    this_pyr->interp->op_restart        = (jmp_buf*)UNINIT_VAL;
-    this_pyr->interp->thread_counter    = 0;
-    this_pyr->interp->global_tick_count = 0;
-
-    this_pyr->interp->argc      = argc;
-    this_pyr->interp->argv      = argv;
-    this_pyr->interp->envp      = envp;
+    global_irt->argc      = argc;
+    global_irt->argv      = argv;
+    global_irt->envp      = envp;
 
 #ifdef COMPAT_MODE
-    this_pyr->interp->hash_fn   = pearson16;
+    global_irt->hash_fn   = pearson16;
 #else
-    this_pyr->interp->hash_fn   = pearson_marsaglia16;
+    global_irt->hash_fn   = pearson_marsaglia16;
 #endif
 
-    ////////////////////////////////////
-    // init this_pyr->interp->flags   //
-    ////////////////////////////////////
+    //////////////////////////////
+    // init global_irt->flags   //
+    //////////////////////////////
 
     interp_init_flags(this_pyr);
 
     ////////////////////////////
     // init this_pyr          //
     ////////////////////////////
-
     this_pyr->self              = UNINIT_PTR;
-//    this_pyr->code_ptr          = UNINIT_PTR;
-//    this_pyr->rstack_ptr        = UNINIT_PTR;
-//    this_pyr->dstack_ptr        = UNINIT_PTR;
-//    this_pyr->soft_root         = UNINIT_PTR;
-//    this_pyr->local_root        = UNINIT_PTR;
-//    this_pyr->local_path        = UNINIT_PTR;
-//    this_pyr->local_pwd         = UNINIT_PTR;
-//
-//    this_pyr->thread_id         = UNINIT_VAL;
-//    this_pyr->steps             = UNINIT_VAL;
-//    this_pyr->advance_type      = UNINIT_VAL;
-//    this_pyr->bvm_initd         = UNINIT_VAL;
-//
-//    this_pyr->dstack_depth      = UNINIT_VAL;
-//    this_pyr->dstack_diameter   = UNINIT_VAL;
 
-    ////////////////////////////////
-    // init this_pyr->interp->mem //
-    ////////////////////////////////
+    //////////////////////////
+    // init global_irt->mem //
+    //////////////////////////
 
     mem_new(this_pyr, MEM_GC_STAT_BANK_MAX_SIZE);
 
-    this_pyr->flags->MEM_ALLOC_BLOCKING = CLR; // It is now safe to use mem_alloc()
-
-    this_pyr->flags->MEM_ALLOC_NON_GC = SET; // Continue using mem_non_gc_alloc until boot is complete (ensures proper teardown)
-//    this_pyr->flags->MEM_ALLOC_NON_GC = CLR; // Continue using mem_non_gc_alloc until boot is complete (ensures proper teardown)
+    global_irt->flags->MEM_ALLOC_BLOCKING = CLR; // It is now safe to use mem_alloc()
+    global_irt->flags->MEM_ALLOC_NON_GC = CLR;   // ... so stop using mem_non_gc_alloc()
 
     interp_init_limits(this_pyr);
-
     interp_init_privileges(this_pyr);
 
 #ifdef PROF_MODE
-    this_pyr->interp->profile = mem_non_gc_alloc(sizeof(pyr_profile));
+    global_irt->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
 
 #define X(a, b) global_irt->tags->a = HASHC(this_pyr, b);
@@ -283,7 +277,7 @@ PYR_TAGS
 
     global_irt->env = interp_load_pyr_env(this_pyr);
 
-    this_pyr->flags->INTERP_BOOT_IN_PROGRESS = CLR;
+    global_irt->flags->INTERP_BOOT_IN_PROGRESS = CLR;
 
 #ifdef INTERP_RESET_TRACE
 _msg("INTERP_RESET_TRACE: COMPLETE");
@@ -353,7 +347,7 @@ _reset_trace;
     f->PYR_CACHE_ONLY                       = CLR;
     f->PYR_CACHE_BLOCKING                   = CLR;
 
-    this_pyr->flags = f;
+    global_irt->flags = f;
 
     return this_pyr;
 
@@ -377,7 +371,7 @@ _reset_trace;
     l->max_num_file_access      = 0;        // XXX unimplemented
     l->max_run_time_ms          = 0;        // XXX unimplemented
 
-    this_pyr->interp->limits = l;
+    global_irt->limits = l;
 
     return this_pyr;
 
@@ -401,7 +395,7 @@ _reset_trace;
     p->BVM_FORK_ALLOWED   = SET;
 
 
-    this_pyr->interp->privileges = p;
+    global_irt->privileges = p;
 
     return this_pyr;
 

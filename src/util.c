@@ -116,7 +116,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                        _val(this_pyr, 0xcafefade),
 //                        _val(this_pyr, 0xabaddeed));
 
-//                ACC = this_pyr->interp->tags->PYR_TAG_TRIE_ENTRY;
+//                ACC = global_irt->tags->PYR_TAG_TRIE_ENTRY;
 //                ACC = global_irt->tags->PYR_TAG_TRIE;
 
 //                ACC = global_irt->fs;
@@ -197,7 +197,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 _notify("exiting bare metal prompt");
                 return;
             case 3:
-                _interp_reset(this_pyr);
+                _interp_reset;
                 break;
             case 4:
                 _d(ACC);

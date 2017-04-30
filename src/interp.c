@@ -51,7 +51,7 @@ _reset_trace;
     else if(val==INTERP_RESET){
 //        interp_exit(this_pyr);
 
-        mem_destroy(this_pyr->mem);
+        mem_destroy(global_irt->gc_mem);
         _say("INTERP_RESET: pyramid");
     }
 
@@ -120,8 +120,8 @@ void interp_init_once(pyr_cache *this_pyr){ // interp_init_once#
 _reset_trace;
 #endif
 
-    global_irt = malloc(sizeof(interp_runtime)); // XXX WAIVER(malloc) XXX //
-    global_irt->tags = malloc(sizeof(interp_tags));  // XXX WAIVER(malloc) XXX //
+    global_irt = malloc(sizeof(interp_runtime));    // XXX WAIVER(malloc) XXX //
+    global_irt->tags = malloc(sizeof(interp_tags)); // XXX WAIVER(malloc) XXX //
 
     interp_init_zero_hash();
     interp_init_nil_mem();
@@ -202,7 +202,7 @@ _reset_trace;
     global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
 
-    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_runtime)); // XXX WAIVER(mem_sys_alloc) XXX //
+    this_pyr->interp            = mem_non_gc_alloc(sizeof(interp_runtime));  // XXX WAIVER(mem_sys_alloc) XXX //
 
     this_pyr->interp->cat_ex    = cat_ex;
 
@@ -256,6 +256,7 @@ _reset_trace;
     this_pyr->flags->MEM_ALLOC_BLOCKING = CLR; // It is now safe to use mem_alloc()
 
     this_pyr->flags->MEM_ALLOC_NON_GC = SET; // Continue using mem_non_gc_alloc until boot is complete (ensures proper teardown)
+//    this_pyr->flags->MEM_ALLOC_NON_GC = CLR; // Continue using mem_non_gc_alloc until boot is complete (ensures proper teardown)
 
     interp_init_limits(this_pyr);
 
@@ -413,14 +414,14 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
 
     // Complete mem teardown
 
-    mem_destroy(this_pyr->mem);
+    mem_destroy(global_irt->gc_mem);
 
     mem_non_gc_teardown();
 
-    free(nil-1);
-    free(global_irt->tags->PYR_TAG_ZERO_HASH-1);
-    free(global_irt->tags);
-    free(global_irt);
+    free(nil-1);                                    // XXX WAIVER(free) XXX
+    free(global_irt->tags->PYR_TAG_ZERO_HASH-1);    // XXX WAIVER(free) XXX
+    free(global_irt->tags);                         // XXX WAIVER(free) XXX
+    free(global_irt);                               // XXX WAIVER(free) XXX
 
 #ifdef DEV_MODE
     _say("PYRAMID: exiting normally");

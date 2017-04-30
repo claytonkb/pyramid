@@ -110,9 +110,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = sexpr_from_string(this_pyr, C2B("[val 1 2 3]\n"));
 
-//                ACC = _mkbrick(this_pyr, C2B("foo"), _mkval(this_pyr, 4, 0x77777777, 0x99999999, 0xbbbbbbbb, 0xdddddddd));
-
-//                ACC = _mkAOC(this_pyr, 2,
+//                ACC = _mk_aop(this_pyr, 2,
 //                        _val(this_pyr, 0xdeadbabe),
 //                        _val(this_pyr, 0xbeefface),
 //                        _val(this_pyr, 0xcafefade),

@@ -203,8 +203,8 @@ typedef struct { // mem_thread_base#
     mword current_offset;
 
     // statistics
-    mword sys_alloc_count;
-    mword sys_free_count;
+    mword alloc_count;
+    mword free_count;
 
 } mem_thread_base; 
 
@@ -349,7 +349,8 @@ typedef struct { // interp_runtime
     pyr_profile *profile;
 #endif
 
-    mem_thread_base         *mem;
+    mem_thread_base         *sys_mem;
+    mem_context             *gc_mem;
 
     interp_tags             *tags;
     interp_strings          *strings;
@@ -390,12 +391,13 @@ typedef struct { // interp_runtime
 
 typedef struct { // pyr_cache#
 
-    mword *self;
-    mem_context  *mem;
+    mword           *self;
 
-    interp_flags *flags;
+//    mem_context     *mem;
 
-    interp_runtime *interp;
+    mword           *pyr_cpu_array;
+    interp_flags    *flags;
+    interp_runtime  *interp;
 
 } pyr_cache;
 
@@ -581,7 +583,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define size_masked(x)       (abs(~CTL_MASK & sfield(x))/MWORD_SIZE)    // size_masked#
 
 #define _mktptr(pyr,key,bs) mem_new_tptr(pyr,HASHC(pyr,key),bs)         // _mktptr#
-#define _mkbrick(pyr,key,bs) _cons(pyr, _mktptr(pyr,key,key),bs)        // _mkbrick#
 
 #define mem_new_valz(pyr,size) mem_new_val(pyr, size, 0) // mem_new_valz#
 #define mem_sys_free_bs(bs,size) mem_sys_free(bs-1,size) // mem_sys_free_bs#

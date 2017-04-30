@@ -6,64 +6,11 @@
 #include "array.h"
 
 
-// mem_new
-//
-void mem_new(pyr_cache *this_pyr, mword init_mem_size){ // mem_new#
-
-#if(defined INTERP_RESET_TRACE)
-_reset_trace;
-#elif(defined GC_TRACE)
-_trace;
-#endif
-
-    mem_context *m = mem_non_gc_alloc(sizeof(mem_context));
-
-    m->primary   = mem_non_gc_alloc(sizeof(alloc_bank));
-    m->secondary = mem_non_gc_alloc(sizeof(alloc_bank));
-
-    mem_bank_alloc(m->primary,   init_mem_size);
-    mem_bank_alloc(m->secondary, init_mem_size);
-
-//    this_pyr->interp->mem = m;
-    this_pyr->mem = m;
-
-}
-
-
-//
-//
-void mem_destroy(mem_context *m){ // mem_destroy#
-
-    mem_bank_free(m->primary);
-    mem_bank_free(m->secondary);
-
-}
-
-
-//
-//
-inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
-
-    a->base_ptr    = mem_sys_alloc(bank_size); // XXX WAIVER(mem_sys_alloc) XXX //
-    a->size        = bank_size;
-    a->bound_ptr   = (mword*)((char*)a->base_ptr   + (a->size-1));
-
-    mem_reset_bank(a);
-
-}
-
-
-//
-//
-inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
-
-    mem_sys_free(a->base_ptr);
-
-    a->base_ptr    = nil;
-    a->size        = 0;
-    a->bound_ptr   = nil;
-
-}
+/*****************************************************************************
+ *                                                                           *
+ *                    NON-GC MEMORY (global_irt->sys_mem)                    *
+ *                                                                           *
+ ****************************************************************************/
 
 
 // XXX WAIVER REQUIRED mem_sys_alloc XXX
@@ -78,7 +25,7 @@ void *mem_sys_alloc(int size){ // mem_sys_alloc#
         _fatal("malloc failed");
     }
 
-    global_irt->mem->sys_alloc_count++; // FIXME Wrap this in PROF_MODE guards
+    global_irt->sys_mem->alloc_count++; // FIXME Wrap this in PROF_MODE guards
 
     return alloc_attempt;
 
@@ -92,7 +39,7 @@ void mem_sys_free(void *p){ // mem_sys_free#
 
     free(p); // XXX WAIVER(free) XXX
 
-    global_irt->mem->sys_free_count++; // FIXME Wrap this in PROF_MODE guards
+    global_irt->sys_mem->free_count++; // FIXME Wrap this in PROF_MODE guards
 
 }
 
@@ -105,21 +52,20 @@ void mem_non_gc_new(void){ // mem_non_gc_new#
 _reset_trace;
 #endif
 
-//    global_irt->mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
-    global_irt->mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
-    global_irt->mem = global_irt->mem;
+    global_irt->sys_mem = malloc(sizeof(mem_thread_base)); // XXX WAIVER(malloc) XXX //
+    global_irt->sys_mem = global_irt->sys_mem;
 
-    global_irt->mem->sys_alloc_count = 0;
-    global_irt->mem->sys_free_count = 0;
+    global_irt->sys_mem->alloc_count = 0;
+    global_irt->sys_mem->free_count = 0;
 
     // XXX We can use mem_sys_alloc() now
-    global_irt->mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
-    global_irt->mem->current_page = global_irt->mem->base_ptr;
-    global_irt->mem->current_offset = 0;
+    global_irt->sys_mem->base_ptr = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
+    global_irt->sys_mem->current_page = global_irt->sys_mem->base_ptr;
+    global_irt->sys_mem->current_offset = 0;
 
     int i;
     for(i=0; i<mem_thread_base_page_size; i++){
-        ((mword**)(global_irt->mem->base_ptr))[i] = UNINIT_PTR;
+        ((mword**)(global_irt->sys_mem->base_ptr))[i] = UNINIT_PTR;
     }
 
 }
@@ -165,11 +111,10 @@ mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
     mword *temp;
     int i;
 
-    if(global_irt->mem->current_offset
+    if(global_irt->sys_mem->current_offset
             == (mem_thread_base_page_size-2)){ // Leave a space for the chaining pointer
-//        _die; // XXX implement chaining, if needed XXX
 
-        ((mword**)(global_irt->mem->current_page))[mem_thread_base_page_size-2] 
+        ((mword**)(global_irt->sys_mem->current_page))[mem_thread_base_page_size-2] 
             = non_gc_ptr;
 
         temp = mem_sys_alloc(UNITS_MTO8(mem_thread_base_page_size));
@@ -177,19 +122,19 @@ mword mem_non_gc_insert(void *non_gc_ptr){ // mem_non_gc_free#
             ((mword**)temp)[i] = UNINIT_PTR;
         }
 
-        ((mword**)(global_irt->mem->current_page))[mem_thread_base_page_size-1] 
+        ((mword**)(global_irt->sys_mem->current_page))[mem_thread_base_page_size-1] 
             = temp;
 
-        global_irt->mem->current_page   = temp;
-        global_irt->mem->current_offset = 0;
+        global_irt->sys_mem->current_page   = temp;
+        global_irt->sys_mem->current_offset = 0;
 
     }
     else{
-        global_irt->mem->current_page[global_irt->mem->current_offset]
+        global_irt->sys_mem->current_page[global_irt->sys_mem->current_offset]
             = (mword)non_gc_ptr;
     }
 
-    global_irt->mem->current_offset++;
+    global_irt->sys_mem->current_offset++;
 
     return 1;
 
@@ -205,29 +150,28 @@ mword mem_non_gc_free(void *non_gc_ptr){ // mem_non_gc_free#
 }
 
 
-// Returns 1 if teardown succeeded, 0 otherwise
+//
 // 
-//mword mem_non_gc_teardown(void){ // mem_non_gc_teardown#
 void mem_non_gc_reset(void){ // mem_non_gc_reset#
 
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
 
-    mem_non_gc_reset_pages(global_irt->mem->base_ptr);
+    mem_non_gc_reset_pages(global_irt->sys_mem->base_ptr);
 
-    global_irt->mem->current_page = global_irt->mem->base_ptr;
-    global_irt->mem->current_offset = 0;
+    global_irt->sys_mem->current_page = global_irt->sys_mem->base_ptr;
+    global_irt->sys_mem->current_offset = 0;
 
     int i;
     for(i=0; i<mem_thread_base_page_size; i++){
-        ((mword**)(global_irt->mem->base_ptr))[i] = UNINIT_PTR;
+        ((mword**)(global_irt->sys_mem->base_ptr))[i] = UNINIT_PTR;
     }
 
 }
 
 
-//
+// FIXME why isn't this calling mem_non_gc_free()? FIXME
 //
 void mem_non_gc_reset_pages(mword *page_ptr){ // mem_non_gc_reset_pages#
 
@@ -254,16 +198,84 @@ void mem_non_gc_teardown(void){ // mem_non_gc_teardown#
 
     mem_non_gc_reset();
 
-    mem_sys_free(global_irt->mem->base_ptr);
+    mem_sys_free(global_irt->sys_mem->base_ptr);
 
 #ifdef PROF_MODE
-    _dd(global_irt->mem->sys_alloc_count);
-    _dd(global_irt->mem->sys_free_count);
+    _dd(global_irt->sys_mem->alloc_count);
+    _dd(global_irt->sys_mem->free_count);
 #endif
 
-    free(global_irt->mem);
+    free(global_irt->sys_mem);
 
 }
+
+
+/*****************************************************************************
+ *                                                                           *
+ *                       GC MEMORY (global_irt->gc_mem)                      *
+ *                                                                           *
+ ****************************************************************************/
+
+//
+//
+void mem_new(pyr_cache *this_pyr, mword init_mem_size){ // mem_new#
+
+#if(defined INTERP_RESET_TRACE)
+_reset_trace;
+#elif(defined GC_TRACE)
+_trace;
+#endif
+
+    mem_context *m = mem_non_gc_alloc(sizeof(mem_context));
+
+    m->primary   = mem_non_gc_alloc(sizeof(alloc_bank));
+    m->secondary = mem_non_gc_alloc(sizeof(alloc_bank));
+
+    mem_bank_alloc(m->primary,   init_mem_size);
+    mem_bank_alloc(m->secondary, init_mem_size);
+
+    global_irt->gc_mem = m;
+
+}
+
+
+//
+//
+void mem_destroy(mem_context *m){ // mem_destroy#
+
+    mem_bank_free(m->primary);
+    mem_bank_free(m->secondary);
+
+}
+
+
+//
+//
+inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
+
+    a->base_ptr    = mem_sys_alloc(bank_size); // XXX WAIVER(mem_sys_alloc) XXX //
+    a->size        = bank_size;
+    a->bound_ptr   = (mword*)((char*)a->base_ptr   + (a->size-1));
+    a->alloc_ptr   = a->bound_ptr;
+
+    mem_reset_bank(a);
+
+}
+
+
+//
+//
+inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
+
+    mem_sys_free(a->base_ptr);
+
+    a->base_ptr    = nil;
+    a->size        = 0;
+    a->bound_ptr   = nil;
+    a->alloc_ptr   = nil;
+
+}
+
 
 //
 //
@@ -281,11 +293,27 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
         return result;
     }
 
+    _d(global_irt->gc_mem->primary->base_ptr);
+    _d(global_irt->gc_mem->primary->bound_ptr);
+    _d(global_irt->gc_mem->primary->alloc_ptr);
+    _dd(global_irt->gc_mem->primary->size);
+
+    _d(global_irt->gc_mem->secondary->base_ptr);
+    _d(global_irt->gc_mem->secondary->bound_ptr);
+    _d(global_irt->gc_mem->secondary->alloc_ptr);
+    _dd(global_irt->gc_mem->secondary->size);
+
     _die;
     return nil;
 
 }
 
+
+/*****************************************************************************
+ *                                                                           *
+ *                             ALLOC UTILITIES                               *
+ *                                                                           *
+ ****************************************************************************/
 
 //
 //
@@ -485,10 +513,10 @@ void *_mkptr(pyr_cache *this_pyr, mword array_size, ...){ // _mkptr#
 }
 
 
-// make "array-of-cons"
+// make aop ==> "array-of-pairs"
 // array_size = number-of-arguments / 2
 //
-void *_mkAOC(pyr_cache *this_pyr, mword array_size, ...){ // _mkAOC#
+void *_mk_aop(pyr_cache *this_pyr, mword array_size, ...){ // _mkAOC#
 
     void *ptr = (void*)mem_new_ptr(this_pyr, array_size);
 
@@ -510,30 +538,6 @@ void *_mkAOC(pyr_cache *this_pyr, mword array_size, ...){ // _mkAOC#
     return ptr;
 
 }
-
-
-//// creates a new list of given size
-//// note that the list is created in REVERSE order:
-//// _newls(this_pyr, 3, _val(this_pyr,3), _val(this_pyr,2), _val(this_pyr,1)) --> (1 2 3)
-////
-//mword *_mkls(pyr_cache *this_pyr, mword list_size, ...){ // _mkls#
-//
-//    va_list vl;
-//    va_start(vl,list_size);
-//
-//    int i;
-//
-//    mword *last_cons = nil;
-//
-//    for(i=0;i<list_size;i++){
-//        last_cons = (void*)_cons(this_pyr, va_arg(vl,mword*), last_cons);
-//    }
-//
-//    va_end(vl);
-//
-//    return last_cons;
-//
-//}
 
 
 // creates a new list of given size

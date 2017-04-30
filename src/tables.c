@@ -4,10 +4,23 @@
 #include "pyramid.h"
 #include "tables.h"
 
-mword *tables_new(void){
+void tables_new(pyr_cache *this_pyr){
 
-    return nil;
+    tables_new_verb_table(this_pyr);
+    tables_new_noun_table(this_pyr);
 
+}
+
+
+//
+//
+void tables_new_verb_table(pyr_cache *this_pyr){
+}
+
+
+//
+//
+void tables_new_noun_table(pyr_cache *this_pyr){
 }
 
 

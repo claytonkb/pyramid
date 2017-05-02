@@ -4,37 +4,25 @@
 #ifndef TAGS_H 
 #define TAGS_H 
 
-#define PYR_NUM_NOUN_TAGS 10 // XXX This number is ad hoc and can break the build with changes!!! XXX
-#define PYR_NUM_VERB_TAGS 10 // XXX This number is ad hoc and can break the build with changes!!! XXX
-#define PYR_NUM_TAGS 100 // XXX This number is ad hoc and can break the build with changes!!! XXX
+// noun --> a blob that you can do something to
+// verb --> a blob that can do something to other blobs
+// pred --> a blob that has a matching predicate-test that reduces to T/F
+
+#define PYR_NUM_NOUN_TAGS 64 // XXX This number is ad hoc and can break the build with changes!!! XXX
+#define PYR_NUM_VERB_TAGS 16 // XXX This number is ad hoc and can break the build with changes!!! XXX
+#define PYR_NUM_TAGS (PYR_NUM_NOUN_TAGS + PYR_NUM_VERB_TAGS) // XXX This number is ad hoc and can break the build with changes!!! XXX
 
 #ifdef COMPAT_MODE
 
 #define PYR_NOUN_TAGS                                                       \
+    X(PYR_TAG_ARRAY8           , "/babel/tag/array8")                       \
+    X(PYR_TAG_ARRAY1           , "/babel/tag/array1")                       \
+    X(PYR_TAG_INTERP_NIL       , "nil")                                     \
+    X(PYR_TAG_NIL              , "/babel/tag/nil")                          \
     X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                 \
     X(PYR_TAG_OPERAND          , "/pyramid/tag/operand")                    \
+    X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")                   \
     X(PYR_TAG_CPTR             , "/pyramid/tag/cptr")                       \
-    X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")
-
-#define PYR_VERB_TAGS                                                       \
-    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                     \
-    X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op")
-
-#define PYR_TAGS                                                            \
-    PYR_NOUN_TAGS                                                           \
-    PYR_VERB_TAGS                                                           \
-    X(PYR_TAG_NIL              , "/babel/tag/nil")                          \
-    X(PYR_TAG_INTERP_NIL       , "nil")                                     \
-    X(PYR_TAG_EXIST            , "/babel/tag/exist")                        \
-    X(PYR_TAG_UNEXIST          , "/babel/tag/unexist")                      \
-    X(PYR_TAG_DEF              , "/babel/tag/def")                          \
-    X(PYR_TAG_UNDEF            , "/babel/tag/undef")                        \
-    X(PYR_TAG_TRUE             , "/babel/tag/true")                         \
-    X(PYR_TAG_FALSE            , "/babel/tag/false")                        \
-    X(PYR_TAG_ACCEPT           , "/babel/tag/accept")                       \
-    X(PYR_TAG_REJECT           , "/babel/tag/reject")                       \
-    X(PYR_TAG_PASS             , "/babel/tag/pass")                         \
-    X(PYR_TAG_FAIL             , "/babel/tag/fail")                         \
     X(PYR_TAG_NAN              , "/babel/tag/nan")                          \
     X(PYR_TAG_REF              , "/babel/tag/ref")                          \
     X(PYR_TAG_PURE_REF         , "/babel/tag/pure_ref")                     \
@@ -46,8 +34,6 @@
     X(PYR_TAG_STRING_ARRAY     , "/babel/tag/string_array")                 \
     X(PYR_TAG_STRING_LIST      , "/babel/tag/string_list")                  \
     X(PYR_TAG_NUMERIC          , "/babel/tag/numeric")                      \
-    X(PYR_TAG_ARRAY8           , "/babel/tag/array8")                       \
-    X(PYR_TAG_ARRAY1           , "/babel/tag/array1")                       \
     X(PYR_TAG_BVM              , "/babel/tag/bvm")                          \
     X(PYR_TAG_SYM_BVM          , "/babel/tag/sym_bvm")                      \
     X(PYR_TAG_HIBER_BVM        , "/babel/tag/hiber_bvm")                    \
@@ -59,6 +45,24 @@
     X(PYR_TAG_BVM_JUMP_TABLE   , "/babel/tag/bvm_jump_table")               \
     X(PYR_TAG_BVM_SYM_TABLE    , "/babel/tag/bvm_sym_table")                \
     X(PYR_TAG_BVM_STEPS        , "/babel/tag/bvm_steps")                    \
+    X(PYR_TAG_REF_HASH         , "/babel/tag/ref_hash")                     \
+    X(PYR_TAG_REF_STRING       , "/babel/tag/ref_string")                   \
+    X(PYR_TAG_REF_ARRAY        , "/babel/tag/ref_array")                    \
+    X(PYR_TAG_REF_SYM_LOCAL    , "/babel/tag/ref_sym_local")                \
+    X(PYR_TAG_REF_SYM_GLOBAL   , "/babel/tag/ref_sym_global")               \
+    X(PYR_TAG_TRIE             , "/babel/tag/trie")                         \
+    X(PYR_TAG_TRIE_ENTRY       , "/babel/tag/trie_entry")                   \
+    X(PYR_TAG_SENTINEL         , "/babel/tag/sentinel")                     \
+    X(PYR_TAG_MONKEY           , "/babel/tag/monkey")                       \
+    X(PYR_TAG_ROBOT            , "/babel/tag/robot")                        \
+    X(PYR_TAG_BVM_INITD        , "/babel/tag/bvm_initd")                    \
+    X(PYR_SYM_ARGV             , "/babel/sym/argv")                         \
+    X(PYR_SYM_PARENT_BVM       , "/babel/sym/parent_bvm")                   \
+    X(PYR_SYM_CODE_RESTART_POINT , "/babel/sym/code_restart_point")       
+
+#define PYR_VERB_TAGS                                                       \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                     \
+    X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op")                     \
     X(PYR_TAG_EVAL             , "/babel/tag/eval")                         \
     X(PYR_TAG_LOOP             , "/babel/tag/loop")                         \
     X(PYR_TAG_TIMES            , "/babel/tag/times")                        \
@@ -70,22 +74,48 @@
     X(PYR_TAG_ALT              , "/babel/tag/alt")                          \
     X(PYR_TAG_SEQ              , "/babel/tag/seq")                          \
     X(PYR_TAG_LET              , "/babel/tag/let")                          \
-    X(PYR_TAG_REF_HASH         , "/babel/tag/ref_hash")                     \
-    X(PYR_TAG_REF_STRING       , "/babel/tag/ref_string")                   \
-    X(PYR_TAG_REF_ARRAY        , "/babel/tag/ref_array")                    \
-    X(PYR_TAG_REF_SYM_LOCAL    , "/babel/tag/ref_sym_local")                \
-    X(PYR_TAG_REF_SYM_GLOBAL   , "/babel/tag/ref_sym_global")               \
-    X(PYR_TAG_COND             , "/babel/tag/cond")                         \
-    X(PYR_TAG_TRIE             , "/babel/tag/trie")                         \
-    X(PYR_TAG_TRIE_ENTRY       , "/babel/tag/trie_entry")                   \
-    X(PYR_TAG_SENTINEL         , "/babel/tag/sentinel")                     \
-    X(PYR_TAG_MONKEY           , "/babel/tag/monkey")                       \
-    X(PYR_TAG_ROBOT            , "/babel/tag/robot")                        \
+    X(PYR_TAG_COND             , "/babel/tag/cond")
+
+#define PYR_PRED_TAGS                                                       \
+    X(PYR_TAG_EXIST            , "/babel/tag/exist")                        \
+    X(PYR_TAG_UNEXIST          , "/babel/tag/unexist")                      \
+    X(PYR_TAG_DEF              , "/babel/tag/def")                          \
+    X(PYR_TAG_UNDEF            , "/babel/tag/undef")                        \
+    X(PYR_TAG_TRUE             , "/babel/tag/true")                         \
+    X(PYR_TAG_FALSE            , "/babel/tag/false")                        \
+    X(PYR_TAG_ACCEPT           , "/babel/tag/accept")                       \
+    X(PYR_TAG_REJECT           , "/babel/tag/reject")                       \
+    X(PYR_TAG_PASS             , "/babel/tag/pass")                         \
+    X(PYR_TAG_FAIL             , "/babel/tag/fail")                         \
     X(PYR_TAG_UNTYPED          , "/babel/tag/untyped")                      \
-    X(PYR_TAG_BVM_INITD        , "/babel/tag/bvm_initd")                    \
-    X(PYR_SYM_ARGV             , "/babel/sym/argv")                         \
-    X(PYR_SYM_PARENT_BVM       , "/babel/sym/parent_bvm")                   \
-    X(PYR_SYM_CODE_RESTART_POINT , "/babel/sym/code_restart_point")       
+
+#define PYR_FORM_SYMS                                                       \
+    X(PYR_SYM_IGNORE           , "/pyramid/sym/ignore")                     \
+    X(PYR_SYM_QUOTE            , "/pyramid/sym/quote")                      \
+    X(PYR_SYM_SEXPR            , "/pyramid/sym/sexpr")                      \
+    X(PYR_SYM_BYTES            , "/pyramid/sym/bytes")                      \
+    X(PYR_SYM_LIST             , "/pyramid/sym/list")                       \
+    X(PYR_SYM_CODE             , "/pyramid/sym/code")                       \
+    X(PYR_SYM_HASH             , "/pyramid/sym/hash")                       \
+    X(PYR_SYM_OPER             , "/pyramid/sym/oper")                       \
+    X(PYR_SYM_TPTR             , "/pyramid/sym/tptr")                       \
+    X(PYR_SYM_VAL              , "/pyramid/sym/val")                        \
+    X(PYR_SYM_PTR              , "/pyramid/sym/ptr")                        \
+    X(PYR_SYM_TAG              , "/pyramid/sym/tag")                        \
+    X(PYR_SYM_REF              , "/pyramid/sym/ref")                        \
+    X(PYR_SYM_NIL              , "/pyramid/sym/nil")                        \
+    X(PYR_SYM_SYM              , "/pyramid/sym/sym")                        \
+    X(PYR_SYM_BS               , "/pyramid/sym/bs")                         \
+    X(PYR_SYM_QW               , "/pyramid/sym/qw")                         \
+    X(PYR_SYM_SQUOTE           , "/pyramid/sym/squote")                     \
+    X(PYR_SYM_DQUOTE           , "/pyramid/sym/dquote")                     \
+
+#define PYR_TAGS                                                            \
+    PYR_NOUN_TAGS                                                           \
+    PYR_VERB_TAGS                                                           \
+    PYR_PRED_TAGS                                                           \
+    PYR_FORM_SYMS
+
 #else
 #define PYR_TAGS                                                            \
     X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                 \

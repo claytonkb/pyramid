@@ -245,7 +245,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _say("------------------------------------");
 //                _mem(global_irt->tags->PYR_TAG_CPTR);
 
-                ACC = global_irt->verb_table;
+                ACC = global_irt->noun_table;
 
                 break;
             case 2:

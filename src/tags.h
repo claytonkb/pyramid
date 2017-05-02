@@ -4,6 +4,8 @@
 #ifndef TAGS_H 
 #define TAGS_H 
 
+#define PYR_NUM_NOUN_TAGS 10 // XXX This number is ad hoc and can break the build with changes!!! XXX
+#define PYR_NUM_VERB_TAGS 10 // XXX This number is ad hoc and can break the build with changes!!! XXX
 #define PYR_NUM_TAGS 100 // XXX This number is ad hoc and can break the build with changes!!! XXX
 
 #ifdef COMPAT_MODE
@@ -15,7 +17,8 @@
     X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")
 
 #define PYR_VERB_TAGS                                                       \
-    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                     \
+    X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op")
 
 #define PYR_TAGS                                                            \
     PYR_NOUN_TAGS                                                           \

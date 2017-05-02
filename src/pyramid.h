@@ -365,6 +365,9 @@ typedef struct { // interp_runtime
     interp_limits           *limits;
     interp_privileges       *privileges;
 
+    mword                   *noun_table;
+    mword                   *verb_table;
+
     jmp_buf                 *cat_ex;
     jmp_buf                 *op_restart;
     int                      argc;

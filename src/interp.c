@@ -286,6 +286,8 @@ PYR_TAGS
 
     interp_init_tags_strings(this_pyr);
 
+    interp_init_tables(this_pyr);
+
     interp_init_symbols(this_pyr);
 
     this_pyr->self = interp_load_root_bvm(this_pyr);
@@ -302,6 +304,49 @@ _msg("INTERP_RESET_TRACE: COMPLETE");
 #endif
 
     return this_pyr;
+
+}
+
+
+//
+//
+void interp_init_tables(pyr_cache *this_pyr){ // interp_init_tables#
+
+    int i=0;
+
+#ifdef INTERP_RESET_TRACE
+_prn("PYR_NUM_VERB_TAGS is ");
+_dd(PYR_NUM_VERB_TAGS);
+_prn("PYR_NUM_NOUN_TAGS is ");
+_dd(PYR_NUM_NOUN_TAGS);
+#endif
+
+    global_irt->verb_table = mem_new_ptr(this_pyr, PYR_NUM_VERB_TAGS);
+    global_irt->noun_table = mem_new_ptr(this_pyr, PYR_NUM_NOUN_TAGS);
+
+#define X(a, b) \
+    ldp(global_irt->verb_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
+    PYR_VERB_TAGS    
+#undef X
+
+    for(;i<PYR_NUM_VERB_TAGS;i++){
+        ldp(global_irt->verb_table,i) = _cons(this_pyr, nil, nil);
+    }
+
+    array_sort(this_pyr, global_irt->verb_table, LEX_MWORD);
+
+    i=0;
+
+#define X(a, b) \
+    ldp(global_irt->noun_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
+    PYR_NOUN_TAGS    
+#undef X
+
+    for(;i<PYR_NUM_NOUN_TAGS;i++){
+        ldp(global_irt->noun_table,i) = _cons(this_pyr, nil, nil);
+    }
+
+    array_sort(this_pyr, global_irt->noun_table, LEX_MWORD);
 
 }
 

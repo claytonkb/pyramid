@@ -487,7 +487,6 @@ _reset_trace;
     p->BVM_EXEC_ALLOWED   = SET;
     p->BVM_FORK_ALLOWED   = SET;
 
-
     global_irt->privileges = p;
 
     return this_pyr;

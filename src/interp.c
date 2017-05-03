@@ -10,6 +10,8 @@
 #include "trie.h"
 #include "string.h"
 #include "bstruct.h"
+#include "array.h"
+
 
 // invocation
 // |    init_once
@@ -281,6 +283,8 @@ PYR_TAGS
 PYR_TAGS    
 #undef X
 
+    interp_init_tags_strings(this_pyr);
+
     interp_init_symbols(this_pyr);
 
     this_pyr->self = interp_load_root_bvm(this_pyr);
@@ -300,6 +304,36 @@ _msg("INTERP_RESET_TRACE: COMPLETE");
 
 }
 
+
+//
+//
+void interp_init_tags_strings(pyr_cache *this_pyr){ // interp_init_tags_strings#
+
+    int i=0;
+    mword *car;
+    mword *cdr;
+
+#ifdef INTERP_RESET_TRACE
+_prn("PYR_NUM_TAGS is ");
+_dd(PYR_NUM_TAGS);
+#endif
+
+    global_irt->tags_strings = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
+
+#define X(a, b) \
+    car = global_irt->tags->a; \
+    cdr = global_irt->strings->a; \
+    ldp(global_irt->tags_strings,i++) = _cons(this_pyr, car, cdr);
+    PYR_TAGS    
+#undef X
+
+    for(;i<PYR_NUM_TAGS;i++){
+        ldp(global_irt->tags_strings,i) = _cons(this_pyr, nil, nil);
+    }
+
+    array_sort(this_pyr, global_irt->tags_strings, LEX_MWORD);
+
+}
 
 //
 //

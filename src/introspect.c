@@ -164,45 +164,7 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
 
     int num_entries = size(bs);
 
-    if(is_tptr(bs)){ // is_tptr
-
-        if(!is_nil(bs)){ // XXX 140 * NTAG
-
-            bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
-
-            for(i=0; i<HASH_SIZE; i++){ // XXX 13 * 4 = 52
-
-                bsprintf(this_pyr, result, offset, "<f%d> %x", i, *(mword *)(bs+i)); // XXX 12
-
-                if(i<(HASH_SIZE-1)){
-                    bsprintf(this_pyr, result, offset, "|"); // XXX 1
-                }
-
-            }
-
-            bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
-
-            bsprintf(this_pyr, result, offset,
-                        "\"s%08x\":f0 -> \"s%08x\":f0 [arrowhead=\"none\"];\n", // XXX 53
-                        (mword)bs, 
-                        (mword)(bs+HASH_SIZE+1));
-
-            mark_traversed_U(bs);
-
-            _rbs2gv(this_pyr, (mword *)(bs+HASH_SIZE+1), result, offset, 0);
-
-        }
-#ifdef PYR_INTROSPECT_SHOW_NIL
-        else{
-
-            bsprintf(this_pyr, result, offset, "s%08x [style=bold,shape=record,label=\"", (mword)bs);
-            bsprintf(this_pyr, result, offset, "<f0> nil (%x)", (mword)bs);
-            bsprintf(this_pyr, result, offset, "\"];\n");
-
-        }
-#endif
-    }
-    else if(is_ptr(bs)){ // XXX 33 * NIN
+    if(is_ptr(bs)){ // XXX 33 * NIN
 
         mark_traversed_U(bs);
 
@@ -238,7 +200,7 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
         // XXX (25 + 43) * NPT
 
     }
-    else{// if(is_val(bs)){  // XXX 65 * NLF
+    else if(is_val(bs)){  // XXX 65 * NLF
 
         if(num_entries > 8){
             num_entries=8;
@@ -269,6 +231,59 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
         bsprintf(this_pyr, result, offset, "\"];\n");             // XXX 4
 
     }
+    else{ //if(is_tptr(bs)){ // is_tptr
+
+        if(!is_nil(bs)){ // XXX 140 * NTAG
+
+            if(is_cptr(bs)){ // we should search all known tags and print corresponding label
+
+                bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
+                bsprintf(this_pyr, result, offset, "<f0> /pyramid/tag/cptr");
+                bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
+
+                mark_traversed_U(bs);
+
+            }
+            else{
+
+                bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
+
+                for(i=0; i<HASH_SIZE; i++){ // XXX 13 * 4 = 52
+
+                    bsprintf(this_pyr, result, offset, "<f%d> %x", i, *(mword *)(bs+i)); // XXX 12
+
+                    if(i<(HASH_SIZE-1)){
+                        bsprintf(this_pyr, result, offset, "|"); // XXX 1
+                    }
+
+                }
+
+                bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
+
+                bsprintf(this_pyr, result, offset,
+                            "\"s%08x\":f0 -> \"s%08x\":f0 [arrowhead=\"none\"];\n", // XXX 53
+                            (mword)bs, 
+                            (mword)(bs+HASH_SIZE+1));
+
+                mark_traversed_U(bs);
+
+                _rbs2gv(this_pyr, (mword *)(bs+HASH_SIZE+1), result, offset, 0);
+
+            }
+
+        }
+#ifdef PYR_INTROSPECT_SHOW_NIL
+        else{
+
+            bsprintf(this_pyr, result, offset, "s%08x [style=bold,shape=record,label=\"", (mword)bs);
+            bsprintf(this_pyr, result, offset, "<f0> nil (%x)", (mword)bs);
+            bsprintf(this_pyr, result, offset, "\"];\n");
+
+        }
+#endif
+
+    }
+
 
     mark_traversed_U(bs);
 

@@ -225,6 +225,26 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                temp = mem_new_tptr(this_pyr, global_irt->tags->PYR_TAG_CPTR, nil);
 //                ACC = _val(this_pyr, is_cptr(temp));
 
+//                ACC = _mk_aop(this_pyr, 2,
+//                        mem_new_tptr(this_pyr, global_irt->tags->PYR_TAG_CPTR, _val(this_pyr, 0xdeadbeef)),
+//                        _val(this_pyr, 0xdeadbabe),
+//                        mem_new_tptr(this_pyr, global_irt->tags->PYR_TAG_OPERAND, nil),
+//                        _val(this_pyr, 0xbeefface),
+//                        _val(this_pyr, 0xcafefade),
+//                        _val(this_pyr, 0xabaddeed));
+
+//                ACC = global_irt->tags_strings;
+
+//                ACC = _val(this_pyr,
+//                        array_search(this_pyr, global_irt->tags_strings, global_irt->tags->PYR_TAG_CPTR, LEX_MWORD));
+
+                tempv = array_search(this_pyr, global_irt->tags_strings, global_irt->tags->PYR_TAG_CPTR, LEX_MWORD);
+                ACC = rdp(global_irt->tags_strings, tempv);
+
+                _say("------------------------------------");
+                _mem(global_irt->tags->PYR_TAG_CPTR);
+
+
                 break;
             case 2:
                 _notify("exiting bare metal prompt");

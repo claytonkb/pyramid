@@ -60,7 +60,7 @@ mword *_dcons(pyr_cache *this_pyr, mword *car, mword *cdr, mword *cpr);
 
 void *_mkval(pyr_cache *this_pyr, mword array_size, ...);
 void *_mkptr(pyr_cache *this_pyr, mword array_size, ...);
-void *_mkAOC(pyr_cache *this_pyr, mword array_size, ...);
+void *_mk_aop(pyr_cache *this_pyr, mword array_size, ...);
 
 mword *_mkls(pyr_cache *this_pyr, mword list_size, ...);
 mword *_mkdls(pyr_cache *this_pyr, mword list_size, ...);

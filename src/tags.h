@@ -4,6 +4,8 @@
 #ifndef TAGS_H 
 #define TAGS_H 
 
+#define PYR_NUM_TAGS 100 // XXX This number is ad hoc and can break the build with changes!!! XXX
+
 #ifdef COMPAT_MODE
 
 #define PYR_NOUN_TAGS                                                       \

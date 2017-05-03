@@ -997,6 +997,7 @@ void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src
 // ETC:
 
 // In-place mergesort of an array
+// st can be one of: {UNSIGNED, SIGNED, ALPHA_MWORD, ALPHA_BYTE, LEX_MWORD, LEX_BYTE, VAL, CUSTOM}
 //
 void array_sort(pyr_cache *this_pyr, mword *array, sort_type st){ // array_sort#
 
@@ -1057,6 +1058,10 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
     for(i = right_start; i<right_end; i++, r++){
         right_half[r] = array[i];
     }
+
+// XXX PERF: 'is_val(array)' is BAD here (conditional inside recursion)
+// XXX Instead, test array-type (val or ptr) in array_sort() and then call
+// XXX array_sort_r() or array_sort_aop_r() depending on array type
 
     // merge left_half and right_half back into array
     if(is_val(array) || (st == VAL)){ // st == VAL means "sort ptr-array as a val-array"

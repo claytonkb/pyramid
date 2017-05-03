@@ -532,10 +532,10 @@ void *_mkptr(pyr_cache *this_pyr, mword array_size, ...){ // _mkptr#
 }
 
 
-// make aop ==> "array-of-pairs"
+// make aop ==> make "array-of-pairs"
 // array_size = number-of-arguments / 2
 //
-void *_mk_aop(pyr_cache *this_pyr, mword array_size, ...){ // _mkAOC#
+void *_mk_aop(pyr_cache *this_pyr, mword array_size, ...){ // _mk_aop#
 
     void *ptr = (void*)mem_new_ptr(this_pyr, array_size);
 

@@ -122,6 +122,28 @@ mword _rmu(pyr_cache *this_pyr, mword *bs, void *v){ // _rmu#
 }
 
 
+// _nar -> number of leaf-arrays
+//
+mword _nar(pyr_cache *this_pyr, mword *bs){ // _nar#
+
+    mword counter=0;
+    _recurse(this_pyr, bs, _rnar, &counter);
+    return counter;
+
+}
+
+
+//
+//
+mword _rnar(pyr_cache *this_pyr, mword *bs, void *v){ // _rnar#
+
+    *(mword*)v += 1;
+
+    return 1;
+
+}
+
+
 // _nlf -> number of leaf-arrays
 //
 mword _nlf(pyr_cache *this_pyr, mword *bs){ // _nlf#
@@ -473,9 +495,11 @@ void set_offset_for_ptr(
 //
 mword *bstruct_to_array(pyr_cache *this_pyr, mword *bs){  // bstruct_to_array#
 
-    mword num_arrays  = _nin(this_pyr, bs);
-          num_arrays += _nlf(this_pyr, bs);
-          num_arrays += _ntag(this_pyr, bs);
+//    mword num_arrays  = _nin(this_pyr, bs);
+//          num_arrays += _nlf(this_pyr, bs);
+//          num_arrays += _ntag(this_pyr, bs);
+
+    mword num_arrays = _nar(this_pyr, bs);
 
     mword *arr_list = mem_new_ptr(this_pyr, num_arrays);
     mword offset = 0;
@@ -511,7 +535,8 @@ void bstruct_to_array_r(pyr_cache *this_pyr, mword *bs, mword *arr_list, mword *
 
         mark_traversed_U(tptr_ptr);
 
-        bstruct_to_array_r(this_pyr, (mword*)*tptr_ptr, arr_list, offset);
+//        bstruct_to_array_r(this_pyr, (mword*)*tptr_ptr, arr_list, offset);
+        bstruct_to_array_r(this_pyr, tcar(bs), arr_list, offset);
 
     }
     else if(is_ptr(bs)){

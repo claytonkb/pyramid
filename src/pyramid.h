@@ -24,6 +24,7 @@
 //#define BPDL_TRACE
 //#define BPDL2_TRACE
 //#define GC_TRACE
+//#define PYR_INTROSPECT_SHOW_NIL
 
 /*****************************************************************************
  *                                                                           *
@@ -517,6 +518,7 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define is_val(x)    ((int)sfield((mword*)x) >  0)                  // is_val#
 #define is_ptr(x)    ((int)sfield((mword*)x) <  0)                  // is_ptr#
 #define is_tptr(x)   ((int)sfield((mword*)x) == 0)                  // is_tptr#
+#define is_cptr(x)   tageq((x), global_irt->tags->PYR_TAG_CPTR, TAG_SIZE) // is_cptr#
 
 #define is_tptr_spec(x)   (!is_val(x) && !is_ptr && !is_nil(x))     // is_tptr_spec#
 

@@ -192,6 +192,15 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
             _rbs2gv(this_pyr, (mword *)(bs+HASH_SIZE+1), result, offset, 0);
 
         }
+#ifdef PYR_INTROSPECT_SHOW_NIL
+        else{
+
+            bsprintf(this_pyr, result, offset, "s%08x [style=bold,shape=record,label=\"", (mword)bs);
+            bsprintf(this_pyr, result, offset, "<f0> nil (%x)", (mword)bs);
+            bsprintf(this_pyr, result, offset, "\"];\n");
+
+        }
+#endif
     }
     else if(is_ptr(bs)){ // XXX 33 * NIN
 
@@ -216,11 +225,11 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
         }
 
         for(i=0; i<num_entries; i++){
-
+#ifndef PYR_INTROSPECT_SHOW_NIL
             if(is_nil(pcar(bs+i))){
                 continue;
             }
-
+#endif
             bsprintf(this_pyr, result, offset, "\"s%08x\":f%d -> \"s%08x\":f0;\n", (mword)bs, i, *(mword *)(bs+i)); // XXX 43
             _rbs2gv(this_pyr, (mword *)*(bs+i), result, offset, 0);
 

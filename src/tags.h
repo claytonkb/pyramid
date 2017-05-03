@@ -9,6 +9,7 @@
 #define PYR_NOUN_TAGS                                                       \
     X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                 \
     X(PYR_TAG_OPERAND          , "/pyramid/tag/operand")                    \
+    X(PYR_TAG_CPTR             , "/pyramid/tag/cptr")                       \
     X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")
 
 #define PYR_VERB_TAGS                                                       \

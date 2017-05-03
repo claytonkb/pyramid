@@ -12,6 +12,8 @@ mword _fn_recurse(pyr_cache *this_pyr, mword *bs, bstruct_op_fn_ptr bfn, void *v
 
 mword _mu(pyr_cache *this_pyr, mword *bs);
 mword _rmu(pyr_cache *this_pyr, mword *bs, void *v);
+mword _nar(pyr_cache *this_pyr, mword *bs);
+mword _rnar(pyr_cache *this_pyr, mword *bs, void *v);
 mword _nlf(pyr_cache *this_pyr, mword *bs);
 mword _rnlf(pyr_cache *this_pyr, mword *bs, void *v);
 mword _nin(pyr_cache *this_pyr, mword *bs);

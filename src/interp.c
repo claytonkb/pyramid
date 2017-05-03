@@ -11,6 +11,19 @@
 #include "string.h"
 #include "bstruct.h"
 
+// invocation
+// |    init_once
+// |    |   reinit
+// |    |   |   global_irt ready
+// |    |   |   |   pyr_vm ready
+// |    |   |   |   |   pvc ready
+// |    |   |   |   |   |   interp_core
+// |    |   |   |   |   |   |   pvc_core
+// |    |   |   |   |   |   |   |   code_exec
+// |    |   |   |   |   |   |   |   |
+// v    v   v   v   v   v   v   v   v
+// |----------------------------------------> t
+
 
 /*****************************************************************************
  *                                                                           *

@@ -67,10 +67,11 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
     int i;
 
     mword *ACC = init_ptr;
-//    mword  tempv=0;
+    mword  tempv=0;
     char  *tempc = NULL;
     mword *temp=nil;
 //    mword *temp2=nil;
+    tempv+=0; // silence compiler warning
 
     _notify("entering bare metal prompt");
 
@@ -190,7 +191,39 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = bstruct_load(this_pyr, ACC, size(ACC));
 //                _say("code_block.bbl loaded");
 
-                ACC = global_irt->env;
+//                tempv = _mu(this_pyr, global_irt->env);
+//                _prn("_mu: ");
+//                _dd(tempv);
+//
+//                tempv = _nar(this_pyr, global_irt->env);
+//                _prn("_nar: ");
+//                _dd(tempv);
+//
+//                tempv = _nin(this_pyr, global_irt->env);
+//                _prn("_nin: ");
+//                _dd(tempv);
+//
+//                tempv = _nlf(this_pyr, global_irt->env);
+//                _prn("_nlf: ");
+//                _dd(tempv);
+//
+//                tempv = _ntag(this_pyr, global_irt->env);
+//                _prn("_ntag: ");
+//                _dd(tempv);
+//
+//                tempv = _nva(this_pyr, global_irt->env);
+//                _prn("_nva: ");
+//                _dd(tempv);
+//
+//                tempv = _nptr(this_pyr, global_irt->env);
+//                _prn("_nptr: ");
+//                _dd(tempv);
+
+//                ACC = bstruct_to_array(this_pyr, global_irt->env);
+
+//                ACC = global_irt->tags->PYR_TAG_CPTR;
+//                temp = mem_new_tptr(this_pyr, global_irt->tags->PYR_TAG_CPTR, nil);
+//                ACC = _val(this_pyr, is_cptr(temp));
 
                 break;
             case 2:

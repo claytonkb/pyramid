@@ -357,8 +357,9 @@ typedef struct { // interp_runtime
     mem_context             *gc_mem;
 
     interp_tags             *tags;
-    mword                   *tags_strings;
     interp_strings          *strings;
+    mword                   *tags_strings;
+
     interp_symbols          *symbols;
     interp_flags            *flags; // XXX not to be confused wiith pyr_vm_flags
     interp_limits           *limits;

@@ -238,12 +238,14 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = _val(this_pyr,
 //                        array_search(this_pyr, global_irt->tags_strings, global_irt->tags->PYR_TAG_CPTR, LEX_MWORD));
 
-                tempv = array_search(this_pyr, global_irt->tags_strings, global_irt->tags->PYR_TAG_CPTR, LEX_MWORD);
-                ACC = rdp(global_irt->tags_strings, tempv);
+//                tempv = array_search(this_pyr, global_irt->tags_strings, global_irt->tags->PYR_TAG_CPTR, LEX_MWORD);
+//                ACC = pcar( rdp(global_irt->tags_strings, tempv) );
+//
+//                _mem(ACC);
+//                _say("------------------------------------");
+//                _mem(global_irt->tags->PYR_TAG_CPTR);
 
-                _say("------------------------------------");
-                _mem(global_irt->tags->PYR_TAG_CPTR);
-
+                ACC = global_irt->symbols->SEXPR_IGNORE_SYMBOL;
 
                 break;
             case 2:

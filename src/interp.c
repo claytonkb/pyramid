@@ -19,11 +19,12 @@
 // |    |   |   global_irt ready
 // |    |   |   |   pyr_vm ready
 // |    |   |   |   |   pvc ready
-// |    |   |   |   |   |   interp_core
-// |    |   |   |   |   |   |   pvc_core
-// |    |   |   |   |   |   |   |   code_exec
-// |    |   |   |   |   |   |   |   |
-// v    v   v   v   v   v   v   v   v
+// |    |   |   |   |   |   init_once_per_install (build templates)
+// |    |   |   |   |   |   |   interp_core
+// |    |   |   |   |   |   |   |   pvc_core
+// |    |   |   |   |   |   |   |   |   code_exec
+// |    |   |   |   |   |   |   |   |   |
+// v    v   v   v   v   v   v   v   v   v
 // |----------------------------------------> t
 
 
@@ -477,25 +478,25 @@ void interp_init_symbols(pyr_cache *this_pyr){ // interp_init_symbols#
 
     // XXX Unless MC_ALLOC_NON_GC is set, this could break XXX
     // FIXME: Use quoted char's FIXME
-    global_irt->symbols->SEXPR_IGNORE_SYMBOL   = _mkval( this_pyr, 6, 0x69, 0x67, 0x6e, 0x6f, 0x72, 0x65 );
-    global_irt->symbols->SEXPR_QUOTE_SYMBOL    = _mkval( this_pyr, 5, 0x71, 0x75, 0x6f, 0x74, 0x65 );
-    global_irt->symbols->SEXPR_SEXPR_SYMBOL    = _mkval( this_pyr, 5, 0x73, 0x65, 0x78, 0x70, 0x72 );
-    global_irt->symbols->SEXPR_BYTES_SYMBOL    = _mkval( this_pyr, 5, 0x62, 0x79, 0x74, 0x65, 0x73 );
-    global_irt->symbols->SEXPR_LIST_SYMBOL     = _mkval( this_pyr, 4, 0x6c, 0x69, 0x73, 0x74 );
-    global_irt->symbols->SEXPR_CODE_SYMBOL     = _mkval( this_pyr, 4, 0x63, 0x6f, 0x64, 0x65 );
-    global_irt->symbols->SEXPR_HASH_SYMBOL     = _mkval( this_pyr, 4, 0x68, 0x61, 0x73, 0x68 );
-    global_irt->symbols->SEXPR_OPER_SYMBOL     = _mkval( this_pyr, 4, 0x6f, 0x70, 0x65, 0x72 );
-    global_irt->symbols->SEXPR_TPTR_SYMBOL     = _mkval( this_pyr, 4, 0x74, 0x70, 0x74, 0x72 );
-    global_irt->symbols->SEXPR_VAL_SYMBOL      = _mkval( this_pyr, 3, 0x76, 0x61, 0x6c );
-    global_irt->symbols->SEXPR_PTR_SYMBOL      = _mkval( this_pyr, 3, 0x70, 0x74, 0x72 );
-    global_irt->symbols->SEXPR_TAG_SYMBOL      = _mkval( this_pyr, 3, 0x74, 0x61, 0x67 );
-    global_irt->symbols->SEXPR_REF_SYMBOL      = _mkval( this_pyr, 3, 0x72, 0x65, 0x66 );
-    global_irt->symbols->SEXPR_NIL_SYMBOL      = _mkval( this_pyr, 3, 0x6e, 0x69, 0x6c );
-    global_irt->symbols->SEXPR_SYM_SYMBOL      = _mkval( this_pyr, 3, 0x73, 0x79, 0x6d );
-    global_irt->symbols->SEXPR_BS_SYMBOL       = _mkval( this_pyr, 2, 0x62, 0x73 );
-    global_irt->symbols->SEXPR_QW_SYMBOL       = _mkval( this_pyr, 2, 0x71, 0x77 );
-    global_irt->symbols->SEXPR_SQUOTE_SYMBOL   = _mkval( this_pyr, 1, 0x27 );
-    global_irt->symbols->SEXPR_DQUOTE_SYMBOL   = _mkval( this_pyr, 1, 0x22 );
+    global_irt->symbols->SEXPR_IGNORE_SYMBOL   = _mkval( this_pyr, 6, 'i', 'g', 'n', 'o', 'r', 'e' );
+    global_irt->symbols->SEXPR_QUOTE_SYMBOL    = _mkval( this_pyr, 5, 'q', 'u', 'o', 't', 'e' );
+    global_irt->symbols->SEXPR_SEXPR_SYMBOL    = _mkval( this_pyr, 5, 's', 'e', 'x', 'p', 'r' );
+    global_irt->symbols->SEXPR_BYTES_SYMBOL    = _mkval( this_pyr, 5, 'b', 'y', 't', 'e', 's' );
+    global_irt->symbols->SEXPR_LIST_SYMBOL     = _mkval( this_pyr, 4, 'l', 'i', 's', 't' );
+    global_irt->symbols->SEXPR_CODE_SYMBOL     = _mkval( this_pyr, 4, 'c', 'o', 'd', 'e' );
+    global_irt->symbols->SEXPR_HASH_SYMBOL     = _mkval( this_pyr, 4, 'h', 'a', 's', 'h' );
+    global_irt->symbols->SEXPR_OPER_SYMBOL     = _mkval( this_pyr, 4, 'o', 'p', 'e', 'r' );
+    global_irt->symbols->SEXPR_TPTR_SYMBOL     = _mkval( this_pyr, 4, 't', 'p', 't', 'r' );
+    global_irt->symbols->SEXPR_VAL_SYMBOL      = _mkval( this_pyr, 3, 'v', 'a', 'l' );
+    global_irt->symbols->SEXPR_PTR_SYMBOL      = _mkval( this_pyr, 3, 'p', 't', 'r' );
+    global_irt->symbols->SEXPR_TAG_SYMBOL      = _mkval( this_pyr, 3, 't', 'a', 'g' );
+    global_irt->symbols->SEXPR_REF_SYMBOL      = _mkval( this_pyr, 3, 'r', 'e', 'f' );
+    global_irt->symbols->SEXPR_NIL_SYMBOL      = _mkval( this_pyr, 3, 'n', 'i', 'l' );
+    global_irt->symbols->SEXPR_SYM_SYMBOL      = _mkval( this_pyr, 3, 's', 'y', 'm' );
+    global_irt->symbols->SEXPR_BS_SYMBOL       = _mkval( this_pyr, 2, 'b', 's' );
+    global_irt->symbols->SEXPR_QW_SYMBOL       = _mkval( this_pyr, 2, 'q', 'w' );
+    global_irt->symbols->SEXPR_SQUOTE_SYMBOL   = _mkval( this_pyr, 1, '\'' );
+    global_irt->symbols->SEXPR_DQUOTE_SYMBOL   = _mkval( this_pyr, 1, '"' );
 
 }
 

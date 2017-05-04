@@ -629,7 +629,7 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  *                                                                           *
  ****************************************************************************/
 
-
+#define PYR_NUM_TAGS (sizeof(interp_tags)/MWORD_SIZE)
 
 /*****************************************************************************
  *                                                                           *

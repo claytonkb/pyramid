@@ -1561,7 +1561,7 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
 //           search
 
 
-#define ARRAY_LINEAR_THRESH 4
+#define ARRAY_LINEAR_THRESH 2
 
 // array must be in sorted order (non-decreasing)
 // XXX smoke-tested ONLY XXX
@@ -1572,9 +1572,11 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
 
     mword target_val;
 
-    int shift       =   array_size >> 1;
-    int guess_index =   shift;
+    int shift       = array_size >> 1;
+    int guess_index = shift;
         shift       >>= 1;
+
+    mword brk_count = 0;
 
     if(is_val(array) || (st == VAL)){
         mword guess;
@@ -1585,7 +1587,12 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                 break;
             }
             if( shift <= ARRAY_LINEAR_THRESH ){
-                return array_search_linear(this_pyr, array, guess_index, guess_index+ARRAY_LINEAR_THRESH+1, target, st);
+                return array_search_linear(this_pyr, 
+                            array, 
+                            guess_index, 
+                            guess_index+ARRAY_LINEAR_THRESH+1, 
+                            target, 
+                            st);
             }
             guess = rdv(array,guess_index);
             if(guess < target_val){
@@ -1611,7 +1618,12 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                     break;
                 }
                 if( shift <= ARRAY_LINEAR_THRESH ){
-                    return array_search_linear(this_pyr, array, guess_index, guess_index+ARRAY_LINEAR_THRESH+1, target, st);
+                    return array_search_linear(this_pyr,
+                                array,
+                                guess_index,
+                                guess_index+ARRAY_LINEAR_THRESH+1,
+                                target,
+                                st);
                 }
                 guess = key_AOP2(array,guess_index);
                 if(array_lt_num(guess, target)){
@@ -1633,9 +1645,14 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                     || guess_index >= array_size){
                     break;
                 }
-                if( shift <= ARRAY_LINEAR_THRESH ){
-                    return array_search_linear(this_pyr, array, guess_index, guess_index+ARRAY_LINEAR_THRESH+1, target, st);
-                }
+//                if( shift <= ARRAY_LINEAR_THRESH ){
+//                    return array_search_linear(this_pyr,
+//                                array,
+//                                guess_index-2*ARRAY_LINEAR_THRESH,
+//                                guess_index+2*ARRAY_LINEAR_THRESH+1,
+//                                target,
+//                                st);
+//                }
                 guess = key_AOP2(array,guess_index);
                 if(array_lt(this_pyr, guess, target)){
                     guess_index += shift;
@@ -1646,8 +1663,15 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                 else if(array_eq(this_pyr, guess, target)){
                     return guess_index;
                 }
-                shift >>= 1;
-                shift = (shift == 0) ? 1 : shift;
+                if(shift == 1){
+                    brk_count++;
+                    if(brk_count==5)
+                        break;
+                }
+                else{
+                    shift >>= 1;
+                    shift = (shift == 0) ? 1 : shift;
+                }
             }
         }
         else if(st == ALPHA_BYTE || st == LEX_BYTE){
@@ -1657,7 +1681,12 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                     break;
                 }
                 if( shift <= ARRAY_LINEAR_THRESH ){
-                    return array_search_linear(this_pyr, array, guess_index, guess_index+ARRAY_LINEAR_THRESH+1, target, st);
+                    return array_search_linear(this_pyr,
+                                array,
+                                guess_index,
+                                guess_index+ARRAY_LINEAR_THRESH+1,
+                                target,
+                                st);
                 }
                 guess = key_AOP2(array,guess_index);
                 if(array8_lt(this_pyr, guess, target)){
@@ -1685,7 +1714,10 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
 
 //
 //
-mword array_search_linear(pyr_cache *this_pyr, mword *array, mword start, mword end, mword *target, sort_type st){ // array_search_linear#
+mword array_search_linear(pyr_cache *this_pyr, mword *array, int start, int end, mword *target, sort_type st){ // array_search_linear#
+
+    start = (start < 0) ? 0 : start;
+    end   = (end   > size(array)) ? size(array) : end;
 
     int i=start;
     mword target_val;

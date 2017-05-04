@@ -8,9 +8,10 @@
 // verb --> a blob that can do something to other blobs
 // pred --> a blob that has a matching predicate-test that reduces to T/F
 
-#define PYR_NUM_NOUN_TAGS 64 // XXX This number is ad hoc and can break the build with changes!!! XXX
-#define PYR_NUM_VERB_TAGS 16 // XXX This number is ad hoc and can break the build with changes!!! XXX
-#define PYR_NUM_TAGS (PYR_NUM_NOUN_TAGS + PYR_NUM_VERB_TAGS) // XXX This number is ad hoc and can break the build with changes!!! XXX
+#define PYR_NUM_NOUN_TAGS 44
+#define PYR_NUM_VERB_TAGS 14
+#define PYR_NUM_PRED_TAGS 11
+#define PYR_NUM_FORM_SYMS 19
 
 #ifdef COMPAT_MODE
 
@@ -20,6 +21,7 @@
     X(PYR_TAG_INTERP_NIL       , "nil")                                     \
     X(PYR_TAG_NIL              , "/babel/tag/nil")                          \
     X(PYR_TAG_CODE_ARRAY       , "/pyramid/tag/code_array")                 \
+    X(PYR_TAG_PYR_ENV          , "/pyramid/tag/pyr_env")                    \
     X(PYR_TAG_OPERAND          , "/pyramid/tag/operand")                    \
     X(PYR_TAG_OPERATOR         , "/pyramid/tag/operator")                   \
     X(PYR_TAG_CPTR             , "/pyramid/tag/cptr")                       \

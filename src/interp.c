@@ -152,7 +152,10 @@ _reset_trace;
 #endif
 
     global_irt = malloc(sizeof(interp_runtime));    // XXX WAIVER(malloc) XXX //
-    global_irt->tags = malloc(sizeof(interp_tags)); // XXX WAIVER(malloc) XXX //
+    mword *temp = malloc(sizeof(interp_tags)+MWORD_SIZE); // XXX WAIVER(malloc) XXX //
+    ldv(temp,0) = sizeof(interp_tags);
+    temp++;
+    global_irt->tags = (interp_tags*)temp;
 
     interp_init_zero_hash();
     interp_init_nil_mem();
@@ -366,16 +369,22 @@ _dd(PYR_NUM_TAGS);
 
     global_irt->tags_strings = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
 
+    car = global_irt->tags->PYR_TAG_ZERO_HASH;
+    cdr = _val(this_pyr, 0);
+    ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr);
+    i++;
+
 #define X(a, b) \
     car = global_irt->tags->a; \
     cdr = global_irt->strings->a; \
-    ldp(global_irt->tags_strings,i++) = _cons(this_pyr, car, cdr);
+    ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr); \
+    i++;
     PYR_TAGS    
 #undef X
 
-    for(;i<PYR_NUM_TAGS;i++){
-        ldp(global_irt->tags_strings,i) = _cons(this_pyr, nil, nil);
-    }
+//    for(;i<PYR_NUM_TAGS;i++){
+//        ldp(global_irt->tags_strings,i) = _cons(this_pyr, nil, nil);
+//    }
 
     array_sort(this_pyr, global_irt->tags_strings, LEX_MWORD);
 

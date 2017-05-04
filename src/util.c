@@ -80,6 +80,9 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //    ldp(temp,0) = this_pyr->self;
 //    ldv(temp,1) = MWORD_SIZE;
 
+//    mword num_tags;
+//    mword found_count;
+
     while(1){
 
         _prn("% ");
@@ -246,10 +249,25 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _say("------------------------------------");
 //                _mem(global_irt->tags->PYR_TAG_CPTR);
 
-                ACC = global_irt->env;
-
 //                ACC = xbar_tag_to_string(this_pyr, global_irt->tags->PYR_TAG_CPTR);
 
+                ACC = global_irt->env;
+
+//                num_tags = size(global_irt->tags);
+//
+//                for(i=0; i<num_tags; i++){
+//                    tempv = array_search_rewrite(this_pyr, global_irt->tags_strings, rdp(global_irt->tags,i), LEX_MWORD);
+//                    _mem(rdp(global_irt->tags,i));
+//                    _say("---------------------");
+//                    if(tempv!=-1){
+//                        _mem(pcar(rdp(global_irt->tags_strings,tempv)));
+//                    }
+//                    _say("/////////////////////");
+//                }
+//
+////                _dd(num_tags);
+////                _dd(found_count);
+//
                 break;
             case 2:
                 _notify("exiting bare metal prompt");

@@ -239,23 +239,30 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
 
             mword *builtin_tag = xbar_tag_to_string(this_pyr, bs);
 
-//            if(is_cptr(bs)){ // we should search all known tags and print corresponding label
-//
-//                bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
-//                bsprintf(this_pyr, result, offset, "<f0> /pyramid/tag/cptr");
-//                bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
-//
-//                mark_traversed_U(bs);
-//
-//            }
+            if(is_cptr(bs)){ // we should search all known tags and print corresponding label
 
-            if(!is_nil(builtin_tag)){
+                bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
+                bsprintf(this_pyr, result, offset, "<f0> /pyramid/tag/cptr");
+                bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
+
+                mark_traversed_U(bs);
+
+            }
+            else if(!is_nil(builtin_tag)){
 
                 bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
                 bsprintf(this_pyr, result, offset, "<f0> %s", builtin_tag);
                 bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
 
-                mark_traversed_U(bs);
+                bsprintf(this_pyr, result, offset,
+                            "\"s%08x\":f0 -> \"s%08x\":f0 [arrowhead=\"none\"];\n", // XXX 53
+                            (mword)bs, 
+                            (mword)tcar(bs));
+
+               mark_traversed_U(bs);
+
+//                _rbs2gv(this_pyr, (mword *)(bs+HASH_SIZE+1), result, offset, 0);
+                _rbs2gv(this_pyr, tcar(bs), result, offset, 0);
 
             }
             else{

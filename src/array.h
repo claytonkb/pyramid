@@ -42,6 +42,7 @@ mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right);
 int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
 int array_ncmp(pyr_cache *this_pyr, mword *left, mword left_offset, mword *right, mword length, access_size_sel access_size);
 
+
 //int array_cmp_lex(mword *left, mword *right);
 //int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
 
@@ -92,7 +93,10 @@ void array_max_heapify(mword *array, mword i, mword array_size);
 
 mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type st);
 
-//#define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
+mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sort_type st);
+mword array_search_linear(pyr_cache *this_pyr, mword *array, mword start, mword end, mword *target, sort_type st);
+
+    //#define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
 //#define  _arcmp(x,y)  array_cmp_lex(x, y)
 //
 //#define _areq8(x,y,z) (array8_cmp_lex(x, y, z) == 0)

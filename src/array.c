@@ -15,11 +15,11 @@
 //#include "lib_babel.h"
 //#include "logic.h"
 
-#define  key_AOP(x,y) vcar(pcar(rdp(x,y)))
-#define data_AOP(x,y) vcar(pcar(rdp(x,y)))
+#define  key_aopv(x,y) vcar(pcar(rdp(x,y)))
+#define data_aopv(x,y) vcar(pcar(rdp(x,y)))
 
-#define  key_AOP2(x,y) pcar(rdp(x,y))
-#define data_AOP2(x,y) pcar(rdp(x,y))
+#define  key_aop(x,y) pcar(rdp(x,y))
+#define data_aop(x,y) pcar(rdp(x,y))
 
 
 /*****************************************************************************
@@ -1079,7 +1079,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
     else{ // array-of-pairs
         if(st == UNSIGNED){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if(val_lt(key_AOP2(left_half,l), key_AOP2(right_half,r))){ // numeric
+                if(val_lt(key_aop(left_half,l), key_aop(right_half,r))){ // numeric
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1089,7 +1089,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
         }
         else if(st == SIGNED){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if((array_cmp_num_signed(key_AOP2(left_half,l), key_AOP2(right_half,r)) < 0)){
+                if((array_cmp_num_signed(key_aop(left_half,l), key_aop(right_half,r)) < 0)){
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1099,7 +1099,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
         }
         else if(st == ALPHA_MWORD){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if((array_cmp_alpha(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), MWORD_ASIZE) < 0)){
+                if((array_cmp_alpha(this_pyr, key_aop(left_half,l), key_aop(right_half,r), MWORD_ASIZE) < 0)){
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1109,7 +1109,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
         }
         else if(st == ALPHA_BYTE){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if((array_cmp_alpha(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), BYTE_ASIZE) < 0)){
+                if((array_cmp_alpha(this_pyr, key_aop(left_half,l), key_aop(right_half,r), BYTE_ASIZE) < 0)){
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1119,7 +1119,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
         }
         else if(st == LEX_MWORD){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if((array_cmp_lex(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), MWORD_ASIZE) < 0)){
+                if((array_cmp_lex(this_pyr, key_aop(left_half,l), key_aop(right_half,r), MWORD_ASIZE) < 0)){
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1129,7 +1129,7 @@ void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left
         }
         else if(st == LEX_BYTE){
             for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-                if((array_cmp_lex(this_pyr, key_AOP2(left_half,l), key_AOP2(right_half,r), BYTE_ASIZE) < 0)){
+                if((array_cmp_lex(this_pyr, key_aop(left_half,l), key_aop(right_half,r), BYTE_ASIZE) < 0)){
                     array[i] = left_half[l++];
                 }
                 else{
@@ -1374,13 +1374,13 @@ void array_max_heapify(mword *array, mword i, mword array_size){
 
     if( (left < array_size)
             && 
-        val_gt(key_AOP2(array,left), key_AOP2(array,largest)) ){
+        val_gt(key_aop(array,left), key_aop(array,largest)) ){
         largest = left;
     }
 
     if( (right < array_size) 
             && 
-        val_gt(key_AOP2(array,right), key_AOP2(array,largest)) ){
+        val_gt(key_aop(array,right), key_aop(array,largest)) ){
         largest = right;
     }
 
@@ -1423,21 +1423,21 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
         else{ // is_ptr(array)
             if(st == SIGNED || st == UNSIGNED){ // numeric
                 for(i=0; i<array_size; i++){
-                    if(array_eq_num(key_AOP2(array,i), target)){
+                    if(array_eq_num(key_aop(array,i), target)){
                         return i;
                     }
                 }
             }
             else if(st == ALPHA_MWORD || st == LEX_MWORD){
                 for(i=0; i<array_size; i++){
-                    if(array_eq(this_pyr, key_AOP2(array,i), target)){
+                    if(array_eq(this_pyr, key_aop(array,i), target)){
                         return i;
                     }
                 }
             }
             else if(st == ALPHA_BYTE || st == LEX_BYTE){
                 for(i=0; i<array_size; i++){
-                    if(array8_eq(this_pyr, key_AOP2(array,i), target)){
+                    if(array8_eq(this_pyr, key_aop(array,i), target)){
                         return i;
                     }
                 }
@@ -1486,7 +1486,7 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
                         || guess_index >= array_size){
                     break;
                 }
-                guess = key_AOP2(array,guess_index);
+                guess = key_aop(array,guess_index);
                 last_guess_index = guess_index;
                 if(array_lt_num(guess, target)){
                     guess_index += shift;
@@ -1508,7 +1508,7 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
                         || guess_index >= array_size){
                     break;
                 }
-                guess = key_AOP2(array,guess_index);
+                guess = key_aop(array,guess_index);
                 last_guess_index = guess_index;
                 if(array_lt(this_pyr, guess, target)){
                     guess_index += shift;
@@ -1530,7 +1530,7 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
                         || guess_index >= array_size){
                     break;
                 }
-                guess = key_AOP2(array,guess_index);
+                guess = key_aop(array,guess_index);
                 last_guess_index = guess_index;
                 if(array8_lt(this_pyr, guess, target)){
                     guess_index += shift;
@@ -1562,6 +1562,7 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
 
 
 #define ARRAY_LINEAR_THRESH 2
+#define ARRAY_LINEAR_HOLDOFF 3
 
 // array must be in sorted order (non-decreasing)
 // XXX smoke-tested ONLY XXX
@@ -1570,44 +1571,61 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
 
     int array_size = size(array);
 
+    if(array_size <= ARRAY_LINEAR_THRESH)
+        return array_search_linear(this_pyr,
+                    array,
+                    0,
+                    array_size,
+                    target,
+                    st);
+
     mword target_val;
 
     int shift       = array_size >> 1;
     int guess_index = shift;
         shift       >>= 1;
 
-    mword brk_count = 0;
+    int lower_bound = 0;
+    int upper_bound = array_size;
+
+    int i;
+    int bin_iters=0, temp_array_size=array_size;
+    while(temp_array_size){ bin_iters++; temp_array_size>>=1; }
+    bin_iters-=ARRAY_LINEAR_HOLDOFF;
 
     if(is_val(array) || (st == VAL)){
+
         mword guess;
         target_val = vcar(target);
-        while(1){
-            if( guess_index < 0
-                || guess_index >= array_size){
-                break;
-            }
-            if( shift <= ARRAY_LINEAR_THRESH ){
-                return array_search_linear(this_pyr, 
-                            array, 
-                            guess_index, 
-                            guess_index+ARRAY_LINEAR_THRESH+1, 
-                            target, 
-                            st);
-            }
+
+        for(i=0;i<bin_iters;i++){
+
             guess = rdv(array,guess_index);
+
             if(guess < target_val){
+                lower_bound = guess_index;
                 guess_index += shift;
             }
             else if(guess > target_val){
+                upper_bound = guess_index;
                 guess_index -= shift;
             }
             else if(guess == target_val){
                 return guess_index;
             }
+
             shift >>= 1;
             shift = (shift == 0) ? 1 : shift;
+
         }
-        return -1; // we didn't find what you were looking for...
+
+        return array_search_linear(this_pyr,
+                    array,
+                    lower_bound,
+                    upper_bound+1,
+                    target,
+                    st);
+
     }
     else{
         mword *guess;
@@ -1625,7 +1643,7 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                                 target,
                                 st);
                 }
-                guess = key_AOP2(array,guess_index);
+                guess = key_aop(array,guess_index);
                 if(array_lt_num(guess, target)){
                     guess_index += shift;
                 }
@@ -1640,39 +1658,35 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
             }
         }
         else if(st == ALPHA_MWORD || st == LEX_MWORD){
-            while(1){
-                if( guess_index < 0
-                    || guess_index >= array_size){
-                    break;
-                }
-//                if( shift <= ARRAY_LINEAR_THRESH ){
-//                    return array_search_linear(this_pyr,
-//                                array,
-//                                guess_index-2*ARRAY_LINEAR_THRESH,
-//                                guess_index+2*ARRAY_LINEAR_THRESH+1,
-//                                target,
-//                                st);
-//                }
-                guess = key_AOP2(array,guess_index);
+
+            for(i=0;i<bin_iters;i++){
+
+                guess = key_aop(array,guess_index);
+
                 if(array_lt(this_pyr, guess, target)){
+                    lower_bound = guess_index;
                     guess_index += shift;
                 }
                 else if(array_gt(this_pyr, guess, target)){
+                    upper_bound = guess_index;
                     guess_index -= shift;
                 }
                 else if(array_eq(this_pyr, guess, target)){
                     return guess_index;
                 }
-                if(shift == 1){
-                    brk_count++;
-                    if(brk_count==5)
-                        break;
-                }
-                else{
-                    shift >>= 1;
-                    shift = (shift == 0) ? 1 : shift;
-                }
+
+                shift >>= 1;
+                shift = (shift == 0) ? 1 : shift;
+
             }
+
+            return array_search_linear(this_pyr,
+                        array,
+                        lower_bound,
+                        upper_bound+1,
+                        target,
+                        st);
+
         }
         else if(st == ALPHA_BYTE || st == LEX_BYTE){
             while(1){
@@ -1688,7 +1702,7 @@ mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sor
                                 target,
                                 st);
                 }
-                guess = key_AOP2(array,guess_index);
+                guess = key_aop(array,guess_index);
                 if(array8_lt(this_pyr, guess, target)){
                     guess_index += shift;
                 }
@@ -1733,21 +1747,21 @@ mword array_search_linear(pyr_cache *this_pyr, mword *array, int start, int end,
     }
     else if(st == SIGNED || st == UNSIGNED){ // numeric
         for(; i<end; i++){
-            if(array_eq_num(key_AOP2(array,i), target)){
+            if(array_eq_num(key_aop(array,i), target)){
                 return i;
             }
         }
     }
     else if(st == ALPHA_MWORD || st == LEX_MWORD){
         for(; i<end; i++){
-            if(array_eq(this_pyr, key_AOP2(array,i), target)){
+            if(array_eq(this_pyr, key_aop(array,i), target)){
                 return i;
             }
         }
     }
     else if(st == ALPHA_BYTE || st == LEX_BYTE){
         for(; i<end; i++){
-            if(array8_eq(this_pyr, key_AOP2(array,i), target)){
+            if(array8_eq(this_pyr, key_aop(array,i), target)){
                 return i;
             }
         }

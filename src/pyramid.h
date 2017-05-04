@@ -583,9 +583,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define mark_traversed_U(x) (sfield(x) |= 0x1) // mark_traversedU#
 #define mark_traversed_V(x) (sfield(x) |= 0x2) // mark_traversedV#
 
-#define MAX(a,b) ((a>=b) ? (a) : (b)) // MAX#
-#define MIN(a,b) ((a<=b) ? (a) : (b)) // MIN#
-
 #define size(x)             (abs(sfield(x))/MWORD_SIZE)                 // size#
 #define size_special(x)     (sfield(x) == 0 ? HASH_SIZE : size(x))      // size_special#
 #define alloc_size(x)       (sfield(x) == 0 ? TPTR_SIZE : size(x)+1)    // alloc_size#
@@ -618,7 +615,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 #define HASH8(pyr,str) (pearson_hash8(pyr,string_c2b(this_pyr, str, STRLEN(str)))) // HASH8#
 
-
 // signature is HASHM of unloaded bstruct
 
 #define C2B(str) (string_c2b(this_pyr, str, STRLEN(str))) // C2B#
@@ -638,6 +634,16 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  ****************************************************************************/
 
 #define STRLEN(s) (sizeof(s)-1) // STRLEN#
+
+// FIXME sed -i to choose_max(), choose_min()
+#define MAX(a,b) ((a>=b) ? (a) : (b)) // MAX#
+#define MIN(a,b) ((a<=b) ? (a) : (b)) // MIN#
+
+#define floor_clamp(x,y) ((x) < (y)) ? (y) : (x); // floor_clamp#
+#define ceil_clamp(x,y)  ((x) > (y)) ? (y) : (x); // ceil_clamp#
+
+// returns true if x>=y and x<=z
+#define in_bounds(x,y,z) (!(((x) < (y)) || ((x) > (z)))) // in_bounds#
 
 #define _prn(x)         fprintf(stderr, "%s", x); // _prn#
 #define _say(x)         fprintf(stderr, "%s\n", x);   // _say#

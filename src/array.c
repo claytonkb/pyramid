@@ -485,6 +485,8 @@ int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_se
     mword right_size;
 
     if(access_size == MWORD_ASIZE){
+//        left_size  = UNITS_MTO8(size_special(left));
+//        right_size = UNITS_MTO8(size_special(right));
         left_size  = UNITS_MTO8(size(left));
         right_size = UNITS_MTO8(size(right));
     }
@@ -1390,6 +1392,12 @@ void array_max_heapify(mword *array, mword i, mword array_size){
     }
 
 }
+
+
+// array_search() rewrite:
+//      - inner-loop tests for shift < ARRAY_LINEAR_THRESH
+//         - when shift has gone below ARRAY_LINEAR_THRESH, invoke linear
+//           search
 
 
 // array must be in sorted order (non-decreasing)

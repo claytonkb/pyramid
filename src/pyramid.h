@@ -586,10 +586,11 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define MAX(a,b) ((a>=b) ? (a) : (b)) // MAX#
 #define MIN(a,b) ((a<=b) ? (a) : (b)) // MIN#
 
-#define size(x)       (abs(sfield(x))/MWORD_SIZE)                       // size#
-#define alloc_size(x) (sfield(x) == 0 ? TPTR_SIZE : size(x)+1)          // alloc_size#
-#define mem_alloc_size(x) (x == 0 ? TPTR_SIZE : (abs(x)/MWORD_SIZE))    // mem_alloc_size#
-#define size_masked(x)       (abs(~CTL_MASK & sfield(x))/MWORD_SIZE)    // size_masked#
+#define size(x)             (abs(sfield(x))/MWORD_SIZE)                 // size#
+#define size_special(x)     (sfield(x) == 0 ? HASH_SIZE : size(x))      // size_special#
+#define alloc_size(x)       (sfield(x) == 0 ? TPTR_SIZE : size(x)+1)    // alloc_size#
+#define mem_alloc_size(x)   (x == 0 ? TPTR_SIZE : (abs(x)/MWORD_SIZE))  // mem_alloc_size#
+#define size_masked(x)      (abs(~CTL_MASK & sfield(x))/MWORD_SIZE)     // size_masked#
 
 #define _mktptr(pyr,key,bs) mem_new_tptr(pyr,HASHC(pyr,key),bs)         // _mktptr#
 

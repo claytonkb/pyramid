@@ -7,6 +7,8 @@
 #include "array.h"
 #include "bstruct.h"
 #include "string.h"
+#include "xbar.h"
+
 
 #define INTE_OPEN  "[ptr "
 #define INTE_CLOSE "] "
@@ -235,10 +237,22 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
 
         if(!is_nil(bs)){ // XXX 140 * NTAG
 
-            if(is_cptr(bs)){ // we should search all known tags and print corresponding label
+            mword *builtin_tag = xbar_tag_to_string(this_pyr, bs);
+
+//            if(is_cptr(bs)){ // we should search all known tags and print corresponding label
+//
+//                bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
+//                bsprintf(this_pyr, result, offset, "<f0> /pyramid/tag/cptr");
+//                bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
+//
+//                mark_traversed_U(bs);
+//
+//            }
+
+            if(!is_nil(builtin_tag)){
 
                 bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
-                bsprintf(this_pyr, result, offset, "<f0> /pyramid/tag/cptr");
+                bsprintf(this_pyr, result, offset, "<f0> %s", builtin_tag);
                 bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
 
                 mark_traversed_U(bs);

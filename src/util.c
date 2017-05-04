@@ -16,6 +16,7 @@
 #include "bstruct.h"
 #include "list.h"
 #include "interp.h"
+#include "xbar.h"
 
 
 /*****************************************************************************
@@ -245,7 +246,9 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _say("------------------------------------");
 //                _mem(global_irt->tags->PYR_TAG_CPTR);
 
-                ACC = global_irt->noun_table;
+                ACC = global_irt->env;
+
+//                ACC = xbar_tag_to_string(this_pyr, global_irt->tags->PYR_TAG_CPTR);
 
                 break;
             case 2:

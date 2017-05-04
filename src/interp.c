@@ -559,7 +559,11 @@ void interp_init_symbols(pyr_cache *this_pyr){ // interp_init_symbols#
 mword *interp_load_root_bvm(pyr_cache *this_pyr){ // interp_load_root_bvm#
 
 //    return interp_init_load_from_file(this_pyr, "rt/root.bbl");
-    return io_slurp8(this_pyr, "rt/root.bbl");
+
+    mword *temp = io_slurp8(this_pyr, "rt/root.bbl");
+    return bstruct_load(this_pyr, temp, size(temp));
+
+//    return io_slurp8(this_pyr, "rt/root.bbl");
 
 }
 

@@ -676,6 +676,17 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 /*****************************************************************************
  *                                                                           *
+ *                                  PERF                                     *
+ *                                                                           *
+ ****************************************************************************/
+
+// Increasing this parameter increases the amount of time spent in 
+// array_linear_search() when calling array_search()
+#define ARRAY_PERF_LINEAR_HOLDOFF 3 // ARRAY_PERF_LINEAR_HOLDOFF#
+
+
+/*****************************************************************************
+ *                                                                           *
  *                                  DEV                                      *
  *                                                                           *
  ****************************************************************************/

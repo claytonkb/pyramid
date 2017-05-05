@@ -578,7 +578,8 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 #define tagcmp(x,y,z) ( (is_tptr(x) || (size(x) >= HASH_SIZE)) ? (memcmp((mword*)x, y, z)) : -1 ) // tagcmp#
 #define tageq(x,y,z)  ( tagcmp(x,y,z) == 0 ) // tageq#
-#define tagcpy(dest,src) cpy(dest,src,HASH_SIZE)
+#define itageq(x,y)   ( tagcmp(x,y,INTERP_TAG_SIZE) == 0 ) // itageq#
+#define tagcpy(dest,src) cpy(dest,src,HASH_SIZE) // tagcpy#
 
 #define mark_traversed_U(x) (sfield(x) |= 0x1) // mark_traversedU#
 #define mark_traversed_V(x) (sfield(x) |= 0x2) // mark_traversedV#

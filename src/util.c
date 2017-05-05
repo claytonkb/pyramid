@@ -17,6 +17,7 @@
 #include "list.h"
 #include "interp.h"
 #include "xbar.h"
+#include "pvc.h"
 
 
 /*****************************************************************************
@@ -191,10 +192,6 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = _val(this_pyr,
 //                        array_ncmp(this_pyr, C2B("foobaz"), 3, C2B("bar"), 2, BYTE_ASIZE));
 
-//                ACC = io_slurp8(this_pyr, "code_block.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("code_block.bbl loaded");
-
 //                tempv = _mu(this_pyr, global_irt->env);
 //                _prn("_mu: ");
 //                _dd(tempv);
@@ -253,7 +250,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = global_irt->env;
 
-                ACC = this_pyr->self;
+//                ACC = this_pyr->self;
 
 //                num_tags = size(global_irt->tags);
 //
@@ -271,6 +268,13 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //
 //                _dd(num_tags);
 //                _dd(found_count);
+
+                ACC = io_slurp8(this_pyr, "code_block.bbl");
+                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _say("code_block.bbl loaded");
+
+                pvc_core_interp(this_pyr, tcar(ACC));
+                _say("done");
 
                 break;
             case 2:

@@ -63,7 +63,7 @@
     X(PYR_SYM_CODE_RESTART_POINT , "/babel/sym/code_restart_point")       
 
 #define PYR_VERB_TAGS                                                       \
-    X(PYR_TAG_ADD_OP           , "/pyramid/tag/add_op")                     \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi")                \
     X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op")                     \
     X(PYR_TAG_EVAL             , "/babel/tag/eval")                         \
     X(PYR_TAG_LOOP             , "/babel/tag/loop")                         \

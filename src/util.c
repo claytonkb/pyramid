@@ -269,6 +269,12 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _dd(num_tags);
 //                _dd(found_count);
 
+//                fprintf(stderr, "%d\n", sizeof(unsigned));
+//                fprintf(stderr, "%d\n", sizeof(double));
+//
+//                double foo = 12345.6789;
+//                fprintf(stderr, "%lf\n", foo);
+
                 ACC = io_slurp8(this_pyr, "code_block.bbl");
                 ACC = bstruct_load(this_pyr, ACC, size(ACC));
                 _say("code_block.bbl loaded");

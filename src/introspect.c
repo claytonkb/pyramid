@@ -253,14 +253,16 @@ void _rbs2gv(pyr_cache *this_pyr, mword *bs, mword *result, mword *offset, int i
                 bsprintf(this_pyr, result, offset, "s%08x [shape=record,label=\"", (mword)bs); // XXX 31
                 bsprintf(this_pyr, result, offset, "<f0> %s", builtin_tag);
                 bsprintf(this_pyr, result, offset, "\"];\n"); // XXX 4
+                
+                if(!is_nil(tcar(bs))){
+                    bsprintf(this_pyr, result, offset,
+                                "\"s%08x\":f0 -> \"s%08x\":f0 [arrowhead=\"none\"];\n", // XXX 53
+                                (mword)bs, 
+                                (mword)tcar(bs));
+                }
 
-                bsprintf(this_pyr, result, offset,
-                            "\"s%08x\":f0 -> \"s%08x\":f0 [arrowhead=\"none\"];\n", // XXX 53
-                            (mword)bs, 
-                            (mword)tcar(bs));
-
-               mark_traversed_U(bs);
-
+                mark_traversed_U(bs);
+                
 //                _rbs2gv(this_pyr, (mword *)(bs+HASH_SIZE+1), result, offset, 0);
                 _rbs2gv(this_pyr, tcar(bs), result, offset, 0);
 

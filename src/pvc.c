@@ -57,6 +57,22 @@ _d(this_operand);
 }
 
 
+//bvm_cache *interp_op_exec(bvm_cache *this_bvm, mword opcode){ // interp_op_exec#
+//
+//    bvm_cache *discard;
+//    babel_op op_ptr;
+//
+//    op_ptr = (babel_op)this_bvm->interp->jump_table[ opcode % NUM_INTERP_OPCODES ];
+//
+//    discard = op_ptr(this_bvm);
+//    discard = discard; // suppress compiler warning, gets optimized away
+//
+//    return this_bvm;
+//
+//}
+
+
+
 //
 //
 void arith_maddi(pyr_cache *this_pyr, mword **local_stack_ptr){ // arith_maddi#

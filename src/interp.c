@@ -143,6 +143,7 @@ _prn("\n");
 
 }
 
+
 //
 //
 void interp_init_once(pyr_cache *this_pyr){ // interp_init_once#
@@ -150,6 +151,8 @@ void interp_init_once(pyr_cache *this_pyr){ // interp_init_once#
 #ifdef INTERP_RESET_TRACE
 _reset_trace;
 #endif
+
+    UNINIT_FN_PTR = interp_uninit_fn;
 
     global_irt = malloc(sizeof(interp_runtime));    // XXX WAIVER(malloc) XXX //
     mword *temp = malloc(sizeof(interp_tags)+MWORD_SIZE); // XXX WAIVER(malloc) XXX //
@@ -235,6 +238,7 @@ _reset_trace;
 
     global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->fns             = mem_non_gc_alloc(sizeof(interp_fns));  // XXX WAIVER(mem_sys_alloc) XXX //
 
     global_irt->cat_ex    = cat_ex;
 
@@ -279,12 +283,16 @@ _reset_trace;
     global_irt->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
 
-#define X(a, b) global_irt->tags->a = HASHC(this_pyr, b);
-PYR_TAGS    
+#define X(a, b, c) global_irt->tags->a = HASHC(this_pyr, b);
+PYR_TAGS
 #undef X
 
-#define X(a, b) global_irt->strings->a = string_c2b(this_pyr, b, 1000); 
-PYR_TAGS    
+#define X(a, b, c) global_irt->strings->a = string_c2b(this_pyr, b, 1000); 
+PYR_TAGS
+#undef X
+
+#define X(a, b, c) global_irt->fns->a = c; 
+PYR_TAGS
 #undef X
 
     interp_init_tags_strings(this_pyr);
@@ -327,7 +335,7 @@ _dd(PYR_NUM_NOUN_TAGS);
     global_irt->verb_table = mem_new_ptr(this_pyr, PYR_NUM_VERB_TAGS);
     global_irt->noun_table = mem_new_ptr(this_pyr, PYR_NUM_NOUN_TAGS);
 
-#define X(a, b) \
+#define X(a, b, c) \
     ldp(global_irt->verb_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
     PYR_VERB_TAGS    
 #undef X
@@ -340,7 +348,7 @@ _dd(PYR_NUM_NOUN_TAGS);
 
     i=0;
 
-#define X(a, b) \
+#define X(a, b, c) \
     ldp(global_irt->noun_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
     PYR_NOUN_TAGS    
 #undef X
@@ -374,7 +382,7 @@ _dd(PYR_NUM_TAGS);
     ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr);
     i++;
 
-#define X(a, b) \
+#define X(a, b, c) \
     car = global_irt->tags->a; \
     cdr = global_irt->strings->a; \
     ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr); \
@@ -608,6 +616,13 @@ _trace;
 
     return file_buffer;
 
+}
+
+
+//
+//
+pyr_cache *interp_uninit_fn(pyr_cache *this_pyr){ // interp_uninit_fn#
+    _fatal("Oops.");
 }
 
 

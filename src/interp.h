@@ -27,6 +27,8 @@ void interp_init_tables(pyr_cache *this_pyr);
 void interp_init_tags_strings(pyr_cache *this_pyr);
 void interp_init_symbols(pyr_cache *this_pyr);
 
+pyr_cache *interp_uninit_fn(pyr_cache *this_pyr);
+
 mword *interp_load_root_bvm(pyr_cache *this_pyr);
 mword *interp_load_dev_overrides(pyr_cache *this_pyr);
 mword *interp_load_pyr_env(pyr_cache *this_pyr);

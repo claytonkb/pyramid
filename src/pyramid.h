@@ -323,14 +323,14 @@ typedef struct {
 
 typedef struct { // interp_tags#
     mword *PYR_TAG_ZERO_HASH;
-#define X(a,b) mword *a;
+#define X(a,b,c) mword *a;
 PYR_TAGS
 #undef X
 } interp_tags;
 
 
 typedef struct { // interp_strings#
-#define X(a,b) mword *a;
+#define X(a,b,c) mword *a;
 PYR_TAGS
 #undef X
 } interp_strings;
@@ -343,10 +343,46 @@ PYR_SYMBOLS
 } interp_symbols;
 
 
+typedef struct { // pvc_xbar#
+
+    interp_tags             *tags;
+    interp_strings          *strings;
+//    interp_fns              *fns;
+//    interp_xlats            *xlats;
+
+    mword                   *xbar_table;
+
+} pvc_xbar;
+
+
+///////////////////////////////////
+// PYRAMID VIRTUAL MACHINE CACHE //
+///////////////////////////////////
+typedef struct { // pyr_cache#
+
+    mword           *self;
+
+//    mem_context     *mem;
+
+    mword           *pyr_cpu_array;
+//    interp_flags    *flags;
+//    interp_runtime  *interp;
+
+} pyr_cache;
+
+
+typedef pyr_cache *(*pyramid_op)(pyr_cache *); // pyramid_op#
+
+typedef struct { // interp_fns#
+#define X(a,b,c)  pyramid_op a;
+PYR_TAGS
+#undef X
+} interp_fns;
+
+
 ///////////////////////////////////
 // PYRAMID INTERPRETER RUNTIME   //
 ///////////////////////////////////
-
 typedef struct { // interp_runtime
 
 #ifdef PROF_MODE
@@ -358,6 +394,7 @@ typedef struct { // interp_runtime
 
     interp_tags             *tags;
     interp_strings          *strings;
+    interp_fns              *fns;
 
     mword                   *tags_strings;
 
@@ -395,28 +432,13 @@ typedef struct { // interp_runtime
 } interp_runtime; 
 
 
-///////////////////////////////////
-// PYRAMID VIRTUAL MACHINE CACHE //
-///////////////////////////////////
-
-typedef struct { // pyr_cache#
-
-    mword           *self;
-
-//    mem_context     *mem;
-
-    mword           *pyr_cpu_array;
-//    interp_flags    *flags;
-    interp_runtime  *interp;
-
-} pyr_cache;
-
-
 /////////////////////////
 // PYRAMID VIRTUAL CPU //
 /////////////////////////
-
 typedef struct { // pyr_cpu#
+
+    mword *active_code_block;
+    mword *active_rstack_ptr;
 
     mword *noun_table;
     mword *verb_table;
@@ -440,6 +462,7 @@ typedef struct { // pyr_cpu#
 //mword *nil;                                   // nil#
 interp_runtime *global_irt;                     // global_irt#
 #define nil global_irt->nil
+pyramid_op UNINIT_FN_PTR;
 
 #ifdef DEV_MODE
 

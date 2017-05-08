@@ -63,7 +63,7 @@
     X(PYR_SYM_CODE_RESTART_POINT , "/babel/sym/code_restart_point", UNINIT_FN_PTR)       
 
 #define PYR_VERB_TAGS                                           \
-    X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi",    UNINIT_FN_PTR) \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi",    arith_maddi) \
     X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op",         UNINIT_FN_PTR) \
     X(PYR_TAG_EVAL             , "/babel/tag/eval",             UNINIT_FN_PTR) \
     X(PYR_TAG_LOOP             , "/babel/tag/loop",             UNINIT_FN_PTR) \

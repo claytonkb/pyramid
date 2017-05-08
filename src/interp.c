@@ -12,6 +12,9 @@
 #include "bstruct.h"
 #include "array.h"
 
+// PYR_TAGS includes:
+#include "pvc.h"
+
 
 // invocation
 // |    init_once
@@ -302,6 +305,7 @@ PYR_TAGS
     interp_init_symbols(this_pyr);
 
     this_pyr->self = interp_load_root_bvm(this_pyr);
+    this_pyr->cpu  = mem_non_gc_alloc(sizeof(pyr_cpu));
 
     global_dev_overrides = interp_load_dev_overrides(this_pyr);
     global_dev_overrides++;
@@ -375,6 +379,10 @@ _prn("PYR_NUM_TAGS is ");
 _dd(PYR_NUM_TAGS);
 #endif
 
+///////////////////////
+//  TAGS -> STRINGS  //
+///////////////////////
+
     global_irt->tags_strings = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
 
     car = global_irt->tags->PYR_TAG_ZERO_HASH;
@@ -387,14 +395,33 @@ _dd(PYR_NUM_TAGS);
     cdr = global_irt->strings->a; \
     ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr); \
     i++;
+    PYR_TAGS
+#undef X
+
+    array_sort(this_pyr, global_irt->tags_strings, LEX_MWORD);
+
+///////////////////////
+// TAGS -> FUNCTIONS //
+///////////////////////
+
+    i=0;
+
+    global_irt->tags_fns = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
+
+    car = global_irt->tags->PYR_TAG_ZERO_HASH;
+    cdr = _ptr(this_pyr, (mword*)UNINIT_FN_PTR);
+    ldp(global_irt->tags_fns,i) = _cons(this_pyr, car, cdr);
+    i++;
+
+#define X(a, b, c) \
+    car = global_irt->tags->a; \
+    cdr = (mword*)global_irt->fns->a; \
+    ldp(global_irt->tags_fns,i) = _cons(this_pyr, car, cdr); \
+    i++;
     PYR_TAGS    
 #undef X
 
-//    for(;i<PYR_NUM_TAGS;i++){
-//        ldp(global_irt->tags_strings,i) = _cons(this_pyr, nil, nil);
-//    }
-
-    array_sort(this_pyr, global_irt->tags_strings, LEX_MWORD);
+    array_sort(this_pyr, global_irt->tags_fns, LEX_MWORD);
 
 }
 

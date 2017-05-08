@@ -255,7 +255,7 @@ inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
 
     a->base_ptr    = mem_sys_alloc(bank_size); // XXX WAIVER(mem_sys_alloc) XXX //
     a->size        = bank_size;
-    a->bound_ptr   = (mword*)((char*)a->base_ptr   + (a->size-1));
+    a->bound_ptr   = (mword*)((char*)a->base_ptr   + (a->size-MWORD_SIZE));
     a->alloc_ptr   = a->bound_ptr;
 
     mem_reset_bank(a);
@@ -279,7 +279,7 @@ inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 
 //
 //
-mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
+mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // mem_alloc#
 
     mword *return_ptr;
 
@@ -311,6 +311,13 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // *mem_alloc#
 
     alloc_bank *b = global_irt->gc_mem->primary;
 
+//_d(b->base_ptr);
+//_d(b->size);
+//_d(b->bound_ptr);
+//_d(b->alloc_ptr);
+//
+//_die;
+//
 //    global_irt->flags->MEM_ALLOC_BLOCKING = FLAG_SET;
 
     if((b->alloc_ptr - alloc_request_size) <= b->base_ptr){

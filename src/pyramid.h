@@ -355,6 +355,28 @@ typedef struct { // pvc_xbar#
 } pvc_xbar;
 
 
+/////////////////////////
+// PYRAMID VIRTUAL CPU //
+/////////////////////////
+typedef struct { // pyr_cpu#
+
+    mword *code_block;
+    mword *rstack_base_ptr;
+    mword *rstack_ptr;
+
+    mword *noun_table;
+    mword *verb_table;
+    mword *std_code_table;
+    mword *user_code_table;
+    mword *reg_file;
+    mword *rstack;
+    mword *cpu_env;
+    void  *jit_tcc;
+    void  *parent_env;
+
+} pyr_cpu;
+
+
 ///////////////////////////////////
 // PYRAMID VIRTUAL MACHINE CACHE //
 ///////////////////////////////////
@@ -362,6 +384,7 @@ typedef struct { // pyr_cache#
 
     mword           *self;
 
+    pyr_cpu         *cpu;
 //    mem_context     *mem;
 
     mword           *pyr_cpu_array;
@@ -397,6 +420,7 @@ typedef struct { // interp_runtime
     interp_fns              *fns;
 
     mword                   *tags_strings;
+    mword                   *tags_fns;
 
     interp_symbols          *symbols;
     interp_flags            *flags; // XXX not to be confused wiith pyr_vm_flags
@@ -429,28 +453,7 @@ typedef struct { // interp_runtime
 
     mword                   *env;
 
-} interp_runtime; 
-
-
-/////////////////////////
-// PYRAMID VIRTUAL CPU //
-/////////////////////////
-typedef struct { // pyr_cpu#
-
-    mword *active_code_block;
-    mword *active_rstack_ptr;
-
-    mword *noun_table;
-    mword *verb_table;
-    mword *std_code_table;
-    mword *user_code_table;
-    mword *reg_file;
-    mword *rstack;
-    mword *cpu_env;
-    void  *jit_tcc;
-    void  *parent_env;
-
-} pyr_cpu;
+} interp_runtime;
 
 
 /*****************************************************************************

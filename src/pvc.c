@@ -32,33 +32,47 @@ void pvc_core_interp(pyr_cache *this_pyr, mword *code_block){ // pvc_core_interp
     this_pyr->cpu->rstack_base_ptr = local_stack;
     this_pyr->cpu->rstack_ptr = local_stack;
 
-    mword *this_operand;
+//    mword *this_operand;
+    mword *this_op;
 
     pyramid_op operator;
     pyr_cache *discard;
 
     for(i=0;i<steps;i++){
         this_step = rdp(code_block,i);
+        this_op = tcar(this_step);
         if(itageq(this_step,global_irt->tags->PYR_TAG_OPERAND)){
-            this_operand = tcar(this_step);
-_d(this_operand);
-            temp = _bs2str(this_pyr, this_operand);
+//            this_operand = tcar(this_step);
+_d(this_op);
+            temp = _bs2str(this_pyr, this_op);
             _say((char*)temp);
 //            *(mword**)local_stack_ptr = this_operand;
-            *(mword**)this_pyr->cpu->rstack_ptr = this_operand;
+            *(mword**)this_pyr->cpu->rstack_ptr = this_op;
 //            local_stack_ptr++;
             this_pyr->cpu->rstack_ptr++;
         }
         else{
-            temp = xbar_tag_to_string(this_pyr, tcar(this_step));
+//            arith_maddi2(this_pyr);
+            temp = xbar_tag_to_fn(this_pyr, this_op);
+
+            if(is_nil_fast(temp)){
+                _say("------------------------ code_block ----------------------->");
+                temp = _bs2str(this_pyr, code_block);
+                _say((char*)temp);
+                _say("------------------------ step ----------------------------->");
+                _d(i);
+                _say("------------------------ operator ------------------------->");
+                _mem(this_op);
+                _fatal("Unrecognized operator");
+            }
+
+            temp = xbar_tag_to_string(this_pyr, this_op);
             _say((char*)temp);
             // dispatch function //
 
-//            arith_maddi2(this_pyr);
-
             operator = (pyramid_op)xbar_tag_to_fn(this_pyr, tcar(this_step));
             discard = operator(this_pyr);
-            discard = discard;
+            discard = discard; // suppress compiler warning; gets optimized away
 
         }
     }

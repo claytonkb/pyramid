@@ -363,6 +363,7 @@ typedef struct { // pyr_cpu#
     mword *code_block;
     mword *rstack_base_ptr;
     mword *rstack_ptr;
+    mword step;
 
     mword *noun_table;
     mword *verb_table;
@@ -546,6 +547,7 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  ****************************************************************************/
 
 #define is_nil(x)       ( tageq(x,nil,TAG_SIZE) )                   // is_nil#
+#define is_nil_fast(x)  ( itageq(x,nil) )                           // is_nil_fast#
 
 #define is_val(x)    ((int)sfield((mword*)x) >  0)                  // is_val#
 #define is_ptr(x)    ((int)sfield((mword*)x) <  0)                  // is_ptr#

@@ -11,6 +11,7 @@
 #include "string.h"
 #include "bstruct.h"
 #include "array.h"
+#include "introspect.h"
 
 // PYR_TAGS includes:
 #include "pvc.h"
@@ -422,6 +423,30 @@ _dd(PYR_NUM_TAGS);
 #undef X
 
     array_sort(this_pyr, global_irt->tags_fns, LEX_MWORD);
+
+///////////////////////
+// TAGS -> XBAR      //
+///////////////////////
+
+    i=0;
+    mword *payload;
+
+    global_irt->tags_xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
+
+    ldp(global_irt->tags_xbar,i) = _cons(this_pyr, nil, nil);
+    i++;
+
+#define X(a, b, c) \
+    car = global_irt->tags->a; \
+    payload = mem_new_val(this_pyr, 2, 0); \
+    ldp(payload,0) = (mword*)global_irt->fns->a; \
+    ldp(payload,1) = global_irt->strings->a; \
+    ldp(global_irt->tags_xbar,i) = _cons(this_pyr, car, payload); \
+    i++;
+    PYR_TAGS    
+#undef X
+
+    array_sort(this_pyr, global_irt->tags_xbar, LEX_MWORD);
 
 }
 

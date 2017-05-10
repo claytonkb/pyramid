@@ -275,12 +275,14 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                double foo = 12345.6789;
 //                fprintf(stderr, "%lf\n", foo);
 
-                ACC = io_slurp8(this_pyr, "code_block.bbl");
-                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _say("code_block.bbl loaded");
+//                ACC = io_slurp8(this_pyr, "code_block.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("code_block.bbl loaded");
+//
+//                pvc_core_interp(this_pyr, tcar(ACC));
+//                _say("done");
 
-                pvc_core_interp(this_pyr, tcar(ACC));
-                _say("done");
+                ACC = global_irt->tags_xbar;
 
                 break;
             case 2:

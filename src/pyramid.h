@@ -704,6 +704,7 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define _cat_except(x)    _trace; longjmp(*(global_irt->cat_ex),CAT_EXCEPT); // _cat_except#
 #define _interp_reset          longjmp(*(global_irt->cat_ex),INTERP_RESET); // _interp_reset#
 
+
 /*****************************************************************************
  *                                                                           *
  *                                  PERF                                     *
@@ -725,6 +726,13 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 FILE *dev_log; // dev_log#
 int dev_i;     // dev_i#
+
+#define _dump(x)                                                    \
+    io_spit(this_pyr, "test.dot",                                   \
+        _bs2gv(this_pyr,                                            \
+            (x)),                                                   \
+            BYTE_ASIZE,                                             \
+            OVERWRITE);
 
 // #define _mem#
 #define _mem32(x)                                                     \

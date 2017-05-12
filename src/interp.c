@@ -240,11 +240,11 @@ _reset_trace;
     // init global_irt  //
     //////////////////////
 
-    global_irt->symbols         = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
-    global_irt->strings         = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
-    global_irt->fns             = mem_non_gc_alloc(sizeof(interp_fns));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->symbols = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->strings = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->fns     = mem_non_gc_alloc(sizeof(interp_fns));  // XXX WAIVER(mem_sys_alloc) XXX //
 
-    global_irt->cat_ex    = cat_ex;
+    global_irt->cat_ex  = cat_ex;
 
     global_irt->op_restart        = (jmp_buf*)UNINIT_VAL;
     global_irt->thread_counter    = 0;
@@ -263,7 +263,6 @@ _reset_trace;
     //////////////////////////////
     // init global_irt->flags   //
     //////////////////////////////
-
     interp_init_flags(this_pyr);
 
     ////////////////////////////
@@ -381,72 +380,25 @@ _dd(PYR_NUM_TAGS);
 #endif
 
 ///////////////////////
-//  TAGS -> STRINGS  //
-///////////////////////
-
-    global_irt->tags_strings = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
-
-    car = global_irt->tags->PYR_TAG_ZERO_HASH;
-    cdr = _val(this_pyr, 0);
-    ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr);
-    i++;
-
-#define X(a, b, c) \
-    car = global_irt->tags->a; \
-    cdr = global_irt->strings->a; \
-    ldp(global_irt->tags_strings,i) = _cons(this_pyr, car, cdr); \
-    i++;
-    PYR_TAGS
-#undef X
-
-    array_sort(this_pyr, global_irt->tags_strings, LEX_MWORD);
-
-///////////////////////
-// TAGS -> FUNCTIONS //
-///////////////////////
-
-    i=0;
-
-    global_irt->tags_fns = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
-
-    car = global_irt->tags->PYR_TAG_ZERO_HASH;
-    cdr = _ptr(this_pyr, (mword*)UNINIT_FN_PTR);
-    ldp(global_irt->tags_fns,i) = _cons(this_pyr, car, cdr);
-    i++;
-
-#define X(a, b, c) \
-    car = global_irt->tags->a; \
-    cdr = (mword*)global_irt->fns->a; \
-    ldp(global_irt->tags_fns,i) = _cons(this_pyr, car, cdr); \
-    i++;
-    PYR_TAGS    
-#undef X
-
-    array_sort(this_pyr, global_irt->tags_fns, LEX_MWORD);
-
-///////////////////////
 // TAGS -> XBAR      //
 ///////////////////////
 
-    i=0;
-    mword *payload;
+    global_irt->xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
 
-    global_irt->tags_xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
-
-    ldp(global_irt->tags_xbar,i) = _cons(this_pyr, nil, nil);
+    ldp(global_irt->xbar,i) = _cons(this_pyr, nil, nil);
     i++;
 
 #define X(a, b, c) \
     car = global_irt->tags->a; \
-    payload = mem_new_val(this_pyr, 2, 0); \
-    ldp(payload,0) = (mword*)global_irt->fns->a; \
-    ldp(payload,1) = global_irt->strings->a; \
-    ldp(global_irt->tags_xbar,i) = _cons(this_pyr, car, payload); \
+    cdr = mem_new_val(this_pyr, 2, 0); \
+    ldp(cdr,0) = (mword*)global_irt->fns->a; \
+    ldp(cdr,1) = global_irt->strings->a; \
+    ldp(global_irt->xbar,i) = _cons(this_pyr, car, cdr); \
     i++;
     PYR_TAGS    
 #undef X
 
-    array_sort(this_pyr, global_irt->tags_xbar, LEX_MWORD);
+    array_sort(this_pyr, global_irt->xbar, LEX_MWORD);
 
 }
 

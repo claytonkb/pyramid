@@ -422,7 +422,7 @@ typedef struct { // interp_runtime
 
     mword                   *tags_strings;
     mword                   *tags_fns;
-    mword                   *tags_xbar;
+    mword                   *xbar;
 
     interp_symbols          *symbols;
     interp_flags            *flags; // XXX not to be confused wiith pyr_vm_flags

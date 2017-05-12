@@ -282,7 +282,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 pvc_core_interp(this_pyr, tcar(ACC));
                 _say("done");
 
-//                ACC = global_irt->tags_xbar;
+//                ACC = global_irt->xbar;
 
                 break;
             case 2:

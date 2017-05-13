@@ -229,7 +229,7 @@ typedef struct { // mem_context#
     alloc_bank *secondary;
 
     mword alloc_count;
-    mword free_count;
+    mword free_count; // XXX This doesn't really make sense...
 
 } mem_context;
 
@@ -603,6 +603,16 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 
 #define ptr2val(x) sfield(x) = abs(sfield(x))
 
+// FIXME sed -i to choose_max(), choose_min()
+#define MAX(a,b) ((a>=b) ? (a) : (b)) // MAX#
+#define MIN(a,b) ((a<=b) ? (a) : (b)) // MIN#
+
+#define floor_clamp(x,y) ((x) < (y)) ? (y) : (x); // floor_clamp#
+#define ceil_clamp(x,y)  ((x) > (y)) ? (y) : (x); // ceil_clamp#
+
+// returns true if x>=y and x<=z
+#define in_bounds(x,y,z) (!(((x) < (y)) || ((x) > (z)))) // in_bounds#
+
 //#define TOGGLE_FLAG(x) (((x) == IGN) ? (x = IGN) : (((x) == SET) ? (x = CLR) : (x = SET))) // TOGGLE_FLAG#
 
 #define tagcmp(x,y,z) ( (is_tptr(x) || (size(x) >= HASH_SIZE)) ? (memcmp((mword*)x, y, z)) : -1 ) // tagcmp#
@@ -664,16 +674,6 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
  ****************************************************************************/
 
 #define STRLEN(s) (sizeof(s)-1) // STRLEN#
-
-// FIXME sed -i to choose_max(), choose_min()
-#define MAX(a,b) ((a>=b) ? (a) : (b)) // MAX#
-#define MIN(a,b) ((a<=b) ? (a) : (b)) // MIN#
-
-#define floor_clamp(x,y) ((x) < (y)) ? (y) : (x); // floor_clamp#
-#define ceil_clamp(x,y)  ((x) > (y)) ? (y) : (x); // ceil_clamp#
-
-// returns true if x>=y and x<=z
-#define in_bounds(x,y,z) (!(((x) < (y)) || ((x) > (z)))) // in_bounds#
 
 #define _prn(x)         fprintf(stderr, "%s", x); // _prn#
 #define _say(x)         fprintf(stderr, "%s\n", x);   // _say#

@@ -7,6 +7,19 @@
 #include "array.h"
 #include "tptr.h"
 
+// Non-contiguous bstruct support
+//      - ldv(), ldp(), rdv(), rdp()
+//      - size()
+//      - sfield()
+//
+// Code must not make assumptions about linearity (contiguity)
+// Macros can be locally overridden to support ncbs (non-contiguous Babel-
+// structure).
+//
+// bstruct_load is difficult because it has to abstract away linearity but
+// must understand how to load each page offset.
+//
+// Can we use rov(), trop(), etc. to handle this?
 
 // recursively cleans a bstruct after traversal
 //
@@ -357,7 +370,6 @@ mword bstruct_unload_r(
     int i;
 
     if( is_traversed_U(bs) ){
-//        return offset_array[get_offset_from_ptr(this_pyr, span_array, bs)];
         return offset_array[array_search(this_pyr, span_array, (mword*)(&bs), VAL)];
     }
 
@@ -423,67 +435,12 @@ mword bstruct_unload_r(
 }
 
 
-////
-////
-//mword get_offset_from_ptr(pyr_cache *this_pyr, mword *span_array, mword *ptr){ // get_offset_from_ptr#
-//
-//    return array_search(this_pyr, span_array, _val(this_pyr, (mword)ptr), VAL);
-//
-////    return array_search_direct(this_pyr, span_array, (mword)ptr);
-//
-////    int span_array_size = size(span_array);
-////    int i;
-////
-////    if(span_array_size < 4){ // linear search
-////        for(i=0; i<span_array_size; i++){
-////            if(rdp(span_array,i) == ptr){
-////                return i;
-////            }
-////        }
-////        return -1;
-////    }
-////
-////    int shift       = span_array_size >> 1;
-////    int guess_index = shift;
-////
-////    shift >>= 1;
-////
-////    mword last_guess_index = -1;
-////
-////    while(1){ // binary search sweetness...
-////        if(guess_index == last_guess_index
-////                || guess_index < 0
-////                || guess_index >= span_array_size){
-////            _fatal("ptr not found in span_array");
-////        }
-////        mword *guess = rdp(span_array,guess_index);
-////        last_guess_index = guess_index;
-////        if(guess < ptr){
-////            guess_index += shift;
-////        }
-////        else if(guess > ptr){
-////            guess_index -= shift;
-////        }
-////        else if(guess == ptr){
-////            return guess_index;
-////        }
-////        shift >>= 1;
-////        shift = (shift == 0) ? 1 : shift;
-////    }
-////
-////    _die; // FIXME(throw_exception)
-////    return -1; //error
-////
-//}
-
-
 //
 void set_offset_for_ptr(
         pyr_cache *this_pyr, 
         mword     *span_array,      mword *ptr, 
         mword     *offset_array,    mword this_offset){ // set_offset_for_ptr#
 
-//    mword span_offset = get_offset_from_ptr(this_pyr, span_array, ptr);
     mword span_offset = array_search(this_pyr, span_array, (mword*)(&ptr), VAL);
 
     offset_array[span_offset] = this_offset;

@@ -4,6 +4,18 @@
 #include "pyramid.h"
 #include "std.h"
 
+// Pyramid-level std-library support. Some primitives are perf-critical and
+// must be implemented here. Other std-library primitives can be implemented
+// in terms of these perf-optimized primitives.
+
+// array-of-pairs
+// paged-array
+// etc.
+//
+// relative-offset accessors
+// 
+
+
 mword *frobnicate(void){
 
     return nil;

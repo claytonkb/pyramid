@@ -16,6 +16,7 @@
 #ifdef COMPAT_MODE
 
 #define PYR_NOUN_TAGS                                           \
+    X(PYR_TAG_PAGED_ARRAY      , "/pyramid/tag/paged_array",    UNINIT_FN_PTR) \
     X(PYR_TAG_ARRAY8           , "/babel/tag/array8",           UNINIT_FN_PTR) \
     X(PYR_TAG_ARRAY1           , "/babel/tag/array1",           UNINIT_FN_PTR) \
     X(PYR_TAG_INTERP_NIL       , "nil",                         UNINIT_FN_PTR) \

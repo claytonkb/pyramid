@@ -284,10 +284,13 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                pvc_core_interp(this_pyr, tcar(ACC));
 //                _say("done");
 
-                ACC = io_slurp8(this_pyr, "paged_array.bbl");
+//                ACC = io_slurp8(this_pyr, "paged_array.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("paged_array.bbl loaded");
+
+                ACC = io_slurp8(this_pyr, "tree.bbl");
                 ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                ACC=tcar(ACC);
-                _say("paged_array.bbl loaded");
+                _say("tree.bbl loaded");
 
 #define sfield_pa(base)  (vcar(rdp(base,0)))
 #define pgsize_pa(base)  (vcar(rdp(base,1)))
@@ -301,6 +304,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //_dd(pgsize_pa(ACC));
 //_dd(sfield_pa(ACC));
+
+
 
 //                ACC = arrays_pa(ACC);
 

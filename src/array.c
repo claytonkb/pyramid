@@ -84,6 +84,8 @@ void array8_write(mword *array, mword offset, mword value){ // array8_write#
 }
 
 
+// FIXME The following functions do not need pyr_cache* !!! FIXME
+
 // Returns a val containing the byte at val_entry[entry] (byte-wise addressing)
 //
 mword *array8_th(pyr_cache *this_pyr, mword *val_array, mword entry8){ // array8_th#

@@ -3,6 +3,9 @@
 
 #include "pyramid.h"
 #include "std.h"
+#include "mem.h"
+#include "array.h"
+
 
 // Pyramid-level std-library support. Some primitives are perf-critical and
 // must be implemented here. Other std-library primitives can be implemented
@@ -284,6 +287,79 @@ mword *frobnicate(void){
 //            [a a a b b b c c c d d d e e e f f f g g g h h h]
 //                multi-dim transpose? (permutation/rotation of dim vector)
 
+//                             +-------------+
+//           gc_mem         +->| page0       |
+//        +-----------+     |  +-------------+
+//        |           |-----+  
+//        +-----------+        +-------------+
+//        |           |------->| page1       |
+//        +-----------+        +-------------+
+//        |           |-----+
+//        +-----------+     |  +-------------+
+//        |           |--+  +->| page2       |
+//        +-----------+  |     +-------------+
+//              .        |
+//              .        |     +-------------+
+//              .        +---->| page3       |
+//                             +-------------+
+//        +-----------+              .
+//        |           |--+           .
+//        +-----------+  |           .
+//                       |
+//                       |     +-------------+
+//                       +---->| pageK       |
+//                             +-------------+
+//
+// K x page_size -> Ncube
+
+
+//
+//
+mword *std_resize_paged_array(pyr_cache *this_pyr, mword *pa, int new_sfield){ // std_resize_paged_array#
+
+//    mword curr_sfield = sfield_pa(pa);
+
+    return nil;
+
+}
+
+
+//
+//
+mword *std_new_paged_array(pyr_cache *this_pyr, mword page_size, int init_sfield){ // std_new_paged_array#
+
+    mword mword_init_sfield = UNITS_8TOM(abs(init_sfield));
+    mword num_pages =  mword_init_sfield / page_size;
+
+    if((mword_init_sfield % page_size) != 0) num_pages++;
+    if(!num_pages) return nil;
+
+    mword *arrays   = mem_new_ptr(this_pyr, num_pages);
+    mword i;
+
+    if(init_sfield > 0){ // val-array
+        for(i=0; i<num_pages; i++){
+            ldp(arrays,i) = mem_new_valz(this_pyr, page_size);
+        }
+    }
+    else if(init_sfield < 0){ // ptr-array
+        for(i=0; i<num_pages; i++){
+            ldp(arrays,i) = mem_new_ptr(this_pyr, page_size);
+        }
+    }
+    else{
+        _fatal("cannot allocate tptr paged-array");
+    }
+
+    mword *pa = mem_new_ptr(this_pyr, 3);
+
+    ldp(pa,0) = _val(this_pyr, (mword)init_sfield);
+    ldp(pa,1) = _val(this_pyr, page_size);
+    ldp(pa,2) = arrays;
+
+    return pa;
+
+}
 
 // Clayton Bauman 2017
 

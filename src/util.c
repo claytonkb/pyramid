@@ -18,6 +18,7 @@
 #include "interp.h"
 #include "xbar.h"
 #include "pvc.h"
+#include "std.h"
 
 
 /*****************************************************************************
@@ -292,24 +293,16 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = bstruct_load(this_pyr, ACC, size(ACC));
 //                _say("root.bbl loaded");
 
-                ACC = io_slurp8(this_pyr, "tree.bbl");
-                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _say("tree.bbl loaded");
+//                ACC = io_slurp8(this_pyr, "tree.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("tree.bbl loaded");
 
-#define sfield_pa(base)  (vcar(rdp(base,0)))
-#define pgsize_pa(base)  (vcar(rdp(base,1)))
-#define arrays_pa(base)       (rdp(base,2))
-#define rdv_pa(base,offset) (rdv(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
-#define ldv_pa(base,offset) (ldv(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
-#define rdp_pa(base,offset) (rdp(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
-#define ldp_pa(base,offset) (ldp(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
+                ACC = std_new_paged_array(this_pyr, 4, -1*UNITS_MTO8(19));
 
 // std_new_pa() <-- creates a new paged_array
 
 //_dd(pgsize_pa(ACC));
 //_dd(sfield_pa(ACC));
-
-
 
 //                ACC = arrays_pa(ACC);
 

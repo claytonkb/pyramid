@@ -297,7 +297,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = bstruct_load(this_pyr, ACC, size(ACC));
 //                _say("tree.bbl loaded");
 
-                ACC = std_new_paged_array(this_pyr, 4, -1*UNITS_MTO8(19));
+                ACC = std_new_paged_array(this_pyr, 4, -1*UNITS_MTO8(9));
+                std_resize_paged_array(this_pyr, ACC, -1*UNITS_MTO8(30));
 
 // std_new_pa() <-- creates a new paged_array
 

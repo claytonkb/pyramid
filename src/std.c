@@ -315,11 +315,31 @@ mword *frobnicate(void){
 
 //
 //
-mword *std_resize_paged_array(pyr_cache *this_pyr, mword *pa, int new_sfield){ // std_resize_paged_array#
+void std_resize_paged_array(pyr_cache *this_pyr, mword *pa, int new_sfield){ // std_resize_paged_array#
 
-//    mword curr_sfield = sfield_pa(pa);
+    mword page_size   = vcar(pgsize_pa(pa));
+    mword *pages      = pages_pa(pa);
+    mword num_pages   = size(pages);
 
-    return nil;
+    mword mword_new_sfield = UNITS_8TOM(abs(new_sfield));
+    mword new_num_pages = mword_new_sfield / page_size;
+    if((new_sfield % page_size) != 0) new_num_pages++;
+
+    mword *new_pages = pages;
+
+    int i;
+
+    if(new_num_pages != num_pages){
+_trace;
+        new_pages = mem_new_ptr(this_pyr, new_num_pages);
+        new_num_pages = MIN(num_pages, new_num_pages);
+        for(i=0; i<new_num_pages; i++){
+            ldp(new_pages,i) = rdp(pages,i);
+        }
+    }
+
+    ldp(pa,2) = new_pages;
+    *(sfield_pa(pa)) = new_sfield;
 
 }
 
@@ -329,9 +349,10 @@ mword *std_resize_paged_array(pyr_cache *this_pyr, mword *pa, int new_sfield){ /
 mword *std_new_paged_array(pyr_cache *this_pyr, mword page_size, int init_sfield){ // std_new_paged_array#
 
     mword mword_init_sfield = UNITS_8TOM(abs(init_sfield));
-    mword num_pages =  mword_init_sfield / page_size;
 
+    mword num_pages =  mword_init_sfield / page_size;
     if((mword_init_sfield % page_size) != 0) num_pages++;
+
     if(!num_pages) return nil;
 
     mword *arrays   = mem_new_ptr(this_pyr, num_pages);

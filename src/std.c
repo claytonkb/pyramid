@@ -312,6 +312,8 @@ mword *frobnicate(void){
 //
 // K x page_size -> Ncube
 
+// std_shift_paged_array
+// std_unshift_paged_array
 
 //
 //
@@ -323,18 +325,34 @@ void std_resize_paged_array(pyr_cache *this_pyr, mword *pa, int new_sfield){ // 
 
     mword mword_new_sfield = UNITS_8TOM(abs(new_sfield));
     mword new_num_pages = mword_new_sfield / page_size;
-    if((new_sfield % page_size) != 0) new_num_pages++;
+    if((mword_new_sfield % page_size) != 0) new_num_pages++;
 
     mword *new_pages = pages;
 
     int i;
 
     if(new_num_pages != num_pages){
-_trace;
         new_pages = mem_new_ptr(this_pyr, new_num_pages);
-        new_num_pages = MIN(num_pages, new_num_pages);
-        for(i=0; i<new_num_pages; i++){
-            ldp(new_pages,i) = rdp(pages,i);
+//        new_num_pages = MIN(num_pages, new_num_pages);
+        if(is_val_sfield(new_sfield)){
+            for(i=0; i<new_num_pages; i++){
+                if(i<num_pages){
+                    ldp(new_pages,i) = rdp(pages,i);
+                }
+                else{
+                    ldp(new_pages,i) = mem_new_valz(this_pyr, page_size);
+                }
+            }
+        }
+        else{
+            for(i=0; i<new_num_pages; i++){
+                if(i<num_pages){
+                    ldp(new_pages,i) = rdp(pages,i);
+                }
+                else{
+                    ldp(new_pages,i) = mem_new_ptr(this_pyr, page_size);
+                }
+            }
         }
     }
 

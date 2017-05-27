@@ -542,13 +542,13 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define ros(x) (rov(x,-1))                              // ros#
 
 // paged-array accessors
-#define sfield_pa(base)     (rdp(base,0))
-#define pgsize_pa(base)     (rdp(base,1))
-#define pages_pa(base)      (rdp(base,2))
-//#define rdv_pa(base,offset) (rdv(rdp(arrays_pa(base),(offset/(*pgsize_pa(base)))),(offset%(*pgsize_pa(base)))))
-//#define ldv_pa(base,offset) (ldv(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
-//#define rdp_pa(base,offset) (rdp(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
-//#define ldp_pa(base,offset) (ldp(rdp(arrays_pa(base),(offset/pgsize_pa(base))),(offset%pgsize_pa(base))))
+#define sfield_pa(pa)     (rdp(pa,0))
+#define pgsize_pa(pa)     (rdp(pa,1))
+#define pages_pa(pa)      (rdp(pa,2))
+#define rdv_pa(pa,offset) (rdv(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
+#define rdp_pa(pa,offset) (rdp(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
+#define ldv_pa(pa,offset) (ldv(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
+#define ldp_pa(pa,offset) (ldp(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
 
 /*****************************************************************************
  *                                                                           *
@@ -563,6 +563,9 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define is_ptr(x)    ((int)sfield((mword*)x) <  0)                  // is_ptr#
 #define is_tptr(x)   ((int)sfield((mword*)x) == 0)                  // is_tptr#
 #define is_cptr(x)   tageq((x), global_irt->tags->PYR_TAG_CPTR, TAG_SIZE) // is_cptr#
+
+#define is_val_sfield(x)    (((int)x) > 0) // is_val_sfield#
+//#define is_val(x)    is_val_sfield(sfield((mword*)x))
 
 #define is_tptr_spec(x)   (!is_val(x) && !is_ptr && !is_nil(x))     // is_tptr_spec#
 

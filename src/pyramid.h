@@ -129,7 +129,7 @@
 #define TPTR_SIZE (HASH_SIZE+3)                                 // TPTR_SIZE#
 #define TPTR_ALLOC_SIZE TPTR_SIZE                               // TPTR_ALLOC_SIZE#
 
-#define TPTR_TAG_OFFSET  (mword)0                                      // TPTR_TAG_OFFSET#
+#define TPTR_TAG_OFFSET  (mword)0                               // TPTR_TAG_OFFSET#
 #define TPTR_PTR_OFFSET  (HASH_SIZE+1)                          // TPTR_PTR_OFFSET#
 
 #define TPTR_SFIELD (mword)0
@@ -419,6 +419,9 @@ typedef struct { // interp_runtime
     interp_tags             *tags;
     interp_strings          *strings;
     interp_fns              *fns;
+//    interp_templates        *templates;
+//    interp_cachers          *cachers;
+//    interp_uncachers        *uncachers;
 
     mword                   *tags_strings;
     mword                   *tags_fns;

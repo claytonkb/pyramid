@@ -340,7 +340,7 @@ mword *bstruct_unload(pyr_cache *this_pyr, mword *bs){
         return dest;
     }
 
-    dest         = mem_new_val(this_pyr, _mu(this_pyr, bs), 0);
+    dest = mem_new_val(this_pyr, _mu(this_pyr, bs), 0);
 
     mword *span_array = bstruct_to_array(this_pyr, bs);
     array_sort(this_pyr, span_array, VAL);

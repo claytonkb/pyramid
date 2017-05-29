@@ -476,6 +476,7 @@ pyramid_op UNINIT_FN_PTR;
 
 mword *global_dev_overrides;                    // global_dev_overrides#
 mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
+mword *global_dev_ptr;                          // general-purpose global pointer
 
 #define FLAG_IGN    ((mword)-1) // FLAG_IGN#
 #define FLAG_SET    1 // FLAG_SET#

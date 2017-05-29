@@ -308,11 +308,14 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //tempv = rrdp(ACC,MWORD_SIZE,0);
 //_d(rrdp(ACC,tempv,0));
 
-                ACC = io_slurp(this_pyr, "tag_val.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _prn("tag_val.bbl loaded\n");
-_mem(ACC);
-                ACC = rtcar(ACC,MWORD_SIZE);
+//                ACC = io_slurp(this_pyr, "tag_val.bbl");
+////                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _prn("tag_val.bbl loaded\n");
+//_mem(ACC);
+//                ACC = rtcar(ACC,MWORD_SIZE);
+
+                ACC = bstruct_cp(this_pyr, ACC);
+                ACC = global_dev_ptr;
 
                 break;
             case 2:

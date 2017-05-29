@@ -308,6 +308,10 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //tempv = rrdp(ACC,MWORD_SIZE,0);
 //_d(rrdp(ACC,tempv,0));
 
+                ACC = io_slurp(this_pyr, "tag_val.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _prn("tag_val.bbl loaded\n");
+_mem(ACC);
                 ACC = rtcar(ACC,MWORD_SIZE);
 
                 break;
@@ -364,7 +368,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 break;
              case 15:
                 tempc = cmd_code_str + strlen(cmd_code_str) + 1;
-                ACC = io_slurp8(this_pyr, tempc);
+                ACC = io_slurp(this_pyr, tempc);
                 ACC = bstruct_load(this_pyr, ACC, size(ACC));
                 _prn((char*)tempc);
                 _prn(" loaded\n");

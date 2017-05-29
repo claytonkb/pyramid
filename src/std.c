@@ -5,7 +5,7 @@
 #include "std.h"
 #include "mem.h"
 #include "array.h"
-
+#include "tptr.h"
 
 // Pyramid-level std-library support. Some primitives are perf-critical and
 // must be implemented here. Other std-library primitives can be implemented
@@ -400,6 +400,96 @@ mword *std_new_paged_array(pyr_cache *this_pyr, mword page_size, int init_sfield
     return pa;
 
 }
+
+
+//
+//
+mword *std_read_with_pbp(pyr_cache *this_pyr, mword *bs, mword *pbp){ // std_read_with_pbp#
+
+    int i;
+    mword pbp_size = size(pbp);
+
+    for(i=0;i<pbp_size;i++){
+        if(is_tptr(bs)){
+            bs = tptr_detag(this_pyr, bs);
+        }
+        if(is_ptr(bs)){
+            bs = rdp(bs,rdv(pbp,i));
+        }
+        else{ // is_val(bs)
+            if(i<pbp_size-1){
+                bs = array_slice(this_pyr, bs, rdv(pbp,i), rdv(pbp,i+1));
+                break;
+            }
+            else{
+                bs = _val(this_pyr, rdv(bs, rdv(pbp, i)));
+                break;
+            }
+        }
+    }
+
+    return bs;
+
+}
+
+
+// X [a b c] Y th_wmd
+// X nil     Y th_wmd  --> overwrites Y into X at offset 0, eqiv. to:
+// X [0]     Y th_wmd
+// 
+// Y    -> X
+// leaf -> leaf (range?)
+// inte -> inte
+//
+mword std_write_with_pbp(pyr_cache *this_pyr, mword *bs, mword *pbp, mword *payload){ // std_write_with_pbp#
+
+    int i;
+
+    mword pbp_size = size(pbp);
+    mword bs_index = 0;
+
+    for(i=0;i<pbp_size;i++){
+        if(is_tptr(bs)){
+            bs = tptr_detag(this_pyr, bs);
+        }
+        if(is_ptr(bs)){
+            if(i<pbp_size-1){
+                bs = rdp(bs,rdv(pbp,i));
+            }
+            else{
+                bs_index = rdv(pbp,i);
+                break;
+            }
+        }
+        else{ // is_val(bs)
+            bs_index = rdv(pbp,i);
+            break;
+        }
+    }
+
+    if( is_ptr(bs) ){
+
+        ldp(bs,bs_index) = payload;
+
+    }
+    else if( is_val(bs)
+            && is_val(payload) ){
+
+        //void    move(mword *dest, mword dest_index, mword *src, mword src_index, mword size);
+        array_move(this_pyr, bs, bs_index, payload, 0, size(payload), MWORD_ASIZE);
+
+    }
+    else{
+        _die;
+        return 0;
+
+    }
+
+    return 1;
+
+}
+
+
 
 // Clayton Bauman 2017
 

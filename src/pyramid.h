@@ -532,11 +532,12 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define tptr_set_ptr(dest,src) (ldp(dest,TPTR_PTR_OFFSET) = src)  // tptr_set_ptr#
 
 /////// relative offset accessors ///////
-#define rel_to_abs(base,rel) (mword*)(base+rel)
-#define abs_to_rel(base,abs) (mword*)(base-abs)
+#define rel_to_abs(base,rel) (mword*)(base+UNITS_8TOM((mword)rel))
+#define abs_to_rel(base,abs) (mword*)(base-UNITS_8TOM((mword)abs))
 
 #define rrdp(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
 #define rldp(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
+
 #define rrdv(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
 #define rldv(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
 

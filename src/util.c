@@ -285,33 +285,30 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                pvc_core_interp(this_pyr, tcar(ACC));
 //                _say("done");
 
-//                ACC = io_slurp8(this_pyr, "paged_array.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("paged_array.bbl loaded");
-
-//                ACC = io_slurp8(this_pyr, "root.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("root.bbl loaded");
-
 //                ACC = io_slurp8(this_pyr, "tree.bbl");
 //                ACC = bstruct_load(this_pyr, ACC, size(ACC));
 //                _say("tree.bbl loaded");
-
-//_dd(pgsize_pa(ACC));
-//_dd(sfield_pa(ACC));
 
 //                ACC = arrays_pa(ACC);
 
 //                tempv = rdv_pa(ACC,9);
 //                ACC = _val(this_pyr, tempv);
 
-                ACC = std_new_paged_array(this_pyr, 4, -1*UNITS_MTO8(9));
+//                ACC = std_new_paged_array(this_pyr, 4, -1*UNITS_MTO8(9));
+//
+//                for(tempv=0; tempv<9; tempv++){
+//                    ldp_pa(ACC,tempv) = _val(this_pyr, (tempv * tempv));
+//                }
+//
+//                std_resize_paged_array(this_pyr, ACC, -1*UNITS_MTO8(13));
 
-                for(tempv=0; tempv<9; tempv++){
-                    ldp_pa(ACC,tempv) = _val(this_pyr, (tempv * tempv));
-                }
+//_dd(pgsize_pa(ACC));
+//_dd(sfield_pa(ACC));
 
-                std_resize_paged_array(this_pyr, ACC, -1*UNITS_MTO8(13));
+//tempv = rrdp(ACC,MWORD_SIZE,0);
+//_d(rrdp(ACC,tempv,0));
+
+                ACC = rtcar(ACC,MWORD_SIZE);
 
                 break;
             case 2:
@@ -366,9 +363,16 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 _say("ACC <== global_dev_overrides");
                 break;
              case 15:
+                tempc = cmd_code_str + strlen(cmd_code_str) + 1;
+                ACC = io_slurp8(this_pyr, tempc);
+                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _prn((char*)tempc);
+                _prn(" loaded\n");
+                break;
+             case 16:
                 util_show_geometries();
                 break;
-            default:
+             default:
                 _say("unrecognized command code");
                 util_bare_metal_menu();
                 break;
@@ -420,7 +424,8 @@ void util_bare_metal_menu(void){
             "12 p  .....    ACC <== p\n"
             "13    .....    ACC <== init_ptr\n"
             "14    .....    ACC <== global_dev_overrides\n"
-            "15    .....    show pyramid constants and geometries");
+            "15 f  .....    ACC <== loaded .bbl file f\n"
+            "16    .....    show pyramid constants and geometries");
 
 }
 

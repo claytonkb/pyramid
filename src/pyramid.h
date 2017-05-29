@@ -531,20 +531,30 @@ mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 #define tptr_set_ptr(dest,src) (ldp(dest,TPTR_PTR_OFFSET) = src)  // tptr_set_ptr#
 
 /////// relative offset accessors ///////
+#define rel_to_abs(base,rel) (mword*)(base+rel)
+#define abs_to_rel(base,abs) (mword*)(base-abs)
 
-//relative offest value
-#define rov(x,y) (*(mword*)((char*)x[0]+x[1]+(UNITS_MTO8(y))))  // rov#
+#define rrdp(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
+#define rldp(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
+#define rrdv(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
+#define rldv(base,x,y)  (*((mword*)(base+(UNITS_8TOM(x)))+y))
 
-//traverse to relative offest for ptr
-#define trop(x,y) (x[1] = rov(x,y))                     // trop#
+#define rtcar(base,x)  ((mword*)rrdp(base,x,TPTR_PTR_OFFSET))
 
-//traverse to relative offest for tptr
-#define trot(x) (x[1] = rov(x,TPTR_PTR_OFFSET))         // trot#
+////relative offest value
+//#define rov(x,y) (*(mword*)((char*)x[0]+x[1]+(UNITS_MTO8(y))))  // rov#
+//
+////traverse to relative offest for ptr
+//#define trop(x,y) (x[1] = rov(x,y))                     // trop#
+//
+////traverse to relative offest for tptr
+//#define trot(x) (x[1] = rov(x,TPTR_PTR_OFFSET))         // trot#
+//
+////relative offest sfield
+//#define ros(x) (rov(x,-1))                              // ros#
 
-//relative offest sfield
-#define ros(x) (rov(x,-1))                              // ros#
 
-// paged-array accessors
+/////// paged-array accessors ///////
 #define sfield_pa(pa)     (rdp(pa,0))
 #define pgsize_pa(pa)     (rdp(pa,1))
 #define pages_pa(pa)      (rdp(pa,2))

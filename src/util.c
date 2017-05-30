@@ -308,20 +308,25 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //tempv = rrdp(ACC,MWORD_SIZE,0);
 //_d(rrdp(ACC,tempv,0));
 
-                ACC = io_slurp(this_pyr, "tag_val.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _prn("tag_val.bbl loaded\n");
-
-_d(ACC);
-_mem(ACC);
-                temp = rtcar(ACC,MWORD_SIZE);
-                ACC = _val(this_pyr, *(rel_to_abs(ACC,temp)));
-
-//                ACC = bstruct_cp(this_pyr, ACC);
-//                ACC = global_dev_ptr;
+//                ACC = io_slurp(this_pyr, "tag_val.bbl");
+////                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _prn("tag_val.bbl loaded\n");
+//
+//_d(ACC);
+//_mem(ACC);
+//                temp = rtcar(ACC,MWORD_SIZE);
+//                ACC = _val(this_pyr, *(rel_to_abs(ACC,temp)));
+//
+////                ACC = bstruct_cp(this_pyr, ACC);
+////                ACC = global_dev_ptr;
 
 // NEXT: Test std_*_pbp using tree.bbl; integrate with relative-offset
 // operators
+
+                temp = pcdr(ACC);
+                ACC = pcar(ACC);
+
+                ACC = std_read_with_pbp(this_pyr, ACC, temp);
 
                 break;
             case 2:

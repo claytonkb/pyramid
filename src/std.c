@@ -411,7 +411,8 @@ mword *std_read_with_pbp(pyr_cache *this_pyr, mword *bs, mword *pbp){ // std_rea
 
     for(i=0;i<pbp_size;i++){
         if(is_tptr(bs)){
-            bs = tptr_detag(this_pyr, bs);
+//            bs = tptr_detag(this_pyr, bs); // XXX check for built-ins?? XXX
+            bs = tcar(bs);
         }
         if(is_ptr(bs)){
             bs = rdp(bs,rdv(pbp,i));

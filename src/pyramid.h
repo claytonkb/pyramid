@@ -509,7 +509,6 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define ldv(x,y) (*((mword*)x+y))       // ldv#
 
 /////// Lisp-style accessors ///////
-
 #define vcar(x) ((mword)rdv(x,0))       // vcar#
 #define vcdr(x) ((mword)rdv(x,1))       // vcdr#
 #define vcpr(x) ((mword)rdv(x,2))       // vcpr#
@@ -523,13 +522,9 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define lcdr(x)     (is_nil(x) ? nil : pcdr(x)) // lcdr#
 
 /////// tptr accessors ///////
-
-#define tcar(x) ((mword*)rdp(x,TPTR_PTR_OFFSET))        // tcar#
-
-//#define set_tptr_tag(x,y) (ldv(x,TPTR_TAG_OFFSET) = y)  // set_tptr_tag#
-
-#define tptr_set_tag(dest,src) tagcpy(dest,src)
-#define tptr_set_ptr(dest,src) (ldp(dest,TPTR_PTR_OFFSET) = src)  // tptr_set_ptr#
+#define tcar(x) ((mword*)rdp(x,TPTR_PTR_OFFSET))                    // tcar#
+#define tptr_set_tag(dest,src) tagcpy(dest,src)                     // tptr_set_tag#
+#define tptr_set_ptr(dest,src) (ldp(dest,TPTR_PTR_OFFSET) = src)    // tptr_set_ptr#
 
 /////// relative offset accessors ///////
 #define rel_to_abs(base,rel) (mword*)(base+UNITS_8TOM((mword)rel))

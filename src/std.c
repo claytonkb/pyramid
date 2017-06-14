@@ -19,12 +19,6 @@
 // 
 
 
-mword *frobnicate(void){
-
-    return nil;
-
-}
-
 //* Tensors
 //
 //    Pyramid will have built-in support for tensors. (See Nial language)

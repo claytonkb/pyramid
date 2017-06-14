@@ -322,11 +322,18 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 // NEXT: Test std_*_pbp using tree.bbl; integrate with relative-offset
 // operators
+//
+//                temp = pcdr(ACC);
+//                ACC = pcar(ACC);
+//
+//                ACC = std_read_with_pbp(this_pyr, ACC, temp);
 
-                temp = pcdr(ACC);
-                ACC = pcar(ACC);
+                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _say("pvc_code.bbl loaded");
 
-                ACC = std_read_with_pbp(this_pyr, ACC, temp);
+                pvc_core_interp(this_pyr, tcar(ACC));
+                _say("done");
 
                 break;
             case 2:

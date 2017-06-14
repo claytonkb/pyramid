@@ -25,61 +25,6 @@ mword *frobnicate(void){
 
 }
 
-//-----------------------------------------------------------------------------
-//
-//"save stack"
-//    stack -> AoP
-//
-//"load stack"
-//    AoP -> stack
-//
-//NOTE: AoP needs to be able to convert to list array and back
-//
-//-----------------------------------------------------------------------------
-//
-//* Babel -> Pyramid conversion
-//
-//    perl -p -i.bak -e 's/\bBYTE_SIZE\b/UNITS_MTO8/' *
-//
-//    %s///g
-// 
-//* Program Input/Conversion
-//
-//    (1) Parse input: Raw text -> s-expressions
-//        <text> sexpr
-//    (2) Rewrite terms: s-expressions -> s-expressions
-//        <sexpr> <rewrite rules> rewrite
-//    (3) Convert to bstruct and apply macros
-//        <sexpr> <macro-table> bpdl
-//    (4) Brickify and give to core_brick_dispatch
-//
-//* ptr-array as special form
-//
-//    If we have a ptr-array whose first element is a tag (or hash-val), we can
-//    treat this ptr-array as a "special form", not unlike the Lisp concept as
-//    applied to S-expressions. "Brick" is a synonym for this idea of a
-//    ptr-array as a special form.
-//
-//* Bricks (formally-tagged bstructs)
-//
-//    A brick is a bstruct that is tagged with a tag specifying its formal
-//    structure.
-//
-//        [ptr [tag <brick-tag> nil] ...]
-//
-//    The exact format of the bstruct depends on the brick-tag. The
-//    interp_core_dispatch function always knows what to do with a brick that is
-//    defined. For example, suppose we define a brick-tag for the 'over'
-//    meta-operation:
-//
-//        [ptr [tag "/pyramid/tag/over" nil] code operand0 operand1 ... operandn]
-//
-//    A brick that calls a meta-operation is called an *active brick*.
-//
-//    For data-type bricks (passive bricks), the interp_core_dispatch will
-//    return the function pointers for accessing (reading/writing) the
-//    respective brick.
-//
 //* Tensors
 //
 //    Pyramid will have built-in support for tensors. (See Nial language)

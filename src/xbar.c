@@ -19,17 +19,32 @@ void xbar_new(pyr_cache *this_pyr){
 
 //
 //
-mword *xbar_tag_to_string(pyr_cache *this_pyr, mword *tag){ // xbar_tag_to_string#
+mword *xbar_search(pyr_cache *this_pyr, mword *tag){ // xbar_search#
 
     mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
-//    mword offset = array_search(this_pyr, global_irt->tags_strings, tag, LEX_MWORD);
 
     if(offset == -1){
         return nil;
     }
 
-    return rdp( pcdr(rdp(global_irt->xbar, offset)), 1);
-    //    return pcdr( rdp(global_irt->tags_strings, offset) );
+    return rdp(global_irt->xbar,offset);
+
+}
+
+
+//
+//
+mword *xbar_tag_to_string(pyr_cache *this_pyr, mword *tag){ // xbar_tag_to_string#
+
+//    mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
+//
+//    if(offset == -1){
+//        return nil;
+//    }
+//
+//    return rdp( pcdr(rdp(global_irt->xbar, offset)), 1);
+
+    return rdp( pcdr( xbar_search(this_pyr, tag) ), 1); // FIXME: Blows up if xbar search returns nil...
 
 }
 

@@ -163,6 +163,44 @@ typedef uint64_t mword;
 #define UNINIT_PTR UNINIT_PTR_64
 #endif
 
+// std types:
+typedef mword* blob; // blob#
+typedef blob ptr; // ptr-array ptr#
+typedef blob val; // val-array val#
+typedef blob tptr; // tagged-pointer tptr#
+typedef blob cptr; // C-style (unsafe) pointer cptr#
+typedef blob ls; // linked-list ls#
+typedef blob dls; // doubly linked-list dls#
+typedef blob pyr; // nested ptr-array pyr#
+typedef blob mat; // ls-based matrix mat#
+typedef blob aop; // array-of-pairs aop#
+typedef blob sap; // sorted aop sap#
+typedef blob tens; // tensor tens#
+typedef blob ar8; // byte-array ar8#
+typedef blob bstr; // Babel-string (mword) bstr#
+typedef blob hash; // HASH_SIZE hash value hash#
+typedef blob bsig; // bstruct-signature bsig#
+typedef blob map; // hash-table map#
+typedef blob hist; // map-based histogram hist#
+typedef blob hista; // aop-based histogram hista#
+typedef blob lut; // map-based lookup-table lut#
+typedef blob luta; // aop-based lookup-table luta#
+typedef blob tmap; // tag-only map tmap#
+typedef blob ns; // namespace ns#
+typedef blob dir; // directory dir#
+
+typedef blob u8str; // utf-8 encoded byte-string u8str#
+typedef blob sexpr; // ls-based s-expression sexpr#
+typedef blob aexpr; // array-based s-expression aexpr#
+typedef blob enuma; // aop-based enumeration enuma#
+
+typedef blob tree; // binary tree data-structre tree#
+typedef blob ntree; // aop-based n-ary tree data-structure ntree#
+typedef blob graph; // undirected graph data-structure graph#
+typedef blob digraph; // directed graph data-structure digraph#
+typedef blob hygraph; // hyper-graph data-structure hygraph#
+typedef blob adjmat; // adjacency-matrix adjmat#
+
 #ifdef PYRAMID_WINDOWS_BUILD
 #ifdef PYRAMID_32_BIT
 #define dpr "%I32d"

@@ -7,6 +7,20 @@
 #include "introspect.h"
 #include "io.h"
 
+// Initialization in interp.c
+//   Idea: Set these up in the relevant X-macros, and add a few padding fields
+//              just in case we decide to add another field later on
+// blob_type --> [noun|verb]
+// tag       --> e.g. [hash "/babel/tag/list"]
+// string    --> e.g. [val "/babel/tag/list"]
+// verb_fn   --> (if applicable, such as for an operator-tag)
+// template  --> (if applicable, such as for a call_stack_frame)
+// to_verb   --> if blob_type==noun, points to verbs that can operate on this noun (else nil)
+// to_noun   --> if blob_type==verb, points to applicable nouns for this verb
+// cacher    --> used only for cache-able nouns
+// uncacher  -->  "          "              "
+//
+// check blind spots: threading, alternation, laziness
 
 //
 //

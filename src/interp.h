@@ -24,7 +24,7 @@ pyr_cache *interp_init_privileges(pyr_cache *this_pyr);
 void interp_exit(pyr_cache *this_pyr);
 
 void interp_init_tables(pyr_cache *this_pyr);
-void interp_init_tags_strings(pyr_cache *this_pyr);
+void interp_init_xbar(pyr_cache *this_pyr);
 void interp_init_symbols(pyr_cache *this_pyr);
 
 pyr_cache *interp_uninit_fn(pyr_cache *this_pyr);

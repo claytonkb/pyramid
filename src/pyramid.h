@@ -361,10 +361,9 @@ typedef struct {
 } pyr_profile;
 #endif
 
-
 typedef struct { // interp_builtins#
     mword *PYR_TAG_ZERO_HASH;
-#define X(a,b,c) mword *a;
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) mword *a;
 PYR_TAGS
 #undef X
 } interp_builtins;
@@ -372,14 +371,14 @@ PYR_TAGS
 
 typedef struct { // interp_tags#
     mword *PYR_TAG_ZERO_HASH;
-#define X(a,b,c) mword *a;
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) mword *a;
 PYR_TAGS
 #undef X
 } interp_tags;
 
 
 typedef struct { // interp_strings#
-#define X(a,b,c) mword *a;
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) mword *a;
 PYR_TAGS
 #undef X
 } interp_strings;
@@ -447,7 +446,7 @@ typedef struct { // pyr_cache#
 typedef pyr_cache *(*pyramid_op)(pyr_cache *); // pyramid_op#
 
 typedef struct { // interp_fns#
-#define X(a,b,c)  pyramid_op a;
+#define X(a,b,c,d,e,f,g,h,i,j,k,l)  pyramid_op a;
 PYR_TAGS
 #undef X
 } interp_fns;

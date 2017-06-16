@@ -290,19 +290,19 @@ _reset_trace;
     global_irt->profile = mem_non_gc_alloc(sizeof(pyr_profile));
 #endif
 
-#define X(a, b, c) global_irt->tags->a = HASHC(this_pyr, b);
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) global_irt->tags->a = HASHC(this_pyr, b);
 PYR_TAGS
 #undef X
 
-#define X(a, b, c) global_irt->strings->a = string_c2b(this_pyr, b, 1000); 
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) global_irt->strings->a = string_c2b(this_pyr, b, 1000); 
 PYR_TAGS
 #undef X
 
-#define X(a, b, c) global_irt->fns->a = c; 
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) global_irt->fns->a = c; 
 PYR_TAGS
 #undef X
 
-    interp_init_tags_strings(this_pyr);
+    interp_init_xbar(this_pyr);
 
     interp_init_tables(this_pyr);
 
@@ -343,7 +343,8 @@ fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
     global_irt->verb_table = mem_new_ptr(this_pyr, PYR_NUM_VERB_TAGS);
     global_irt->noun_table = mem_new_ptr(this_pyr, PYR_NUM_NOUN_TAGS);
 
-#define X(a, b, c) \
+////////////////////////////////////////////////////////////////////////////
+#define X(a,b,c,d,e,f,g,h,j,k,l,m) \
     ldp(global_irt->verb_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
     PYR_VERB_TAGS    
 #undef X
@@ -356,7 +357,8 @@ fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
 
     i=0;
 
-#define X(a, b, c) \
+////////////////////////////////////////////////////////////////////////////
+#define X(a,b,c,d,e,f,g,h,j,k,l,m) \
     ldp(global_irt->noun_table,i++) = _cons(this_pyr, global_irt->tags->a, nil);
     PYR_NOUN_TAGS    
 #undef X
@@ -372,39 +374,86 @@ fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
 
 //
 //
-void interp_init_tags_strings(pyr_cache *this_pyr){ // interp_init_tags_strings#
+void interp_init_xbar(pyr_cache *this_pyr){ // interp_init_xbar#
 
     int i=0;
-    mword *car;
-    mword *cdr;
+    mword *temp;
+//    mword *cdr;
 
 #ifdef INTERP_RESET_TRACE
 _prn("PYR_NUM_TAGS is ");
 _dd(PYR_NUM_TAGS);
 #endif
 
-///////////////////////
-// TAGS -> XBAR      //
-///////////////////////
+    ////////////////////////
+    // GLOBAL_IRT -> XBAR //
+    ////////////////////////
 
     global_irt->xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
 
-    ldp(global_irt->xbar,i) = _cons(this_pyr, nil, nil);
+    ldp(global_irt->xbar,i) = mem_new_ptr(this_pyr, PYR_XBAR_NUM_FIELDS);
     i++;
 
-#define X(a, b, c) \
-    car = global_irt->tags->a; \
-    cdr = mem_new_val(this_pyr, 2, 0); \
-    ldp(cdr,0) = (mword*)global_irt->fns->a; \
-    ldp(cdr,1) = global_irt->strings->a; \
-    ldp(global_irt->xbar,i) = _cons(this_pyr, car, cdr); \
+
+/////////////////////////////////////////////////////////////////////////////
+// NOTE: temp[2] is intentionally stored as a _val not as a _ptr in order
+// to keep the xbar safe for dumping/introspection.
+/////////////////////////////////////////////////////////////////////////////
+#define X(a,b,c,d,e,f,g,h,j,k,l,m) \
+    temp = mem_new_ptr(this_pyr, PYR_XBAR_NUM_FIELDS); \
+    ldp(temp,0) = HASHC(this_pyr, b); \
+    ldp(temp,1) = string_c2b(this_pyr, b, 1000); \
+    ldp(temp,2) = _val(this_pyr,(mword)c); \
+    ldp(temp,3) = _val(this_pyr,d); \
+    ldp(global_irt->xbar,i) = temp; \
     i++;
     PYR_TAGS    
 #undef X
 
     array_sort(this_pyr, global_irt->xbar, LEX_MWORD);
 
+//_dump(global_irt->xbar);
+//_die;
+
 }
+
+
+////
+////
+//void interp_init_xbar(pyr_cache *this_pyr){ // interp_init_xbar#
+//
+//    int i=0;
+//    mword *car;
+//    mword *cdr;
+//
+//#ifdef INTERP_RESET_TRACE
+//_prn("PYR_NUM_TAGS is ");
+//_dd(PYR_NUM_TAGS);
+//#endif
+//
+//    ////////////////////////
+//    // GLOBAL_IRT -> XBAR //
+//    ////////////////////////
+//
+//    global_irt->xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
+//
+//    ldp(global_irt->xbar,i) = _cons(this_pyr, nil, nil);
+//    i++;
+//
+/////////////////////////////////////////////////////////////////////////
+//#define X(a,b,c,d,e,f,g,h,j,k,l,m) \
+//    car = global_irt->tags->a; \
+//    cdr = mem_new_val(this_pyr, 2, 0); \
+//    ldp(cdr,0) = (mword*)global_irt->fns->a; \
+//    ldp(cdr,1) = global_irt->strings->a; \
+//    ldp(global_irt->xbar,i) = _cons(this_pyr, car, cdr); \
+//    i++;
+//    PYR_TAGS    
+//#undef X
+//
+//    array_sort(this_pyr, global_irt->xbar, LEX_MWORD);
+//
+//}
 
 //
 //

@@ -278,12 +278,12 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = global_irt->xbar;
 
-                ACC = io_slurp8(this_pyr, "code_block.bbl");
-                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _say("code_block.bbl loaded");
-
-                pvc_core_interp(this_pyr, tcar(ACC));
-                _say("done");
+//                ACC = io_slurp8(this_pyr, "code_block.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("code_block.bbl loaded");
+//
+//                pvc_core_interp(this_pyr, tcar(ACC));
+//                _say("done");
 
 //                ACC = io_slurp8(this_pyr, "tree.bbl");
 //                ACC = bstruct_load(this_pyr, ACC, size(ACC));
@@ -333,6 +333,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _say("pvc_code.bbl loaded");
 //
 //                _say("done");
+
+                ACC = xbar_search(this_pyr, global_irt->tags->PYR_TAG_ADD_OP);
 
                 break;
             case 2:

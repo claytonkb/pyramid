@@ -148,8 +148,6 @@
  *                                                                           *
  ****************************************************************************/
 
-//typedef unsigned mword; // mword#
-
 // mword#
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
@@ -201,6 +199,7 @@ typedef blob digraph; // directed graph data-structure digraph#
 typedef blob hygraph; // hyper-graph data-structure hygraph#
 typedef blob adjmat; // adjacency-matrix adjmat#
 
+// 32-bit versus 64-bit string-formats
 #ifdef PYRAMID_WINDOWS_BUILD
 #ifdef PYRAMID_32_BIT
 #define dpr "%I32d"
@@ -225,14 +224,15 @@ typedef blob adjmat; // adjacency-matrix adjmat#
 #endif
 #endif
 
-
+// enums
 typedef enum flag_val_enum {CLR, SET, IGN} flag_val; // flag_val#
 typedef enum access_size_sel_enum {BIT_ASIZE, BYTE_ASIZE, MWORD_ASIZE} access_size_sel; // access_size_sel#
 typedef enum sort_type_enum {UNSIGNED, SIGNED, ALPHA_MWORD, ALPHA_BYTE, LEX_MWORD, LEX_BYTE, VAL, CUSTOM} sort_type; // sort_type#
 typedef enum fileout_type_enum {OVERWRITE, APPEND} fileout_type; // fileout_type_enum#
 
-typedef void hash_fn_ptr(char*, char*, char*, mword);
+typedef void hash_fn_ptr(char*, char*, char*, mword); // hash_fn_ptr#
 
+// base-memory page size (in mwords)
 #define mem_thread_base_page_size 32
 
 typedef struct { // mem_thread_base#
@@ -249,7 +249,10 @@ typedef struct { // mem_thread_base#
 
         /////////////////////////////////////////////////////////
         // OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD OLD //
+        // ||| ||| ||| ||| ||| ||| ||| ||| ||| ||| ||| ||| ||| //
+        // vvv vvv vvv vvv vvv vvv vvv vvv vvv vvv vvv vvv vvv //
         /////////////////////////////////////////////////////////
+
 typedef struct { // alloc_bank#
 
     mword *base_ptr;
@@ -359,6 +362,14 @@ typedef struct {
 #endif
 
 
+typedef struct { // interp_builtins#
+    mword *PYR_TAG_ZERO_HASH;
+#define X(a,b,c) mword *a;
+PYR_TAGS
+#undef X
+} interp_builtins;
+
+
 typedef struct { // interp_tags#
     mword *PYR_TAG_ZERO_HASH;
 #define X(a,b,c) mword *a;
@@ -461,8 +472,8 @@ typedef struct { // interp_runtime
 //    interp_cachers          *cachers;
 //    interp_uncachers        *uncachers;
 
-    mword                   *tags_strings;
-    mword                   *tags_fns;
+//    mword                   *tags_strings;
+//    mword                   *tags_fns;
     mword                   *xbar;
 
     interp_symbols          *symbols;
@@ -480,7 +491,7 @@ typedef struct { // interp_runtime
     mword                   *interp_argv;
     char                   **envp;
 
-    mword                   *nil;
+    mword                   *nil;            // nil#
     mword                   *empty_string;
 
     struct tm               *utc_epoch;
@@ -505,7 +516,6 @@ typedef struct { // interp_runtime
  *                                                                           *
  ****************************************************************************/
 
-//mword *nil;                                   // nil#
 interp_runtime *global_irt;                     // global_irt#
 #define nil global_irt->nil
 pyramid_op UNINIT_FN_PTR;

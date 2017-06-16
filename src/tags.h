@@ -8,12 +8,12 @@
 // verb --> a blob that can do something to other blobs
 // pred --> a blob that has a matching predicate-test that reduces to T/F
 
-#define PYR_NUM_NOUN_TAGS 44
-#define PYR_NUM_VERB_TAGS 14
-#define PYR_NUM_PRED_TAGS 11
-#define PYR_NUM_FORM_SYMS 19
+#define PYR_NUM_NOUN_TAGS 64
+#define PYR_NUM_VERB_TAGS 16
+#define PYR_NUM_PRED_TAGS 16
+#define PYR_NUM_FORM_SYMS 32
 
-#ifdef COMPAT_MODE
+#ifdef COMPAT_MODE // Note: This file will not compile in non-COMPAT_MODE :(
 
 #define PYR_NOUN_TAGS                                           \
     X(PYR_TAG_PAGED_ARRAY      , "/pyramid/tag/paged_array",    UNINIT_FN_PTR) \

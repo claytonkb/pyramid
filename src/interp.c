@@ -23,7 +23,7 @@
 // |    |   |   global_irt ready
 // |    |   |   |   pyr_vm ready
 // |    |   |   |   |   pvc ready
-// |    |   |   |   |   |   init_once_per_install (build templates)
+// |    |   |   |   |   |   init_once_per_install (build templates, std JIT)
 // |    |   |   |   |   |   |   interp_core
 // |    |   |   |   |   |   |   |   pvc_core
 // |    |   |   |   |   |   |   |   |   code_exec
@@ -53,11 +53,16 @@ _reset_trace;
     clock_t wall_clock_time;
     wall_clock_time = clock();
 
+    /////////////////////////////
+    //       ONE-TIME INIT     //
+    /////////////////////////////
     interp_init_once(this_pyr);
 
     mword *golden_nil = interp_init_golden_nil();
 
-    // Interpreter reset or catastrophic-exception
+    /////////////////////////////
+    //    INTERP RESET POINT   //
+    /////////////////////////////
     jmp_buf cat_ex;
 
     int val;
@@ -68,12 +73,13 @@ _reset_trace;
         _die;
     }
     else if(val==INTERP_RESET){
-//        interp_exit(this_pyr);
-
         mem_destroy(global_irt->gc_mem);
         _say("INTERP_RESET: pyramid");
     }
 
+    /////////////////////////////
+    //     RE-ENTRANT INIT     //
+    /////////////////////////////
     interp_reinit(this_pyr, golden_nil, argc, argv, envp, &cat_ex);
 
 #ifdef DEV_MODE
@@ -239,7 +245,6 @@ _reset_trace;
     //////////////////////
     // init global_irt  //
     //////////////////////
-
     global_irt->symbols = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->fns     = mem_non_gc_alloc(sizeof(interp_fns));  // XXX WAIVER(mem_sys_alloc) XXX //
@@ -268,16 +273,15 @@ _reset_trace;
     ////////////////////////////
     // init this_pyr          //
     ////////////////////////////
-    this_pyr->self              = UNINIT_PTR;
+    this_pyr->self = UNINIT_PTR;
 
     //////////////////////////
     // init global_irt->mem //
     //////////////////////////
-
     mem_new(this_pyr, MEM_GC_STAT_BANK_MAX_SIZE);
 
     global_irt->flags->MEM_ALLOC_BLOCKING = CLR; // It is now safe to use mem_alloc()
-    global_irt->flags->MEM_ALLOC_NON_GC = CLR;   // ... so stop using mem_non_gc_alloc()
+    global_irt->flags->MEM_ALLOC_NON_GC   = CLR; // ... so stop using mem_non_gc_alloc()
 
     interp_init_limits(this_pyr);
     interp_init_privileges(this_pyr);
@@ -331,9 +335,9 @@ void interp_init_tables(pyr_cache *this_pyr){ // interp_init_tables#
 
 #ifdef INTERP_RESET_TRACE
 _prn("PYR_NUM_VERB_TAGS is ");
-_dd(PYR_NUM_VERB_TAGS);
+fprintf(stderr,"%d\n",PYR_NUM_VERB_TAGS);
 _prn("PYR_NUM_NOUN_TAGS is ");
-_dd(PYR_NUM_NOUN_TAGS);
+fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
 #endif
 
     global_irt->verb_table = mem_new_ptr(this_pyr, PYR_NUM_VERB_TAGS);
@@ -411,7 +415,8 @@ _reset_trace;
 #endif
 
     // Init nil from golden_nil to protect against accidental nil-overwrite
-    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+//    memcpy(nil-1,golden_nil-1,UNITS_MTO8(TPTR_SIZE));
+    cpy(nil-1,golden_nil-1,TPTR_SIZE);
     tptr_set_ptr(nil, nil);
 
 }

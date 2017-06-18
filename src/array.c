@@ -1569,13 +1569,14 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
 
         }
 
-        return -1; // we didn't find what you were looking for...
-
+//        return -1; // we didn't find what you were looking for...
+        return ARRAY_SEARCH_NOT_FOUND;
     }
 
     _pigs_fly;
 
-    return -1; // we didn't find what you were looking for...
+//    return -1; // we didn't find what you were looking for...
+        return ARRAY_SEARCH_NOT_FOUND;
 
 }
 

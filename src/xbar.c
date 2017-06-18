@@ -47,9 +47,8 @@ mword *xbar_search(pyr_cache *this_pyr, mword *tag){ // xbar_search#
 
     mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
 
-    if(offset == -1){
+    if(offset == ARRAY_SEARCH_NOT_FOUND)
         return nil;
-    }
 
     return rdp(global_irt->xbar,offset);
 
@@ -58,17 +57,30 @@ mword *xbar_search(pyr_cache *this_pyr, mword *tag){ // xbar_search#
 
 //
 //
+mword xbar_is_builtin(pyr_cache *this_pyr, mword *tag){ // xbar_is_builtin#
+
+    return (array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD) 
+                != 
+                ARRAY_SEARCH_NOT_FOUND);
+
+}
+
+//
+//
 mword *xbar_tag_to_string(pyr_cache *this_pyr, mword *tag){ // xbar_tag_to_string#
 
-//    mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
-//
-//    if(offset == -1){
-//        return nil;
-//    }
-//
-//    return rdp( pcdr(rdp(global_irt->xbar, offset)), 1);
+    mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
 
-    return rdp( pcdr( xbar_search(this_pyr, tag) ), 1); // FIXME: Blows up if xbar search returns nil...
+    if(offset == -1){
+        return nil; // FIXME: Return the empty_string
+    }
+
+//mword *temp = rdp(global_irt->xbar, offset);
+//_dump(temp);
+//_die;
+
+    return rdp( rdp(global_irt->xbar, offset), 1);
+//    return rdp( pcdr( xbar_search(this_pyr, tag) ), 1); // FIXME: Blows up if xbar search returns nil...
 
 }
 

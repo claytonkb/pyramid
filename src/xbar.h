@@ -6,6 +6,7 @@
 
 void xbar_new(pyr_cache *this_pyr);
 mword *xbar_search(pyr_cache *this_pyr, mword *tag);
+mword xbar_is_builtin(pyr_cache *this_pyr, mword *tag);
 mword *xbar_tag_to_string(pyr_cache *this_pyr, mword *tag);
 mword *xbar_tag_to_fn(pyr_cache *this_pyr, mword *tag);
 

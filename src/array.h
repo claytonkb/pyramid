@@ -7,6 +7,8 @@
 #define ARRAY_SORT_TYPE_LEAF     0
 #define ARRAY_SORT_TYPE_NON_LEAF 1
 
+#define ARRAY_SEARCH_NOT_FOUND NEG_ONE
+
 #define array8_aligned(x) ((x) % BITS_PER_BYTE == 0)
 
 mword *array_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);

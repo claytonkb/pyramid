@@ -5,7 +5,7 @@
 #define EVAL_H
 
 mword *frobnicate(void);
-pyr_cache *eval_apply(pyr_cache *this_pyr, blob b);
+blob eval_apply(pyr_cache *this_pyr, blob b);
 
 #endif //EVAL_H
 

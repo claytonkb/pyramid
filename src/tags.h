@@ -8,10 +8,10 @@
 // verb --> a blob that can do something to other blobs
 // pred --> a blob that has a matching predicate-test that reduces to T/F
 
-#define PYR_NUM_NOUN_TAGS 64
-#define PYR_NUM_VERB_TAGS 16
-#define PYR_NUM_PRED_TAGS 16
-#define PYR_NUM_FORM_SYMS 32
+#define PYR_NUM_NOUN_TAGS 47
+#define PYR_NUM_VERB_TAGS 15
+#define PYR_NUM_PRED_TAGS 12
+#define PYR_NUM_FORM_SYMS 19
 
 #define PYR_XBAR_NUM_FIELDS 4
 
@@ -19,6 +19,17 @@
 #define PYR_VERB_TAG 1
 #define PYR_PRED_TAG 2
 #define PYR_FORM_SYM 3
+#define PYR_SPEC_FORM 4
+#define PYR_EXC_TAG 5
+
+#define is_noun(x)         (rdv(x,3) == PYR_NOUN_TAG)
+#define is_verb(x)         (rdv(x,3) == PYR_VERB_TAG)
+#define is_pred(x)         (rdv(x,3) == PYR_PRED_TAG)
+#define is_form_sym(x)     (rdv(x,3) == PYR_FORM_SYM)
+#define is_special_form(x) (rdv(x,3) == PYR_SPEC_FORM)
+#define is_exception(x)    (rdv(x,3) == PYR_EXC_TAG)
+
+typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_type#
 
 #ifdef COMPAT_MODE // Note: This file will not compile in non-COMPAT_MODE :(
 
@@ -30,6 +41,10 @@
 #define PYR_NOUN_TAGS                                           \
     X(PYR_TAG_PAGED_ARRAY      , "/pyramid/tag/paged_array",    UNINIT_FN_PTR, \
           PYR_NOUN_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_LIST             , "/pyramid/tag/list",           UNINIT_FN_PTR, \
+          PYR_SPEC_FORM           , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
     X(PYR_TAG_ARRAY8           , "/babel/tag/array8",           UNINIT_FN_PTR, \
@@ -219,6 +234,10 @@
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_APPEND           , "/pyramid/tag/append",         UNINIT_FN_PTR, \
+          PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
     X(PYR_TAG_SUB_OP           , "/pyramid/tag/sub_op",         UNINIT_FN_PTR, \
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
@@ -316,6 +335,24 @@
     X(PYR_TAG_UNTYPED          , "/babel/tag/untyped",          UNINIT_FN_PTR, \
           PYR_PRED_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+
+#define PYR_EXC_TAGS                                           \
+    X(PYR_TAG_MALFORMED_EXPR   , "/pyramid/tag/malformed_expr",     UNINIT_FN_PTR, \
+          PYR_EXC_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_UNKNOWN_SYM      , "/pyramid/tag/unknown_sym",     UNINIT_FN_PTR, \
+          PYR_EXC_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_KNOWN_SYM       , "/pyramid/tag/known_sym",     UNINIT_FN_PTR, \
+          PYR_EXC_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_PIGS_FLY       , "/pyramid/tag/pigs_fly",     UNINIT_FN_PTR, \
+          PYR_EXC_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   )
 
 #define PYR_FORM_SYMS                                           \
@@ -400,6 +437,7 @@
     PYR_NOUN_TAGS                                               \
     PYR_VERB_TAGS                                               \
     PYR_PRED_TAGS                                               \
+    PYR_EXC_TAGS                                                \
     PYR_FORM_SYMS
 
 #else

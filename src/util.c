@@ -19,6 +19,7 @@
 #include "xbar.h"
 #include "pvc.h"
 #include "std.h"
+#include "eval.h"
 
 
 /*****************************************************************************
@@ -328,13 +329,12 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //
 //                ACC = std_read_with_pbp(this_pyr, ACC, temp);
 
-//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("pvc_code.bbl loaded");
-//
-//                _say("done");
+                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _say("pvc_code.bbl loaded");
 
-                ACC = xbar_search(this_pyr, global_irt->tags->PYR_TAG_ADD_OP);
+                ACC = (blob)eval_apply(this_pyr, ACC);
+                _say("done");
 
                 break;
             case 2:

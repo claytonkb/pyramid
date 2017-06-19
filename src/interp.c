@@ -12,6 +12,7 @@
 #include "bstruct.h"
 #include "array.h"
 #include "introspect.h"
+#include "list.h"
 
 // PYR_TAGS includes:
 #include "pvc.h"
@@ -298,7 +299,7 @@ PYR_TAGS
 PYR_TAGS
 #undef X
 
-#define X(a,b,c,d,e,f,g,h,i,j,k,l) global_irt->fns->a = c; 
+#define X(a,b,c,d,e,f,g,h,i,j,k,l) global_irt->fns->a = c;
 PYR_TAGS
 #undef X
 
@@ -417,43 +418,6 @@ _dd(PYR_NUM_TAGS);
 
 }
 
-
-////
-////
-//void interp_init_xbar(pyr_cache *this_pyr){ // interp_init_xbar#
-//
-//    int i=0;
-//    mword *car;
-//    mword *cdr;
-//
-//#ifdef INTERP_RESET_TRACE
-//_prn("PYR_NUM_TAGS is ");
-//_dd(PYR_NUM_TAGS);
-//#endif
-//
-//    ////////////////////////
-//    // GLOBAL_IRT -> XBAR //
-//    ////////////////////////
-//
-//    global_irt->xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
-//
-//    ldp(global_irt->xbar,i) = _cons(this_pyr, nil, nil);
-//    i++;
-//
-/////////////////////////////////////////////////////////////////////////
-//#define X(a,b,c,d,e,f,g,h,j,k,l,m) \
-//    car = global_irt->tags->a; \
-//    cdr = mem_new_val(this_pyr, 2, 0); \
-//    ldp(cdr,0) = (mword*)global_irt->fns->a; \
-//    ldp(cdr,1) = global_irt->strings->a; \
-//    ldp(global_irt->xbar,i) = _cons(this_pyr, car, cdr); \
-//    i++;
-//    PYR_TAGS    
-//#undef X
-//
-//    array_sort(this_pyr, global_irt->xbar, LEX_MWORD);
-//
-//}
 
 //
 //
@@ -680,7 +644,7 @@ _trace;
 //
 //
 pyr_cache *interp_uninit_fn(pyr_cache *this_pyr){ // interp_uninit_fn#
-    _fatal("Oops.");
+    _fatal("An unintialized function was invoked");
 }
 
 

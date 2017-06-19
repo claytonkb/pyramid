@@ -8,6 +8,8 @@
 #include "array.h"
 #include "string.h"
 #include "mem.h"
+#include "introspect.h"
+#include "io.h"
 
 
 //
@@ -17,7 +19,7 @@ mword *list_insert(pyr_cache *this_pyr, mword *src_list, mword *dest_list){ // l
     if(is_nil(dest_list)){
         return src_list;
     }
-    
+
     mword *next_dest_list = pcdr(dest_list);
     mword *end_src_list   = list_find_end(this_pyr, src_list);
 
@@ -523,6 +525,31 @@ mword *dlist_cut(pyr_cache *this_pyr, mword *list, mword index, mword direction)
 //(a b c d)     pop     --> (b c d) (a)
 //(a b c) (d)   unshift --> (a b c d)
 //(a b c d)     shift   --> (a b c) (d)
+
+
+// append goes from last element to first element in order to avoid re-traversing
+// the intermediate result list
+blob list_append_pyr_op(pyr_cache *this_pyr, blob lists){ // list_append_pyr_op#
+
+    if(is_nil(lists))
+        return nil;
+
+    int i = size(lists) - 1;
+
+    mword *result = nil;
+    mword *curr_list = nil;
+
+    for(;i>=0;i--){
+        curr_list = rdp(lists,i);
+        list_append_direct(this_pyr,
+                curr_list,
+                result);
+        result = curr_list;
+    }
+
+    return result;
+
+}
 
 
 // Clayton Bauman 2017

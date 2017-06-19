@@ -132,15 +132,16 @@
 #define TPTR_TAG_OFFSET  (mword)0                                      // TPTR_TAG_OFFSET#
 #define TPTR_PTR_OFFSET  (HASH_SIZE+1)                          // TPTR_PTR_OFFSET#
 
-#define TPTR_SFIELD (mword)0
+#define TPTR_SFIELD (mword)0 // TPTR_SFIELD#
 
 #define CTL_MASK (MWORD_SIZE-1)                                 // CTL_MASK#
 
-#define UNINIT_VAL_32 0xdeadbeef                                // Placeholder-value   indicating non-initialization
-#define UNINIT_PTR_32 nil                                       // Placeholder-pointer indicating non-initialization
+// Placeholders indicating non-initialization
+#define UNINIT_VAL_32 0xdeadbeef // UNINIT_VAL_32#
+#define UNINIT_PTR_32 nil // UNINIT_PTR_32#
 
-#define UNINIT_VAL_64 0xabadfaceabaddeed
-#define UNINIT_PTR_64 nil                                       // Placeholder-pointer indicating non-initialization
+#define UNINIT_VAL_64 0xabadfaceabaddeed // UNINIT_VAL_64#
+#define UNINIT_PTR_64 nil // UNINIT_PTR_64#
 
 /*****************************************************************************
  *                                                                           *
@@ -518,6 +519,9 @@ typedef struct { // interp_runtime
 } interp_runtime;
 
 
+typedef blob (*pyr_op)(pyr_cache*, blob); // pyr_op#
+
+
 /*****************************************************************************
  *                                                                           *
  *                              GLOBALS                                      *
@@ -776,6 +780,8 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define _enhance(x)     fprintf(stderr, "ENHANCEMENT: %s in %s at %s line %d\n", x, __func__, __FILE__, __LINE__); // enhance#
 
 #define _timestamp(x)   (time_ms(void) - x->interp->epoch_ms) // _timestamp#
+
+#define _break(x)       util_bare_metal_prompt(this_pyr, x);
 
 //#define _cat_except(x)    _trace; longjmp(*(x->interp->cat_ex),CAT_EXCEPT); // _cat_except#
 //#define _interp_reset(x)          longjmp(*(x->interp->cat_ex),INTERP_RESET); // _interp_reset#

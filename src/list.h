@@ -37,6 +37,9 @@ mword  dlist_len(pyr_cache *this_pyr, mword *list);
 mword *dlist_reverse(pyr_cache *this_pyr, mword *list, mword *head, mword direction);
 mword *dlist_cut(pyr_cache *this_pyr, mword *list, mword index, mword direction);
 
+// pyr_op's
+blob list_append_pyr_op(pyr_cache *this_pyr, blob lists);
+
 #endif //LIST_H
 
 // Clayton Bauman 2013

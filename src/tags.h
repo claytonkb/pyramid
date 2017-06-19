@@ -15,28 +15,40 @@
 
 #define PYR_XBAR_NUM_FIELDS 4
 
-#define PYR_NOUN_TAG 0
-#define PYR_VERB_TAG 1
-#define PYR_PRED_TAG 2
-#define PYR_FORM_SYM 3
+#define PYR_NOUN_TAG  0
+#define PYR_VERB_TAG  1
+#define PYR_PRED_TAG  2
+#define PYR_FORM_SYM  3
 #define PYR_SPEC_FORM 4
-#define PYR_EXC_TAG 5
-
-#define is_noun(x)         (rdv(x,3) == PYR_NOUN_TAG)
-#define is_verb(x)         (rdv(x,3) == PYR_VERB_TAG)
-#define is_pred(x)         (rdv(x,3) == PYR_PRED_TAG)
-#define is_form_sym(x)     (rdv(x,3) == PYR_FORM_SYM)
-#define is_special_form(x) (rdv(x,3) == PYR_SPEC_FORM)
-#define is_exception(x)    (rdv(x,3) == PYR_EXC_TAG)
-
-typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_type#
-
-#ifdef COMPAT_MODE // Note: This file will not compile in non-COMPAT_MODE :(
+#define PYR_EXC_TAG   5
 
 //    X(c_name                    , "/pyramid/tag/<name>"         ,    verb_fn      ,
 //          blob_type             , template                      ,    to_verb      ,
 //          to_noun               , cacher                        ,    unchacher    ,
 //          reserved              , reserved                      ,    reserved     );
+#define XBAR_HASH_OFF           0
+#define XBAR_STR_OFF            1
+#define XBAR_VERB_FN_OFF        2
+#define XBAR_BLOB_TYPE_OFF      3
+#define XBAR_TEMPLATE_OFF       4
+#define XBAR_TO_VERB_OFF        5
+#define XBAR_TO_NOUN_OFF        6
+#define XBAR_TO_CACHER_OFF      7
+#define XBAR_TO_UNCACHER_OFF    8
+#define XBAR_RESERVED9_OFF      9
+#define XBAR_RESERVED10_OFF     10
+#define XBAR_RESERVED11_OFF     11
+
+#define is_noun(x)         (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_NOUN_TAG)
+#define is_verb(x)         (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_VERB_TAG)
+#define is_pred(x)         (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_PRED_TAG)
+#define is_form_sym(x)     (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_FORM_SYM)
+#define is_special_form(x) (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_SPEC_FORM)
+#define is_exception(x)    (vcar(rdp(x,XBAR_BLOB_TYPE_OFF)) == PYR_EXC_TAG)
+
+typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_type#
+
+#ifdef COMPAT_MODE // Note: This file will not compile in non-COMPAT_MODE :(
 
 #define PYR_NOUN_TAGS                                           \
     X(PYR_TAG_PAGED_ARRAY      , "/pyramid/tag/paged_array",    UNINIT_FN_PTR, \
@@ -234,7 +246,7 @@ typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
-    X(PYR_TAG_APPEND           , "/pyramid/tag/append",         UNINIT_FN_PTR, \
+    X(PYR_TAG_APPEND           , "/pyramid/tag/append",         list_append_pyr_op, \
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \

@@ -16,8 +16,11 @@
 //
 blob eval_apply(pyr_cache *this_pyr, blob b){ // eval_apply#
 
+//_mem(b);
+//_say("=================");
+
     if(!is_tptr(b))
-        return (blob)global_irt->tags->PYR_TAG_MALFORMED_EXPR;
+        return b;
 
     // XXX(PERF): This can be done faster with a giant switch-stmt using short-hashes
     mword xbar_index = array_search(this_pyr, global_irt->xbar, b, LEX_MWORD);
@@ -36,6 +39,8 @@ blob eval_apply(pyr_cache *this_pyr, blob b){ // eval_apply#
 
     }
     else{ // it's a built-in
+
+
         mword *xbar_entry = rdp(global_irt->xbar,xbar_index);
         mword *a = tptr_detag(this_pyr,b);
         mword num_args;
@@ -106,8 +111,7 @@ blob eval_spec_form_handler(pyr_cache *this_pyr, mword *xbar_entry, blob b){
             _fatal("bytes");
             break;
         case EVAL_SF_LIST:
-//            _break(b);
-            return (blob)array_to_list(this_pyr, tcar(b));
+            return (blob)array_to_list(this_pyr, eval_apply(this_pyr, tcar(b)));
         case EVAL_SF_CODE:
             _fatal("code");
             break;

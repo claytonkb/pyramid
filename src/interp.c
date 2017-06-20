@@ -643,7 +643,7 @@ _trace;
 
 //
 //
-pyr_cache *interp_uninit_fn(pyr_cache *this_pyr){ // interp_uninit_fn#
+blob interp_uninit_fn(pyr_cache *this_pyr, blob b){ // interp_uninit_fn#
     _fatal("An unintialized function was invoked");
 }
 

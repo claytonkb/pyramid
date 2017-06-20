@@ -9,7 +9,7 @@
 // pred --> a blob that has a matching predicate-test that reduces to T/F
 
 #define PYR_NUM_NOUN_TAGS 47
-#define PYR_NUM_VERB_TAGS 15
+#define PYR_NUM_VERB_TAGS 16
 #define PYR_NUM_PRED_TAGS 12
 #define PYR_NUM_FORM_SYMS 19
 
@@ -240,13 +240,16 @@ typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   )
 
-
 #define PYR_VERB_TAGS                                           \
-    X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi",    arith_maddi, \
+    X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi",    UNINIT_FN_PTR, \
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
     X(PYR_TAG_APPEND           , "/pyramid/tag/append",         list_append_pyr_op, \
+          PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
+    X(PYR_TAG_CAT              , "/pyramid/tag/cat",            array_cat_pyr_op, \
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
           UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \

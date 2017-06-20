@@ -134,6 +134,18 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 ACC = (blob)eval_apply(this_pyr, ACC);
                 _say("done");
 
+//                temp = _mkptr(this_pyr, 3, 
+//                        _val(this_pyr,0x11111111),
+//                        _val(this_pyr,0x22222222),
+//                        _val(this_pyr,0x33333333));
+//
+//                ACC = _mkptr(this_pyr, 3, 
+//                        _val(this_pyr,0x44444444),
+//                        _val(this_pyr,0x55555555),
+//                        _val(this_pyr,0x66666666));
+//
+//                ACC = (mword*)array_cat_pyr_op(this_pyr, (blob)_cons(this_pyr, temp,ACC));
+
                 break;
             case 2:
                 _notify("exiting bare metal prompt");

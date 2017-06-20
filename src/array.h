@@ -98,6 +98,8 @@ mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type s
 mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sort_type st);
 mword array_search_linear(pyr_cache *this_pyr, mword *array, int start, int end, mword *target, sort_type st);
 
+blob array_cat_pyr_op(pyr_cache *this_pyr, blob arrays);
+
     //#define _arcmp8(x,y,z) array8_cmp_lex(x, y, z)
 //#define  _arcmp(x,y)  array_cmp_lex(x, y)
 //

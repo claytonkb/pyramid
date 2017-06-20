@@ -1626,5 +1626,63 @@ mword array_search_linear(pyr_cache *this_pyr, mword *array, int start, int end,
 
 }
 
+
+//array operators
+//--------------
+//
+
+
+//
+//
+blob array_cat_pyr_op(pyr_cache *this_pyr, blob arrays){ // array_cat_pyr_op#
+
+    char *result;
+
+    mword num_arrays = size(arrays);
+    int i;
+
+    if(num_arrays == 1) return (blob)rdp(arrays,0);
+
+    mword all_vals   = 1;
+    mword all_ptrs   = 1;
+    mword total_size = 0;
+    mword *curr_array;
+
+    for(i=0; i<num_arrays; i++){
+
+        curr_array = rdp(arrays,i);
+
+        all_vals = all_vals && is_val(curr_array);
+        all_ptrs = all_ptrs && is_ptr(curr_array);
+
+        total_size += size(curr_array);
+
+    }
+
+    mword curr_offset=0;
+    mword curr_size;
+
+    if(all_vals){
+        result = (char*)mem_new_valz(this_pyr, total_size);
+    }
+    else if(all_ptrs){
+        result = (char*)mem_new_ptr(this_pyr, total_size);
+    }
+    else{
+        return (blob)nil;
+//        return (blob)global_irt->tags->PYR_TAG_BAD_OPERANDS;
+    }
+
+    for(i=0; i<num_arrays; i++){
+        curr_array = rdp(arrays,i);
+        curr_size  = UNITS_MTO8(size(curr_array));
+        memcpy(result+curr_offset, curr_array, curr_size);
+        curr_offset+=curr_size;
+    }
+
+    return (blob)result;
+
+}
+
 // Clayton Bauman 2017
 

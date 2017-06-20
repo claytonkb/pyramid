@@ -454,9 +454,10 @@ typedef struct { // pyr_cache#
 
 
 typedef pyr_cache *(*pyramid_op)(pyr_cache *); // pyramid_op#
+typedef blob (*pyr_op)(pyr_cache*, blob); // pyr_op#
 
 typedef struct { // interp_fns#
-#define X(a,b,c,d,e,f,g,h,i,j,k,l)  pyramid_op a;
+#define X(a,b,c,d,e,f,g,h,i,j,k,l)  pyr_op a;
 PYR_TAGS
 #undef X
 } interp_fns;
@@ -519,9 +520,6 @@ typedef struct { // interp_runtime
 } interp_runtime;
 
 
-typedef blob (*pyr_op)(pyr_cache*, blob); // pyr_op#
-
-
 /*****************************************************************************
  *                                                                           *
  *                              GLOBALS                                      *
@@ -530,7 +528,7 @@ typedef blob (*pyr_op)(pyr_cache*, blob); // pyr_op#
 
 interp_runtime *global_irt;                     // global_irt#
 #define nil global_irt->nil
-pyramid_op UNINIT_FN_PTR;
+pyr_op UNINIT_FN_PTR;
 
 #ifdef DEV_MODE
 

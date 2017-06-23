@@ -40,7 +40,6 @@ blob eval_apply(pyr_cache *this_pyr, blob b){ // eval_apply#
     }
     else{ // it's a built-in
 
-
         mword *xbar_entry = rdp(global_irt->xbar,xbar_index);
         mword *a = tptr_detag(this_pyr,b);
         mword num_args;
@@ -82,7 +81,6 @@ blob eval_apply(pyr_cache *this_pyr, blob b){ // eval_apply#
             return (blob)global_irt->tags->PYR_TAG_KNOWN_SYM;
 
         }
-
 
     }
 

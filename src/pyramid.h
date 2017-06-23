@@ -452,7 +452,6 @@ typedef struct { // pyr_cache#
 
 } pyr_cache;
 
-
 typedef pyr_cache *(*pyramid_op)(pyr_cache *); // pyramid_op#
 typedef blob (*pyr_op)(pyr_cache*, blob); // pyr_op#
 

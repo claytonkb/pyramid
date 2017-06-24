@@ -79,8 +79,21 @@ mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
 
 void array_sort(pyr_cache *this_pyr, mword *array, sort_type st);
+//void array_sort_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st);
+//void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, sort_type st);
+//
+//void array_sort_aop(pyr_cache *this_pyr, mword *array, sort_type st);
+//void array_sort_aop_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st);
+//void array_merge_aop(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, sort_type st);
+
 void array_sort_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st);
-void array_merge(pyr_cache *this_pyr, mword *array, mword left_start, mword left_end, mword right_start, mword right_end, sort_type st);
+void array_sort_aop(pyr_cache *this_pyr, mword *array, mword key_index, sort_type st);
+void array_sort_aop_unsigned(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
+void array_sort_aop_signed(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
+void array_sort_aop_alpha_mword(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
+void array_sort_aop_alpha_byte(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
+void array_sort_aop_lex_mword(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
+void array_sort_aop_lex_byte(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index);
 
 void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
 

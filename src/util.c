@@ -127,13 +127,6 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //
 //                ACC = list_append_pyr_op(this_pyr, temp);
 
-                ACC = io_slurp(this_pyr, "pvc_code.bbl");
-                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-                _say("pvc_code.bbl loaded");
-
-                ACC = (blob)eval_apply(this_pyr, ACC);
-                _say("done");
-
 //                temp = _mkptr(this_pyr, 3, 
 //                        _val(this_pyr,0x11111111),
 //                        _val(this_pyr,0x22222222),
@@ -145,6 +138,21 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                        _val(this_pyr,0x66666666));
 //
 //                ACC = (mword*)array_cat_pyr_op(this_pyr, (blob)_cons(this_pyr, temp,ACC));
+
+//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("pvc_code.bbl loaded");
+//
+//                ACC = (blob)eval_apply(this_pyr, ACC);
+//                _say("done");
+
+                ACC = _mkval(this_pyr, 20,
+                        64, 87, 27, 64, 89, 98, 28,  9,  0, 73, 
+                        89, 76, 74, 82, 14, 16, 77, 83, 71, 63);
+                temp = _bs2str(this_pyr, ACC);
+                _say((char*)temp);
+
+                array_sort(this_pyr, ACC, UNSIGNED);
 
                 break;
             case 2:

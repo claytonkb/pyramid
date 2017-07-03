@@ -20,6 +20,7 @@
 #include "pvc.h"
 #include "std.h"
 #include "eval.h"
+#include "sort.h"
 
 
 /*****************************************************************************
@@ -152,7 +153,12 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 temp = _bs2str(this_pyr, ACC);
                 _say((char*)temp);
 
-                array_sort(this_pyr, ACC, UNSIGNED);
+//                sort(this_pyr, ACC, UNSIGNED);
+
+                sort_insertion(this_pyr, ACC, (mword*)(ACC+size(ACC)), SORT_ARRAY_TYPE_VAL, UNSIGNED, 0);
+
+                tempv = array_search(this_pyr, ACC, _val(this_pyr, 64), UNSIGNED);
+_dd(tempv);
 
                 break;
             case 2:

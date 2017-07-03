@@ -6,6 +6,8 @@
 #include "mem.h"
 #include "array.h"
 #include "tptr.h"
+#include "sort.h"
+
 
 // Non-contiguous bstruct support
 //      - ldv(), ldp(), rdv(), rdp()
@@ -343,7 +345,7 @@ mword *bstruct_unload(pyr_cache *this_pyr, mword *bs){
     dest = mem_new_val(this_pyr, _mu(this_pyr, bs), 0);
 
     mword *span_array = bstruct_to_array(this_pyr, bs);
-    array_sort(this_pyr, span_array, VAL);
+    sort(this_pyr, span_array, VAL);
 
     mword *offset_array = mem_new_val(this_pyr, size(span_array), 0xff);
 

@@ -13,6 +13,8 @@
 #include "array.h"
 #include "introspect.h"
 #include "list.h"
+#include "sort.h"
+
 
 // PYR_TAGS includes:
 #include "pvc.h"
@@ -354,7 +356,7 @@ fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
         ldp(global_irt->verb_table,i) = _cons(this_pyr, nil, nil);
     }
 
-    array_sort(this_pyr, global_irt->verb_table, LEX_MWORD);
+    sort(this_pyr, global_irt->verb_table, LEX_MWORD);
 
     i=0;
 
@@ -368,7 +370,7 @@ fprintf(stderr,"%d\n",PYR_NUM_NOUN_TAGS);
         ldp(global_irt->noun_table,i) = _cons(this_pyr, nil, nil);
     }
 
-    array_sort(this_pyr, global_irt->noun_table, LEX_MWORD);
+    sort(this_pyr, global_irt->noun_table, LEX_MWORD);
 
 }
 
@@ -411,7 +413,7 @@ _dd(PYR_NUM_TAGS);
     PYR_TAGS    
 #undef X
 
-    array_sort(this_pyr, global_irt->xbar, LEX_MWORD);
+    sort(this_pyr, global_irt->xbar, LEX_MWORD);
 
 //_dump(global_irt->xbar);
 //_die;

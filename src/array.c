@@ -15,12 +15,12 @@
 //#include "lib_babel.h"
 //#include "logic.h"
 
-#define  key_aopv(x,y) vcar(pcar(rdp(x,y)))
-#define data_aopv(x,y) vcar(pcar(rdp(x,y)))
-
-#define  key_aop(x,y) pcar(rdp(x,y))
-#define data_aop(x,y) pcar(rdp(x,y))
-
+//#define  key_aopv(x,y) vcar(pcar(rdp(x,y)))
+//#define data_aopv(x,y) vcar(pcar(rdp(x,y)))
+//
+//#define  key_aop(x,y) pcar(rdp(x,y))
+//#define data_aop(x,y) pcar(rdp(x,y))
+//
 
 /*****************************************************************************
  *                                                                           *
@@ -993,352 +993,6 @@ void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src
 
 }
 
-// ETC:
-
-// In-place mergesort of an array
-// st can be one of: {UNSIGNED, SIGNED, ALPHA_MWORD, ALPHA_BYTE, LEX_MWORD, LEX_BYTE, VAL, CUSTOM}
-//
-void array_sort(pyr_cache *this_pyr, mword *array, sort_type st){ // array_sort#
-
-    if(is_val(array) || (st == VAL)){ // ((st == VAL) && (!is_val(array))) means "sort ptr-array as a val-array"
-_trace;
-        array_sort_r(this_pyr, 0, size(array), array, st);
-    }
-    else{
-_trace;
-        array_sort_aop(this_pyr, array, 0, st);
-    }
-
-}
-
-#define merge_pre_sort                                                      \
-    mword left_length  = left_end  - left_start;                            \
-    mword right_length = right_end - right_start;                           \
-                                                                            \
-    mword *left_half  = mem_new_val(this_pyr,left_length,0);                \
-    mword *right_half = mem_new_val(this_pyr,right_length,0);               \
-                                                                            \
-    mword r = 0;                                                            \
-    mword l = 0;                                                            \
-    mword i = 0;                                                            \
-                                                                            \
-    for(i = left_start; i<left_end; i++, l++){                              \
-        left_half[l] = array[i];                                            \
-    }                                                                       \
-                                                                            \
-    for(i = right_start; i<right_end; i++, r++){                            \
-        right_half[r] = array[i];                                           \
-    }
-
-#define merge_post_sort                                                     \
-    for(; l<left_length; i++, l++){                                         \
-        array[i] = left_half[l];                                            \
-    }                                                                       \
-                                                                            \
-    for (; r<right_length; i++, r++){                                       \
-        array[i] = right_half[r];                                           \
-    }                                                                       \
-                                                                            \
-
-
-//
-//
-void array_sort_r(pyr_cache *this_pyr, mword left, mword right, mword *array, sort_type st){ // array_sort_r#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_r(this_pyr, left_start, left_end, array, st);
-
-    // sort right half
-    array_sort_r(this_pyr, right_start, right_end, array, st);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    // merge left_half and right_half back into array
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if(left_half[l] < right_half[r]){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-//array_sort_aop(this_pyr, size(array), array, st);
-void array_sort_aop(pyr_cache *this_pyr, mword *array, mword key_index, sort_type st){ // array_sort_aop#
-
-    if(st == UNSIGNED){
-        array_sort_aop_unsigned(this_pyr, 0, size(array), array, key_index);
-    }
-    else if(st == SIGNED){
-        array_sort_aop_signed(this_pyr, 0, size(array), array, key_index);
-    }
-    else if(st == ALPHA_MWORD){
-        array_sort_aop_alpha_mword(this_pyr, 0, size(array), array, key_index);
-    }
-    else if(st == ALPHA_BYTE){
-        array_sort_aop_alpha_byte(this_pyr, 0, size(array), array, key_index);
-    }
-    else if(st == LEX_MWORD){
-        array_sort_aop_lex_mword(this_pyr, 0, size(array), array, key_index);
-    }
-    else if(st == LEX_BYTE){
-        array_sort_aop_lex_byte(this_pyr, 0, size(array), array, key_index);
-    }
-    else{
-        _pigs_fly;
-    }
-
-
-}
-
-
-//
-//
-void array_sort_aop_unsigned(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_unsigned#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_unsigned(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_unsigned(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    // merge left_half and right_half back into array
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if(val_lt(key_aop(left_half,l), key_aop(right_half,r))){ // numeric
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-//
-//
-void array_sort_aop_signed(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_signed#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_signed(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_signed(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    // merge left_half and right_half back into array
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if((array_cmp_num_signed(key_aop(left_half,l), key_aop(right_half,r)) < 0)){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-//
-//
-void array_sort_aop_alpha_mword(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_alpha_mword#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_alpha_mword(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_alpha_mword(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if((array_cmp_alpha(this_pyr, key_aop(left_half,l), key_aop(right_half,r), MWORD_ASIZE) < 0)){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-//
-//
-void array_sort_aop_alpha_byte(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_alpha_byte#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_alpha_byte(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_alpha_byte(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if((array_cmp_alpha(this_pyr, key_aop(left_half,l), key_aop(right_half,r), BYTE_ASIZE) < 0)){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-
-//
-//
-void array_sort_aop_lex_mword(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_lex_mword#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_lex_mword(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_lex_mword(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if((array_cmp_lex(this_pyr, key_aop(left_half,l), key_aop(right_half,r), MWORD_ASIZE) < 0)){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
-
-//
-//
-void array_sort_aop_lex_byte(pyr_cache *this_pyr, mword left, mword right, mword *array, mword key_index){ // array_sort_aop_lex_byte#
-
-    // base case, array is already sorted
-    if (right - left <= 1){
-        return;
-    }
-
-    // set up bounds to slice array into
-    mword left_start  = left;
-    mword left_end    = (left+right)/2;
-    mword right_start = left_end;
-    mword right_end   = right;
-
-    // sort left half
-    array_sort_aop_lex_byte(this_pyr, left_start, left_end, array, key_index);
-
-    // sort right half
-    array_sort_aop_lex_byte(this_pyr, right_start, right_end, array, key_index);
-
-    // merge sorted halves back together:
-    merge_pre_sort;
-
-    for(i=left_start, r=0, l=0; l<left_length && r<right_length; i++){
-        if((array_cmp_lex(this_pyr, key_aop(left_half,l), key_aop(right_half,r), BYTE_ASIZE) < 0)){
-            array[i] = left_half[l++];
-        }
-        else{
-            array[i] = right_half[r++];
-        }
-    }
-
-    merge_post_sort;
-
-}
-
 
 // XXX Can this be made into a macro?
 //
@@ -1583,12 +1237,24 @@ void array_max_heapify(mword *array, mword i, mword array_size){
 #define ARRAY_LINEAR_THRESH 2
 
 // array must be in sorted order (non-decreasing)
-// XXX smoke-tested ONLY XXX
+// NOTE: It might be nice to know where an element *would* fit in the array
+//       if it were inserted. Need two return values - whether the element was
+//       found, and where the search found the closest match (return a 
+//       boundary index)
 //
-//mword array_search_rewrite(pyr_cache *this_pyr, mword *array, mword *target, sort_type st){ // array_search_rewrite#
 mword array_search(pyr_cache *this_pyr, mword *array, mword *target, sort_type st){ // array_search#
 
-    int array_size = size(array);
+    return array_search_binary(this_pyr, array, (mword*)(array+size(array)), target, st);
+
+}
+
+
+// XXX(INTERNAL_USE_ONLY)
+//
+mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *target, sort_type st){ // array_search_binary#
+
+    mword *array = begin;
+    int array_size = (begin-end);
 
     if(array_size <= ARRAY_LINEAR_THRESH)
         return array_search_linear(this_pyr,

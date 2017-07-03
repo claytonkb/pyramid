@@ -617,6 +617,13 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define ldv_pa(pa,offset) (ldv(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
 #define ldp_pa(pa,offset) (ldp(rdp(pages_pa(pa),(offset/(*pgsize_pa(pa)))),(offset%(*pgsize_pa(pa)))))
 
+/////// aop accessors ///////
+#define  key_aopv(x,y) vcar(pcar(rdp(x,y)))
+#define data_aopv(x,y) vcar(pcar(rdp(x,y)))
+
+#define  key_aop(x,y) pcar(rdp(x,y))
+#define data_aop(x,y) pcar(rdp(x,y))
+
 /*****************************************************************************
  *                                                                           *
  *                            PREDICATES                                     *

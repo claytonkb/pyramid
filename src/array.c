@@ -1234,7 +1234,7 @@ void array_max_heapify(mword *array, mword i, mword array_size){
 }
 
 
-#define ARRAY_LINEAR_THRESH 2
+#define ARRAY_LINEAR_THRESH 2           // ARRAY_LINEAR_THRESH#
 
 // array must be in sorted order (non-decreasing)
 // NOTE: It might be nice to know where an element *would* fit in the array

@@ -57,6 +57,15 @@ void pearson16(char *result, char *init, char *key, mword strlen){ // pearson16#
 }
 
 
+/*****************************************************************************
+ *                                                                           *
+ *                   XXX NOTE: DEPRECATE *marsaglia*!!! XXX                  *
+ *                                                                           *
+ *       Poor randomness. Use mersenne-twister instead. Permute MT with      *
+ *       pearson16_byte_perm for better pseudo-randomness out of the box     *
+ *                                                                           *
+ ****************************************************************************/
+
 // 16-byte hash function based on Pearson hashing with added Marsaglia XORSHIFT fuzz
 //
 void pearson_marsaglia16(char *result, char *init, char *key, mword strlen){ // pearson_marsaglia16#
@@ -148,6 +157,29 @@ mword pearson_marsaglia_fuzz(mword reset){
 }
 
 #endif
+
+
+//// allocating
+////
+//mword *pearson_rand_val(pyr_cache *this_pyr, mword num_mwords){ // pearson_rand_val#
+//
+//    mword *result = mem_new_valz(this_pyr, num_mwords);
+//
+//    int i;
+//
+//    for(i=0;i<num_mwords;i++){
+//        result[i] = pearson_marsaglia_fuzz(0);
+//    }
+//
+//    mword table_offset = result[0];
+//
+//    for(i=0;i<num_mwords;i++){
+//        result[i] ^= pearson16_byte_perm[ table_offset++ % PERM_TABLE_MWORD_SIZE ];
+//    }
+//
+//    return result;
+//
+//}
 
 
 //

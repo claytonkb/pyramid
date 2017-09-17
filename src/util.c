@@ -21,7 +21,7 @@
 #include "std.h"
 #include "eval.h"
 #include "sort.h"
-
+#include "mt19937ar.h"
 
 /*****************************************************************************
  *                                                                           *
@@ -73,10 +73,12 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
     mword *ACC = init_ptr;
     mword  tempv=0;
+    mword  tempw=0;
     char  *tempc = NULL;
     mword *temp=nil;
 //    mword *temp2=nil;
     tempv+=0; // silence compiler warning
+    tempw+=0; // silence compiler warning
 
     _notify("entering bare metal prompt");
 
@@ -147,18 +149,26 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = (blob)eval_apply(this_pyr, ACC);
 //                _say("done");
 
-                ACC = _mkval(this_pyr, 20,
-                        64, 87, 27, 64, 89, 98, 28,  9,  0, 73, 
-                        89, 76, 74, 82, 14, 16, 77, 83, 71, 63);
-                temp = _bs2str(this_pyr, ACC);
-                _say((char*)temp);
+//                ACC = _mkval(this_pyr, 20,
+//                        64, 87, 27, 64, 89, 98, 28,  9,  0, 73, 
+//                        89, 76, 74, 82, 14, 16, 77, 83, 71, 63);
+//                temp = _bs2str(this_pyr, ACC);
+//                _say((char*)temp);
+//
+////                sort(this_pyr, ACC, UNSIGNED);
+//
+//                sort_insertion(this_pyr, ACC, (mword*)(ACC+size(ACC)), SORT_ARRAY_TYPE_VAL, UNSIGNED, 0);
+//                temp = _bs2str(this_pyr, ACC);
+//                _say((char*)temp);
+//
+//                tempv = array_search(this_pyr, ACC, _val(this_pyr, 64), UNSIGNED);
+//_dd(tempv);
 
-//                sort(this_pyr, ACC, UNSIGNED);
+//                ACC = _val(this_pyr, _mu(this_pyr, global_irt->xbar));
 
-                sort_insertion(this_pyr, ACC, (mword*)(ACC+size(ACC)), SORT_ARRAY_TYPE_VAL, UNSIGNED, 0);
+//                ACC = global_irt->srand;
 
-                tempv = array_search(this_pyr, ACC, _val(this_pyr, 64), UNSIGNED);
-_dd(tempv);
+                ACC = std_genrand32(this_pyr, 13);
 
                 break;
             case 2:

@@ -11,7 +11,7 @@
  *                                                                           *
  ****************************************************************************/
 
-//#define PYRAMID_WINDOWS_BUILD
+#define PYRAMID_WINDOWS_BUILD
 
 #define DEV_MODE
 #define COMPAT_MODE
@@ -19,7 +19,7 @@
 #define PROF_MODE
 //#define CHK_MODE
 
-//#define INTERP_RESET_TRACE
+#define INTERP_RESET_TRACE
 //#define INTERP_CORE_TRACE
 //#define BPDL_TRACE
 //#define BPDL2_TRACE
@@ -42,6 +42,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <time.h>
 
 #ifdef PYRAMID_WINDOWS_BUILD
 #define WINVER 0x0500
@@ -504,7 +505,7 @@ typedef struct { // interp_runtime
     mword                   *empty_string;
 
     struct tm               *utc_epoch;
-    mword                    epoch_ms;
+    mword                   *epoch_ms;
     mword                   *srand;
     mword                   *dispatch_table;
 

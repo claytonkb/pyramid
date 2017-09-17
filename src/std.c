@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "array.h"
 #include "tptr.h"
+#include "mt19937ar.h"
 
 // Pyramid-level std-library support. Some primitives are perf-critical and
 // must be implemented here. Other std-library primitives can be implemented
@@ -18,6 +19,28 @@
 // relative-offset accessors
 // 
 
+//* Blobs
+//        - A blob is any kind of bstruct which can be recognized by the 
+//            interpreter as being a particular kind of thing.
+//                - Every tptr pointing at nil is a blob that is itself
+//                    #define is_tptr_at_nil(x) (is_tptr(x) && is_nil(tcar(x)))
+//                - No val-array is a blob
+//                - No ptr-array is a blob
+//                    #define is_val_or_ptr(x) (is_val(x) && is_ptr(tcar(x)))
+//                - A tptr and a val-array pointed to by that tptr is a blob
+//                - A tptr and a ptr-array pointed to by that tptr is a blob
+//                - A blob and any blobs pointed to by that blob is a blob
+//                - Note: The "boundary" of a blob is not necessarily well-defined
+//                - A blob is called a biblob if it is a built-in-blob; otherwise,
+//                    it is called a ublob (user-blob)
+//                - The pvc only knows the internal structure of biblobs.
+//        - Two-layer architecture:
+//            (1) Pyramid Virtual CPU is array/tensor-oriented
+//                This is the "micro-architecture"
+//            (2) Babel Intermediate Language is list/map-oriented
+//                This is the "macro-architecture"
+//        - See pyramid_arch.txt for more foundations
+//            - Everything "brick" is going away, including core_brick_dispatch
 
 //* Tensors
 //
@@ -30,12 +53,12 @@
 //
 //* Courses
 //
-//    A course is a ptr-array that is an aggregrate of bricks (it is also a brick).
+//    A course is a ptr-array that is an aggregrate of blobs (it is also a blob).
 //
-//        [ptr [tag "/pyramid/tag/course" nil] [tag <brick-tag> nil] brick0 brick1 ... brickn]
+//        [tag "/pyramid/tag/course" ptr [tag <blob-tag> nil] [ptr blob0 blob1 ... blobn] ]
 //
 //    When interp_core_dispatch encounters a course, it recursively calls itself
-//    for each brick in that course.
+//    for each blob in that course.
 //
 //* Pyramids
 //
@@ -251,6 +274,47 @@
 //
 // K x page_size -> Ncube
 
+
+//
+//
+mword std_time_ms(void){ // std_time_ms#
+
+#ifdef PYRAMID_WINDOWS_BUILD 
+    DWORD raw_time = GetTickCount();
+    return (mword)raw_time;
+#endif
+
+}
+
+
+//
+//
+val std_genrand32(pyr_cache *this_pyr, mword num_mwords){ // std_genrand32#
+
+    val result = mem_new_valz(this_pyr, num_mwords);
+
+    int i;
+
+    for(i=0; i<num_mwords; i++){
+        result[i] = (mword)genrand_int32();
+    }
+
+//    mword tempA;
+//    mword tempB;
+//
+//    for(i=0; i<num_mwords; i++){
+//        tempA = (mword)genrand_int32();
+//        tempB = (mword)genrand_int32();
+//        result[i] = 
+//               (pearson16_byte_perm[tempA & 0x000000ff] ^ (tempB & 0x000000ff))
+//            || (pearson16_byte_perm[tempA & 0x0000ff00] ^ (tempB & 0x0000ff00))
+//            || (pearson16_byte_perm[tempA & 0x00ff0000] ^ (tempB & 0x00ff0000))
+//            || (pearson16_byte_perm[tempA & 0xff000000] ^ (tempB & 0xff000000));
+//    }
+
+    return result;
+
+}
 
 // std_shift_paged_array
 // std_unshift_paged_array

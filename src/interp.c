@@ -14,7 +14,8 @@
 #include "introspect.h"
 #include "list.h"
 #include "sort.h"
-
+#include "std.h"
+#include "mt19937ar.h"
 
 // PYR_TAGS includes:
 #include "pvc.h"
@@ -177,6 +178,8 @@ _reset_trace;
     interp_init_nil_mem();
     mem_non_gc_new();
 
+//    interp_init_epoch(this_pyr);
+
 }
 
 
@@ -262,11 +265,11 @@ _reset_trace;
     global_irt->argv      = argv;
     global_irt->envp      = envp;
 
-#ifdef COMPAT_MODE
+//#ifdef COMPAT_MODE
     global_irt->hash_fn   = pearson16;
-#else
-    global_irt->hash_fn   = pearson_marsaglia16;
-#endif
+//#else
+//    global_irt->hash_fn   = pearson_marsaglia16;
+//#endif
 
     //////////////////////////////
     // init global_irt->flags   //
@@ -311,6 +314,10 @@ PYR_TAGS
 
     interp_init_symbols(this_pyr);
 
+    interp_init_epoch(this_pyr);
+
+    interp_init_srand(this_pyr);
+
     this_pyr->self = interp_load_root_bvm(this_pyr);
     this_pyr->cpu  = mem_non_gc_alloc(sizeof(pyr_cpu));
 
@@ -328,6 +335,84 @@ _msg("INTERP_RESET_TRACE: COMPLETE");
     return this_pyr;
 
 }
+
+
+//
+//
+pyr_cache *interp_init_epoch(pyr_cache *this_pyr){ // interp_init_epoch#
+
+#ifdef BABEL_RESET_TRACE
+_trace;
+#endif
+
+    time_t rawtime;
+    struct tm *utc_epoch;
+
+    time( &rawtime );
+    utc_epoch = gmtime( &rawtime );
+
+    //    tm_sec     int    seconds after the minute    0-61*
+    //    tm_min     int    minutes after the hour      0-59
+    //    tm_hour    int    hours since midnight        0-23
+    //    tm_mday    int    day of the month            1-31
+    //    tm_mon     int    months since January        0-11
+    //    tm_year    int    years since 1900
+    //    tm_wday    int    days since Sunday           0-6
+    //    tm_yday    int    days since January 1        0-365
+
+//    struct tm *pyr_utc_epoch = mem_sys_alloc(sizeof(struct tm)); //&this_pyr->interp->utc_epoch;
+    struct tm *pyr_utc_epoch = (struct tm *)_newstr(this_pyr, sizeof(struct tm), 0);
+
+    pyr_utc_epoch->tm_sec  = utc_epoch->tm_sec;
+    pyr_utc_epoch->tm_min  = utc_epoch->tm_min;
+    pyr_utc_epoch->tm_hour = utc_epoch->tm_hour;
+    pyr_utc_epoch->tm_mday = utc_epoch->tm_mday;
+    pyr_utc_epoch->tm_mon  = utc_epoch->tm_mon;
+    pyr_utc_epoch->tm_year = utc_epoch->tm_year;
+    pyr_utc_epoch->tm_wday = utc_epoch->tm_wday;
+    pyr_utc_epoch->tm_yday = utc_epoch->tm_yday;
+
+    global_irt->utc_epoch = pyr_utc_epoch;
+
+    global_irt->epoch_ms = _val(this_pyr, std_time_ms());
+
+    return this_pyr;
+
+}
+
+
+// must be called AFTER interp_new_epoch
+//
+void interp_init_srand(pyr_cache *this_pyr){ // interp_init_srand#
+
+#ifdef INTERP_RESET_TRACE
+_trace;
+#endif
+
+    #define SRAND_STRING_SIZE 32
+
+    char srand_string[SRAND_STRING_SIZE];
+
+    sprintf(srand_string, 
+            "%d%d%d%d%d%d", 
+            global_irt->utc_epoch->tm_sec,
+            global_irt->utc_epoch->tm_min,
+            global_irt->utc_epoch->tm_hour,
+            global_irt->utc_epoch->tm_mday,
+            global_irt->utc_epoch->tm_mon,
+            global_irt->utc_epoch->tm_year);
+
+    mword *pyr_srand_string = string_c2b(this_pyr, srand_string, SRAND_STRING_SIZE);
+
+    mword *time_hash = HASH(this_pyr, pyr_srand_string);
+
+//    init_by_array( (unsigned long *)time_hash, HASH_SIZE*(sizeof(mword)/sizeof(unsigned long)));
+    init_by_array( (unsigned long *)time_hash, UNITS_MTO8(HASH_SIZE)/sizeof(unsigned long) );
+
+    global_irt->srand = time_hash;
+
+}
+
 
 
 //

@@ -16,10 +16,10 @@
 #define DEV_MODE
 #define COMPAT_MODE
 //#define MEM_DEBUG
-#define PROF_MODE
+//#define PROF_MODE
 //#define CHK_MODE
 
-#define INTERP_RESET_TRACE
+//#define INTERP_RESET_TRACE
 //#define INTERP_CORE_TRACE
 //#define BPDL_TRACE
 //#define BPDL2_TRACE
@@ -43,6 +43,7 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef PYRAMID_WINDOWS_BUILD
 #define WINVER 0x0500
@@ -81,8 +82,8 @@
 #define MWORD_BIT_SIZE (MWORD_SIZE * BITS_PER_BYTE)             // MWORD_BIT_SIZE#
 #define HALF_MWORD_BIT_SIZE (MWORD_BIT_SIZE/2)                  // HALF_MWORD_SIZE#
 #define MWORD_MSB (MWORD_BIT_SIZE-1)                            // MWORD_MSB#
-#define MSB_MASK ((mword)1<<MWORD_MSB)                                 // MSB_MASK#
-#define MWORD_LSB (mword)0                                             // MWORD_LSB#
+#define MSB_MASK ((mword)1<<MWORD_MSB)                          // MSB_MASK#
+#define MWORD_LSB (mword)0                                      // MWORD_LSB#
 
 #define NEG_ONE ((mword)-1)                                     // NEG_ONE#
 #define FMAX    NEG_ONE                                         // FMAX#
@@ -100,17 +101,22 @@
 #define MODULO_MTO8(x) ((x)%MWORD_SIZE)                         // MODULO_MTO8#
 #define MODULO_8TO1(x) ((x)%BITS_PER_BYTE)                      // MODULO_8TO1#
 
-#define BIT_MASK(mword, upper, lower) (mword & (FMAX >> (MWORD_MSB-upper)) & (FMAX << lower))   // BIT_MASK#
-#define BIT_SELECT(mword, upper, lower) (BIT_MASK(mword, upper, lower) >> lower)                // BIT_SELECT#
-#define HI_BITS(mword, index) BIT_SELECT(mword, MWORD_MSB, index)                               // HI_BITS#
-#define LO_BITS(mword, index) BIT_SELECT(mword, index, 0)                                       // LO_BITS#
+#define COMPLEMENT_MTO1(x) (MWORD_BIT_SIZE-(x))                 // COMPLEMENT_MTO1#
 
-#define NBIT_HI_MASK(n) (((n)==0) ? 0 : (FMAX << (MWORD_BIT_SIZE-(n))))      // NBIT_HI_MASK#
-#define NBIT_LO_MASK(n) (((n)==0) ? 0 : (FMAX >> (MWORD_BIT_SIZE-(n))))      // NBIT_LO_MASK#
-#define BIT_RANGE(hi,lo) ((FMAX >> (MWORD_BIT_SIZE-(hi))) & (FMAX << (lo)))  // BIT_RANGE#
+#define BIT_RANGE(hi,lo) ((FMAX >> (MWORD_MSB-(hi))) & (FMAX << (lo))) // BIT_RANGE#
+#define BIT_MASK(mword, hi, lo) (mword & BIT_RANGE(hi, lo))            // BIT_MASK#
+#define BIT_SELECT(mword, hi, lo) (BIT_MASK(mword, hi, lo) >> lo)      // BIT_SELECT#
+#define HI_BITS(mword, index) BIT_SELECT(mword, MWORD_MSB, index)      // HI_BITS#
+#define LO_BITS(mword, index) BIT_SELECT(mword, index, 0)              // LO_BITS#
 
-#define MWORD_MUX(A, B, sel) (((A) & sel) | ((B) & (~sel)))
-#define BIT_MERGE(A, B, sel) ldv(A,0) = MWORD_MUX(B, rdv(A,0), sel);
+#define NBIT_HI_MASK(n) (((n)==0) ? 0 : (FMAX << (MWORD_BIT_SIZE-(n)))) // NBIT_HI_MASK#
+#define NBIT_LO_MASK(n) (((n)==0) ? 0 : (FMAX >> (MWORD_BIT_SIZE-(n)))) // NBIT_LO_MASK#
+
+#define MWORD_MUX(A, B, sel) (((A) & sel) | ((B) & (~sel)))             // MWORD_MUX#
+#define BIT_MERGE(A, B, sel) ldv(A,0) = MWORD_MUX(B, rdv(A,0), sel);    // BIT_MERGE#
+
+#define MWORD_SHIFT(A, n) ((n>0) ? (A << (n)) : (A >> (abs(n))))
+#define MWORD_ROTATE(A, n) ((A << n) | (A >> (MWORD_MSB-n)))
 
 #define MASK_1_BYTE (mword)0xff                                        // MASK_1_BYTE#
 #define MASK_1_BIT  (mword)0x01                                        // MASK_1_BIT#
@@ -143,6 +149,8 @@
 
 #define UNINIT_VAL_64 0xabadfaceabaddeed // UNINIT_VAL_64#
 #define UNINIT_PTR_64 nil // UNINIT_PTR_64#
+
+#define EMPTY_CSTRING ""
 
 /*****************************************************************************
  *                                                                           *
@@ -209,6 +217,14 @@ typedef blob args; // argument list args#
 typedef blob qu;   // quoted expression qu#
 typedef blob qq;   // quasi-quoted expression qq#
 typedef blob mac;  // macro form mac#
+
+typedef blob thunk;  // delayed-eval thunk#
+    // list of thunks:
+    //      - loadable
+    //      - unloadable
+    //      - evalable
+    //      - stdlib (load)
+    //      ...
 
 // 32-bit versus 64-bit string-formats
 #ifdef PYRAMID_WINDOWS_BUILD
@@ -530,11 +546,20 @@ interp_runtime *global_irt;                     // global_irt#
 #define nil global_irt->nil
 pyr_op UNINIT_FN_PTR;
 
+// dev-mode globals ... 
+// XXX code must be able to build with !defined(DEV_MODE) !!! XXX
 #ifdef DEV_MODE
 
 mword *global_dev_overrides;                    // global_dev_overrides#
 mword GLOBAL_BVM_INSTRUMENT_TRIGGER;            // For use with instrument.pl
 mword *global_dev_ptr;                          // general-purpose global pointer
+
+mword *global_dev_abnormal_ctr;                 // used by _abnormal
+
+// dev-mode flags/commandline-args
+int   global_dev_bare_metal;                    // selects entrance to bare-metal prompt on startup
+char *global_dev_seed;                          // allow specifying seed from command-line (gets hashed)
+char *global_dev_srand;                         // allow specifying srand from command-line (does not get hashed)
 
 #define FLAG_IGN    ((mword)-1) // FLAG_IGN#
 #define FLAG_SET    1 // FLAG_SET#
@@ -783,6 +808,12 @@ mword *global_dev_ptr;                          // general-purpose global pointe
 #define _fatal(x)       fprintf(stderr, "FATAL: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__); _die;  // _fatal#
 #define _pigs_fly       _fatal("Pigs CAN fly...") // _pigs_fly#
 #define _enhance(x)     fprintf(stderr, "ENHANCEMENT: %s in %s at %s line %d\n", x, __func__, __FILE__, __LINE__); // enhance#
+
+#ifdef DEV_MODE
+#define _abnormal       global_dev_abnormal_ctr++;
+#else
+#define _abnormal       ;
+#endif
 
 #define _timestamp(x)   (time_ms(void) - x->interp->epoch_ms) // _timestamp#
 

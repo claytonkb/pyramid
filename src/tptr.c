@@ -6,13 +6,14 @@
 #include "mem.h"
 #include "list.h"
 #include "bstruct.h"
+#include "mt19937ar.h"
 
 #define MAX_DETAG_DEPTH 1024
 
 
 //
 //
-mword *tptr_new(pyr_cache *this_pyr, const mword *hash, mword *bs){ // tptr_new#
+tptr tptr_new(pyr_cache *this_pyr, const mword *hash, mword *bs){ // tptr_new#
 
     mword *ptr = mem_alloc( this_pyr, TPTR_SFIELD );
 
@@ -31,24 +32,25 @@ mword *tptr_new(pyr_cache *this_pyr, const mword *hash, mword *bs){ // tptr_new#
 
 
 // Safely, recursively de-references a tag
-mword *tptr_detag(pyr_cache *this_pyr, mword *tptr){ // tptr_detag#
+//
+mword *tptr_detag(pyr_cache *this_pyr, tptr t){ // tptr_detag#
 
     static int livelock_detect=0;
 
-    if(is_nil(tptr)){
+    if(is_nil(t)){
         return nil;
     }
 
-    if(is_tptr(tptr)){
+    if(is_tptr(t)){
         if(livelock_detect++ > MAX_DETAG_DEPTH){
             //cat_except(this_pyr);
             _fatal("FIXME: this should have been a cat_except...");
         }
-        return tptr_detag(this_pyr, tcar(tptr));
+        return tptr_detag(this_pyr, tcar(t));
     }
     else{
         livelock_detect=0;
-        return tptr;
+        return t;
     }
 
 }
@@ -56,9 +58,9 @@ mword *tptr_detag(pyr_cache *this_pyr, mword *tptr){ // tptr_detag#
 
 //
 //
-mword *tptr_extract_hash(pyr_cache *this_pyr, mword *tptr){ // tptr_extract_hash#
+val tptr_extract_hash(pyr_cache *this_pyr, mword *tptr){ // tptr_extract_hash#
 
-    mword *ptr = mem_new_val(this_pyr, HASH_SIZE, 0);
+    mword *ptr = mem_new_valz(this_pyr, HASH_SIZE);
     int i;
 
     for(i=0; i<HASH_SIZE; i++){// FIXME: PERF... use memcpy
@@ -111,6 +113,26 @@ mword *tptr_hard_detag(pyr_cache *this_pyr, mword *tptr){ // tptr_hard_detag#
     else{
         return temp;
     }
+
+}
+
+
+// Creates a pseudo-random tag
+//
+tptr tptr_uniq(pyr_cache *this_pyr, mword *bs){ // tptr_uniq#
+
+    mword *ptr = mem_alloc( this_pyr, TPTR_SFIELD );
+
+    int i;
+    for(i=0; i<HASH_SIZE; i++){ // FIXME: PERF... use memcpy
+        ptr[i] = (mword)genrand_int32();
+    }
+
+    ldv(ptr,HASH_SIZE) = NEG_ONE*MWORD_SIZE;
+
+    tptr_set_ptr(ptr,bs);
+
+    return ptr;
 
 }
 

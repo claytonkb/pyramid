@@ -1,4 +1,4 @@
--- [append [list 1 2 3] [append [list 4 5 6] [list 7 8 9]]]
+-- (append (append (list 1 2 3) (list (cat [4 5] [5 6]))) (list 7 8 9)) 
 
 { 'std.sp' >>> sexpr bpdli !
 

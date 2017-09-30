@@ -89,6 +89,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //    mword num_tags;
 //    mword found_count=0;
 
+//mword xbar_avg = 0x27E6714;
+
     while(1){
 
         _prn("% ");
@@ -142,13 +144,6 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //
 //                ACC = (mword*)array_cat_pyr_op(this_pyr, (blob)_cons(this_pyr, temp,ACC));
 
-//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("pvc_code.bbl loaded");
-//
-//                ACC = (blob)eval_apply(this_pyr, ACC);
-//                _say("done");
-
 //                ACC = _mkval(this_pyr, 20,
 //                        64, 87, 27, 64, 89, 98, 28,  9,  0, 73, 
 //                        89, 76, 74, 82, 14, 16, 77, 83, 71, 63);
@@ -168,7 +163,68 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                ACC = global_irt->srand;
 
-                ACC = std_genrand32(this_pyr, 13);
+//                ACC = std_genrand32(this_pyr, 13);
+
+//                ACC = tptr_uniq(this_pyr, nil);
+
+//                temp = pearson_hash8(this_pyr, C2B("/foo"));
+//
+//                ACC = pearson_hash8p(this_pyr, (char*)temp, C2B("/foo"));
+
+//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("pvc_code.bbl loaded");
+//
+//                ACC = (blob)eval_apply(this_pyr, ACC);
+//                _say("done");
+
+//                ACC = C2B("");
+
+//                ACC = global_irt->srand;
+
+                // TODO:
+                // 1. sexpr-to-aexpr format (with tags)
+                // 2. command-line execution of opcodes (translate to hash
+                //      look up in op-table, etc.) Allow accumulator to be used
+                //      to implement nesting.
+
+//                ACC = bstruct_cp(this_pyr, global_irt->xbar);
+//                sort(this_pyr, ACC, UNSIGNED);
+//
+//                for(i=1;i<size(ACC);i++){
+//                    tempv = ldv(ldp((mword*)ACC[i],0),3);
+////                    tempw = abs(i-(tempv/xbar_avg));
+//                    tempw = i-(tempv/xbar_avg);
+//                    _dd(tempw);
+//                }
+
+//                tempv = ldv(ldp((mword*)ACC[1],           0),3);
+//                tempw = ldv(ldp((mword*)ACC[size(ACC)-1], 0),3);
+//
+//                _d(tempv);
+//                _d(tempw);
+//                _d(tempw-tempv);
+//                _dd(size(ACC));
+
+                _say("global_irt->xbar has an extra 'empty' entry again...");
+                _say("figure out what's going on...");
+
+//        ldv(dest,0) = MWORD_MUX(    
+//                        BIT_MASK(rdv(src,0),(src_begin+size_arg-1),src_begin),
+//                        rdv(dest,0), 
+//                        BIT_RANGE((dest_begin+size_arg-1),dest_begin));
+
+//                tempv = (BIT_MASK(0xdeadbeef,27,16));
+//                tempw = (BIT_RANGE(19,8));
+//
+//                _d(tempv);
+//                _d(tempw);
+
+                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+                ACC  = _mkval(this_pyr, 3, 0xcccccccc, 0, 0);
+                array1_move_full(this_pyr, ACC, 0, temp, 28, 12);
+
+//                _d( MWORD_SHIFT(0xdeadbeef, -4) );
 
                 break;
             case 2:
@@ -249,7 +305,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 }
 
 
-//
+// XXX Add buffer-size for safety XXX
 //
 void util_get_line(char *buffer, FILE *stream){ // util_get_line#
 

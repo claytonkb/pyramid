@@ -281,7 +281,7 @@ mword _rnptr(pyr_cache *this_pyr, mword *bs, void *v){ // _rnptr#
 
 //
 //
-mword *bstruct_cp(pyr_cache *this_pyr, mword *bs){
+mword *bstruct_cp(pyr_cache *this_pyr, mword *bs){ // bstruct_cp#
 
     mword *temp = bstruct_unload(this_pyr, bs);
 

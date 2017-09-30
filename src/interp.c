@@ -87,7 +87,11 @@ _reset_trace;
     interp_reinit(this_pyr, golden_nil, argc, argv, envp, &cat_ex);
 
 #ifdef DEV_MODE
-    util_bare_metal_prompt(this_pyr, nil);
+    global_dev_abnormal_ctr=0;
+
+    if(global_dev_bare_metal){
+        util_bare_metal_prompt(this_pyr, nil);
+    }
 #endif
 
 //    _pre_interp(this_pyr);
@@ -253,7 +257,7 @@ _reset_trace;
     //////////////////////
     global_irt->symbols = mem_non_gc_alloc(sizeof(interp_symbols));  // XXX WAIVER(mem_sys_alloc) XXX //
     global_irt->strings = mem_non_gc_alloc(sizeof(interp_strings));  // XXX WAIVER(mem_sys_alloc) XXX //
-    global_irt->fns     = mem_non_gc_alloc(sizeof(interp_fns));  // XXX WAIVER(mem_sys_alloc) XXX //
+    global_irt->fns     = mem_non_gc_alloc(sizeof(interp_fns));      // XXX WAIVER(mem_sys_alloc) XXX //
 
     global_irt->cat_ex  = cat_ex;
 
@@ -341,8 +345,8 @@ _msg("INTERP_RESET_TRACE: COMPLETE");
 //
 pyr_cache *interp_init_epoch(pyr_cache *this_pyr){ // interp_init_epoch#
 
-#ifdef BABEL_RESET_TRACE
-_trace;
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
 #endif
 
     time_t rawtime;
@@ -386,30 +390,51 @@ _trace;
 void interp_init_srand(pyr_cache *this_pyr){ // interp_init_srand#
 
 #ifdef INTERP_RESET_TRACE
-_trace;
+_reset_trace;
 #endif
 
     #define SRAND_STRING_SIZE 32
 
     char srand_string[SRAND_STRING_SIZE];
 
-    sprintf(srand_string, 
-            "%d%d%d%d%d%d", 
-            global_irt->utc_epoch->tm_sec,
-            global_irt->utc_epoch->tm_min,
-            global_irt->utc_epoch->tm_hour,
-            global_irt->utc_epoch->tm_mday,
-            global_irt->utc_epoch->tm_mon,
-            global_irt->utc_epoch->tm_year);
+    if(strlen(global_dev_seed)){
+        strcpy(srand_string, global_dev_seed);
+    }
+    else{
+        sprintf(srand_string, 
+                "%d%d%d%d%d%d", 
+                global_irt->utc_epoch->tm_sec,
+                global_irt->utc_epoch->tm_min,
+                global_irt->utc_epoch->tm_hour,
+                global_irt->utc_epoch->tm_mday,
+                global_irt->utc_epoch->tm_mon,
+                global_irt->utc_epoch->tm_year);
+    }
 
     mword *pyr_srand_string = string_c2b(this_pyr, srand_string, SRAND_STRING_SIZE);
 
-    mword *time_hash = HASH(this_pyr, pyr_srand_string);
+    char *srand_hash;
+    char *c;
+    mword offset=0;
 
-//    init_by_array( (unsigned long *)time_hash, HASH_SIZE*(sizeof(mword)/sizeof(unsigned long)));
-    init_by_array( (unsigned long *)time_hash, UNITS_MTO8(HASH_SIZE)/sizeof(unsigned long) );
+    if(strlen(global_dev_srand)){
+        srand_hash = mem_new_valz(this_pyr,HASH_SIZE);
+        c = strtok(global_dev_srand, "_");
+        while(c != NULL){
+            ldv(srand_hash, offset) = strtoul(c,NULL,16);
+            c = strtok(NULL, "_");
+            offset++;
+        }
+    }
+    else{
+        srand_hash = (char*)HASH(this_pyr, pyr_srand_string);
+    }
 
-    global_irt->srand = time_hash;
+
+//    init_by_array( (unsigned long *)srand_hash, HASH_SIZE*(sizeof(mword)/sizeof(unsigned long)));
+    init_by_array( (unsigned long *)srand_hash, UNITS_MTO8(HASH_SIZE)/sizeof(unsigned long) );
+
+    global_irt->srand = (mword*)srand_hash;
 
 }
 
@@ -482,7 +507,6 @@ _dd(PYR_NUM_TAGS);
     ldp(global_irt->xbar,i) = mem_new_ptr(this_pyr, PYR_XBAR_NUM_FIELDS);
     i++;
 
-
 /////////////////////////////////////////////////////////////////////////////
 // NOTE: temp[2] is intentionally stored as a _val not as a _ptr in order
 // to keep the xbar safe for dumping/introspection.
@@ -499,6 +523,7 @@ _dd(PYR_NUM_TAGS);
 #undef X
 
     sort(this_pyr, global_irt->xbar, LEX_MWORD);
+//    sort(this_pyr, global_irt->xbar, UNSIGNED);
 
 //_dump(global_irt->xbar);
 //_die;
@@ -636,7 +661,7 @@ void interp_exit(pyr_cache *this_pyr){ // interp_exit#
     free(global_irt);                               // XXX WAIVER(free) XXX
 
 #ifdef DEV_MODE
-    _say("PYRAMID: exiting normally");
+    _notify("exiting normally");
 #endif
 
 }
@@ -708,8 +733,8 @@ mword *interp_load_pyr_env(pyr_cache *this_pyr){ // interp_load_pyr_env#
 //
 mword *interp_init_load_from_file(pyr_cache *this_pyr, char *filename){ // interp_init_load_from_file#
 
-#ifdef BABEL_RESET_TRACE
-_trace;
+#ifdef INTERP_RESET_TRACE
+_reset_trace;
 #endif
 
     FILE *f = io_open_file(this_pyr, (mword*)filename, "rb");

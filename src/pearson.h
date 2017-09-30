@@ -12,6 +12,7 @@ extern const char pearson16_byte_perm[PERM_TABLE_BYTE_SIZE];
 
 mword *pearson_hash8(pyr_cache *this_pyr, mword *key);
 mword *pearson_hash(pyr_cache *this_pyr, mword *key);
+mword *pearson_hash8p(pyr_cache *this_pyr, char *base_hash, mword *key);
 
 void pearson16(char *result, char *init, char *key, mword strlen);
 void pearson_marsaglia16(char *result, char* init, char *key, mword strlen);

@@ -527,6 +527,15 @@ mword *dlist_cut(pyr_cache *this_pyr, mword *list, mword index, mword direction)
 //(a b c d)     shift   --> (a b c) (d)
 
 
+//
+//
+blob list_to_map(pyr_cache *this_pyr, blob lists){ // list_to_map#
+
+    return nil;
+
+}
+
+
 // append goes from last element to first element in order to avoid re-traversing
 // the intermediate result list
 blob list_append_pyr_op(pyr_cache *this_pyr, blob lists){ // list_append_pyr_op#

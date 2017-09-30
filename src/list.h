@@ -10,6 +10,8 @@
 #define CDR_DIRECTION 0
 #define CPR_DIRECTION 1
 
+blob list_to_map(pyr_cache *this_pyr, blob lists);
+
 mword *list_insert(pyr_cache *this_pyr, mword *src_list, mword *dest_list);
 mword *list_unshift(pyr_cache *this_pyr, mword *list, mword *bs);
 mword *list_shift(pyr_cache *this_pyr, mword *list);

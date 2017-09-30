@@ -244,6 +244,10 @@ typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_
 
 // vvv PYR_VERB_TAGS#
 #define PYR_VERB_TAGS                                           \
+    X(PYR_TAG_LIST_TO_MAP      , "/pyramid/tag/list_to_map",    list_to_map, \
+          PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
     X(PYR_TAG_ADD_OP           , "/pyramid/tag/arith_maddi",    UNINIT_FN_PTR, \
           PYR_VERB_TAG            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \

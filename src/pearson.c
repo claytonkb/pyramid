@@ -7,19 +7,17 @@
 #include "array.h"
 
 
-//
+// XXX CLEAN UP THE HASH INTERFACE, CAN BE EASILY CONVERTED TO #DEFINES XXX
+// byte-based hash
 //
 mword *pearson_hash8(pyr_cache *this_pyr, mword *key){ // pearson_hash8#
 
-   return pearson16a(this_pyr, 
-            (char*)global_irt->tags->PYR_TAG_ZERO_HASH,
-            (char*)key, 
-            array8_size(this_pyr, key));
+    return pearson_hash8p(this_pyr, (char*)global_irt->tags->PYR_TAG_ZERO_HASH, key);
 
 }
 
 
-//
+// mword-based hash
 //
 mword *pearson_hash(pyr_cache *this_pyr, mword *key){ // pearson_hash#
 
@@ -29,6 +27,20 @@ mword *pearson_hash(pyr_cache *this_pyr, mword *key){ // pearson_hash#
             UNITS_MTO8(size(key)));
 
 }
+
+
+// byte-based progressive hashing
+//
+mword *pearson_hash8p(pyr_cache *this_pyr, char *base_hash, mword *key){ // pearson_hash8p#
+
+   return pearson16a(this_pyr, 
+            base_hash,
+            (char*)key, 
+            array8_size(this_pyr, key));
+
+}
+
+
 
 
 // This is a 16-byte version of Pearson's hash

@@ -470,15 +470,6 @@ mword *array1_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array1_cat
  ****************************************************************************/
 
 
-#define array_cmp_size_check(x,y)       \
-    if(x > y){                          \
-        return 1;                       \
-    }                                   \
-    else if(x < y){                     \
-        return -1;                      \
-    }
-    
-
 //
 //
 int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size){ // array_cmp_lex#
@@ -489,15 +480,11 @@ int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_se
     if(access_size == MWORD_ASIZE){
         left_size  = UNITS_MTO8(size_special(left));
         right_size = UNITS_MTO8(size_special(right));
-//        left_size  = UNITS_MTO8(size(left));
-//        right_size = UNITS_MTO8(size(right));
     }
     else{ // access_size == BYTE_ASIZE
         left_size  = array8_size(this_pyr, left);
         right_size = array8_size(this_pyr, right);
     }
-
-//    array_cmp_size_check(left_size, right_size);
 
     if(left_size > right_size){
         return 1;
@@ -579,43 +566,59 @@ int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_
 }
 
 
-// Multi-word numerical comparison
+// Multi-word unsigned numerical comparison
 //
 int array_cmp_num(mword *left, mword *right){ // array_cmp_num#
 
-    mword acc = 0;
-    mword left_size  = size(left);
-    mword right_size = size(right);
+    return array_cmp_num_range(left, (left+size(left)-1), right, (right+size(right)-1));
 
-    int i = left_size-1;
+}
 
-    if(left_size > right_size){
-        for(i=left_size-1; i>=right_size; i--){ // Ignore leading zeroes...
-            acc += (rdp(left,i) != 0);
-        }
-        if(acc != 0){
-            return 1;
-        }
-    }
-    else if(left_size < right_size){
-        for(i=right_size-1; i>=left_size; i--){ // Ignore leading zeroes...
-            acc += (rdp(right,i) != 0);
-        }
-        if(acc != 0){
-            return -1;
-        }
-    }
 
-    for(;i>=0;i--){
-        if(rdp(left,i) > rdp(right,i)){ 
-            return 1;
-        }
-        if(rdp(left,i) < rdp(right,i)){ 
-            return -1;
+// Multi-word (range-based) unsigned numerical comparison
+//
+int array_cmp_num_range(mword *left, mword *left_end, mword *right, mword *right_end){ // array_cmp_num_range#
+
+    mword left_size  = (left_end-left);
+    mword right_size = (right_end-right);
+
+    mword left_non_zero=0;
+    mword right_non_zero=0;
+
+    int i;
+
+    for(i=right_size;i>=0;i--){
+        if(right[i] != 0){
+            right_non_zero=i;
+            break;
         }
     }
 
-    return 0; // They are numerically equal
+    for(i=left_size;i>=0;i--){
+        if(left[i] != 0){
+            left_non_zero=i;
+            break;
+        }
+    }
+
+    if(left_non_zero > right_non_zero){
+        return 1;
+    }
+    else if(left_non_zero < right_non_zero){
+        return -1;
+    }
+    else{
+        for(;i>=0;i--){ // i is in correct position from previous for-loop
+            if(rdp(left,i) > rdp(right,i)){ 
+                return 1;
+            }
+            if(rdp(left,i) < rdp(right,i)){ 
+                return -1;
+            }
+        }
+    }
+
+    return 0; // left and right are numerically equal
 
 }
 
@@ -862,9 +865,18 @@ void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword 
 }
 
 
+// align fwd bwd
+//
+// Case [src:align] [dest:align]
+//   src        |. . . . . . . .|. . . . . . . .|. . . . . . . .|. . . . . . . .
+//   buff       |. . . . . . . .|. . . . . . . .|
+//   dest       |. . . . . . . .|. . . . . . . .|. . . . . . . .|. . . . . . . .
+
 // prereq: dest_begin < MWORD_BIT_SIZE
 //
 void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_n#
+
+_die;
 
     mword dest_comp = MWORD_BIT_SIZE-dest_mod;
 
@@ -990,6 +1002,152 @@ void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src
                         rdv(src,0) >> src_mod, 
                         rdv(dest,0), 
                         NBIT_LO_MASK(size_arg) );
+
+}
+
+
+// comp --> "complementary modulus", i.e. comp(modulus) = (MWORD_BIT_SIZE - modulus)
+// dest_begin and src_begin MUST BE less than MWORD_BIT_SIZE
+// This function performs a full bitwise move from src to dest...
+// XXX src and dest must not overlapped... this is NOT checked in this function XXX
+//
+void array1_move_full(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_full#
+
+    // if src, dest & size_arg are aligned, memmove
+    // if src is aligned, but dest is not aligned, this is a move
+    // if src is not aligned, and dest is aligned, this is a slice
+
+    if(!size_arg)  // nothing to move
+        return;
+
+    if(    (  dest_begin % BITS_PER_BYTE == 0)
+        && (   src_begin % BITS_PER_BYTE == 0) 
+        && (    size_arg % BITS_PER_BYTE == 0) ){
+        _notify("This was supposed to memmove...");
+//        memmove( ((char*)dest+UNITS_1TO8(dest_begin)), (char*)src, (size_t)UNITS_1TO8(size_arg) );
+//        return;
+    }
+
+    mword src_num_splits  = array1_calc_splits(src_begin,  size_arg);
+    mword dest_num_splits = array1_calc_splits(dest_begin, size_arg);
+
+    if((src_num_splits==0) && (dest_num_splits==0)){
+        _notify("(src_num_splits==0) && (dest_num_splits==0)");
+
+        // src    | .xxx.... |
+        //          deadbeef
+        // 
+        // dest   | ...xxx.. |
+        //          000ead00
+
+        ldv(dest,0) = MWORD_MUX(    
+                        MWORD_SHIFT(rdv(src,0),(dest_begin-src_begin)),
+                        rdv(dest,0),
+                        BIT_RANGE((dest_begin+size_arg-1),dest_begin));
+
+    }
+    else if((src_num_splits==0) && (dest_num_splits==1)){
+        _notify("(src_num_splits==0) && (dest_num_splits==1)");
+
+        // src    |. x x x . . . .|
+        //         d e a d b e e f
+        // 
+        // dest   |. . . . . . x x|x . . . . . . .|
+        //         c c c c c c e a d 0 0 0 0 0 0 0
+
+        int shiftA = dest_begin-src_begin;
+        int shiftB = -1*COMPLEMENT_MTO1(shiftA);
+
+        mword src_mwordA = MWORD_SHIFT(rdv(src,0),shiftA);
+        mword src_mwordB = MWORD_SHIFT(rdv(src,0),shiftB);
+
+        ldv(dest,0) = MWORD_MUX(
+                        src_mwordA,
+                        rdv(dest,0),
+                        BIT_RANGE(MWORD_MSB,dest_begin));
+
+        ldv(dest,1) = MWORD_MUX(
+                        src_mwordB,
+                        rdv(dest,1),
+                        BIT_RANGE(MODULO_MTO1(dest_begin+size_arg-1),0));
+
+    }
+    else if((src_num_splits==1) && (dest_num_splits==0)){
+        _notify("(src_num_splits==1) && (dest_num_splits==0)");
+
+        // src    |. . . . . . x x|x . . . . . . .|
+        //         f a c e f e e d d e a d b e e f
+        // 
+        // dest   |. . . . x x x .|
+        //         c c c c e d d c 
+
+// XXX WIP WIP WIP WIP WIP WIP WIP WIP WIP XXX //
+
+        mword src_mwordA = BIT_SELECT(rdv(src,0), MWORD_MSB, src_begin);
+        mword src_mwordB = BIT_SELECT(rdv(src,1), (size_arg-(MWORD_MSB-src_begin)), 0);
+
+        mword src_mword = (src_mwordA << dest_begin)
+                            ||
+                          (src_mwordB << (dest_begin+(MWORD_MSB-src_begin)));
+
+        ldv(dest,0) = MWORD_MUX(
+                        src_mword,
+                        rdv(dest,0),
+                        BIT_RANGE((dest_begin+size_arg-1),dest_begin));
+
+    }
+    else if((src_num_splits==1) && (dest_num_splits==1)){
+        _notify("(src_num_splits==1) && (dest_num_splits==1)");
+    }
+    else if((src_num_splits==1) && (dest_num_splits==2)){
+        _notify("(src_num_splits==1) && (dest_num_splits==2)");
+    }
+    else if((src_num_splits==2) && (dest_num_splits==1)){
+        _notify("(src_num_splits==2) && (dest_num_splits==1)");
+    }
+    else if((src_num_splits==2) && (dest_num_splits==2)){
+        _notify("(src_num_splits==2) && (dest_num_splits==2)");
+    }
+    else{
+        _pigs_fly;
+    }
+
+}
+
+
+//
+//
+mword array1_calc_splits(mword begin, mword size_arg){ // array1_calc_splits#
+
+    mword begin_comp = MWORD_BIT_SIZE-begin;
+    mword end_mod = (begin+size_arg) % MWORD_BIT_SIZE;
+
+    mword num_splits = 0;
+
+    if(size_arg <= MWORD_BIT_SIZE){ // 0 or 1 boundaries crossed
+        num_splits = (begin_comp < size_arg);
+    }
+    else if(size_arg < (2*MWORD_BIT_SIZE)){ // 1 or 2 boundaries crossed
+        if((size_arg+begin) <= (2*MWORD_BIT_SIZE)){
+            num_splits = 1;
+        }
+        else{
+            num_splits = 2;
+        }
+    }
+    else if(size_arg == (2*MWORD_BIT_SIZE)){ // 1 or 2 boundaries crossed
+        if( !begin && !end_mod ){
+            num_splits = 1;
+        }
+        else{
+            num_splits = 2;
+        }
+    }
+    else{ // 2 or more boundaries crossed
+        num_splits = 2;
+    }
+
+    return num_splits;
 
 }
 

@@ -21,6 +21,7 @@ mword *pearson16a(pyr_cache *this_pyr, char *init, char *key, mword strlen);
 mword *pearson_marsaglia16a(pyr_cache *this_pyr, char *init, char *key, mword strlen);
 
 mword  pearson_marsaglia_fuzz(mword reset);
+void pearson_empty_hash(char *result);
 
 //mword *pearson_rand_val(pyr_cache *this_pyr, mword num_mwords);
 

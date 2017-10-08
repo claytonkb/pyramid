@@ -7,6 +7,7 @@
 #include "utf8.h"
 #include "bstruct.h"
 #include "list.h"
+#include "util.h"
 
 //#include "operator.h"
 //#include "pbp.h"
@@ -84,8 +85,6 @@ void array8_write(mword *array, mword offset, mword value){ // array8_write#
 }
 
 
-// FIXME The following functions do not need pyr_cache* !!! FIXME
-
 // Returns a val containing the byte at val_entry[entry] (byte-wise addressing)
 //
 mword *array8_th(pyr_cache *this_pyr, mword *val_array, mword entry8){ // array8_th#
@@ -114,6 +113,7 @@ mword array8_size(pyr_cache *this_pyr, mword *string){ // array8_size#
 
 }
 
+// FIXME The following functions do not need pyr_cache* !!! FIXME
 
 // decodes the alignment word
 //
@@ -262,7 +262,7 @@ mword array1_enc_align(pyr_cache *this_pyr, mword size1){ // array1_enc_align#
     if((size1 % MWORD_BIT_SIZE) == 0)
         return 0;
 
-    mword alignment = (mword)-1;
+    mword alignment = FMAX; //(mword)-1;
 
     return alignment << (size1 % MWORD_BIT_SIZE);
 
@@ -392,7 +392,7 @@ mword *array_cat(pyr_cache *this_pyr, mword *left, mword *right){ // array_cat#
         s_right = sfield(right);
         result = (char*)mem_new_ptr(this_pyr, UNITS_8TOM(s_left+s_right));
     }
-    else{ //FIXME: Throw an exception
+    else{ // FIXME(throw_exception)
         _fatal("cannot concatenate val-array and ptr-array");
     }
 
@@ -492,6 +492,7 @@ int array_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right, access_size_se
     else if(left_size < right_size){
         return -1;
     }
+    //else:
 
     return memcmp(left, right, left_size);
 
@@ -705,234 +706,6 @@ void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, 
 }
 
 
-// comp --> "complementary modulus", i.e. comp(modulus) = (MWORD_BIT_SIZE - modulus)
-// XXX dest_begin and size_arg are NOT safety-checked before they are used XXX
-//
-void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg){ // array1_move#
-
-    if((src == dest)        // src and dest must not overlap
-           || (!size_arg))  // nothing to move
-        return;
-
-    if(    (  dest_begin % BITS_PER_BYTE == 0)
-        && (  size_arg % BITS_PER_BYTE == 0) ){
-        memmove( ((char*)dest+UNITS_1TO8(dest_begin)), (char*)src, (size_t)UNITS_1TO8(size_arg) );
-        return;
-    }
-
-    mword dest_begin_mword = UNITS_1TOM(dest_begin);
-
-    dest+=dest_begin_mword;
-    dest_begin -= UNITS_MTO1(dest_begin_mword);
-
-    mword dest_begin_comp = MWORD_BIT_SIZE-dest_begin;
-    mword dest_end = dest_begin+size_arg;
-    mword dest_end_mod = dest_end % MWORD_BIT_SIZE;
-
-//_dd(dest_begin);
-//_dd(dest_begin_comp);
-//_dd(dest_end_mod);
-//_dd(dest_end_comp);
-
-    mword num_dest_boundaries_crossed = 0;
-
-    if(size_arg <= MWORD_BIT_SIZE){ // 0 or 1 boundaries crossed
-        num_dest_boundaries_crossed = (dest_begin_comp < size_arg);
-    }
-    else if(size_arg < (2*MWORD_BIT_SIZE)){
-        if((size_arg+dest_begin) <= (2*MWORD_BIT_SIZE)){
-            num_dest_boundaries_crossed = 1;
-        }
-        else{
-            num_dest_boundaries_crossed = 2;
-        }
-    }
-    else if(size_arg == (2*MWORD_BIT_SIZE)){
-        if( !dest_begin && !dest_end_mod ){
-            num_dest_boundaries_crossed = 1;
-        }
-        else{
-            num_dest_boundaries_crossed = 2;
-        }
-    }
-    else{ // 2 or more boundaries crossed
-        num_dest_boundaries_crossed = 2;
-    }
-
-_dd(num_dest_boundaries_crossed);
-
-    if(num_dest_boundaries_crossed == 0){
-        array1_move_single(this_pyr, dest, dest_begin, src, size_arg);
-    }
-    else if(num_dest_boundaries_crossed == 1){
-        array1_move_double(this_pyr, dest, dest_begin, src, size_arg);
-    }
-    else{ // num_dest_boundaries_crossed > 1
-        array1_move_n(this_pyr, dest, dest_begin, src, size_arg);
-    }
-
-}
-
-
-
-// prereqs: 
-//      dest_mod < MWORD_BIT_SIZE
-//      size_arg <= MWORD_BIT_SIZE-dest_mod
-//
-void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_single#
-
-    ldv(dest,0) = MWORD_MUX(    
-                        rdv(src,0) << dest_mod, 
-                        rdv(dest,0), 
-                        NBIT_LO_MASK(size_arg) << dest_mod );
-
-//mword result = ldv(dest,0);
-//_d(result);
-
-}
-
-
-//
-//
-void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_double#
-
-    // |----------------|----------------|
-    //       |-----------------|
-    // |.....^..........^......^.........|
-    //            B        A
-
-    mword dest_comp = MWORD_BIT_SIZE-dest_mod;
-    mword size_argA, size_argB, size_argC;
-    mword read_maskA; //, read_maskB, read_maskC;
-    mword write_maskA, write_maskB, write_maskC;
-    mword src_val0;
-
-    if(size_arg <= MWORD_BIT_SIZE){
-
-        size_argA = dest_comp;
-        size_argB = size_arg-size_argA;
-
-        read_maskA  = NBIT_LO_MASK(size_argA);
-
-        write_maskA = read_maskA << dest_mod;
-        write_maskB = NBIT_LO_MASK(size_argB);
-
-        src_val0 = rdv(src,0);
-
-        ldv(dest,0) = MWORD_MUX(src_val0 << dest_mod,  rdv(dest,0), write_maskA);
-        ldv(dest,1) = MWORD_MUX(src_val0 >> dest_comp, rdv(dest,1), write_maskB);
-
-//mword result0 = ldv(dest,0);
-//mword result1 = ldv(dest,1);
-//
-//_d(result0);
-//_d(result1);
-
-    }
-    // |----------------|----------------|
-    //    |--|-----------------|
-    // |..^..^..........^......^.........|
-    //     C      B        A
-    else{
-
-        size_argA = dest_comp;
-        size_argC = size_arg-MWORD_BIT_SIZE;
-        size_argB = size_arg-(size_argA+size_argC);
-
-        read_maskA  = NBIT_LO_MASK(size_argA);
-
-        write_maskA = read_maskA << dest_mod;
-        write_maskB = NBIT_LO_MASK(size_argB);
-        write_maskC = NBIT_LO_MASK(size_argC) << size_argB;
-
-        src_val0 = rdv(src,0);
-
-        ldv(dest,0) = MWORD_MUX(src_val0 << dest_mod, rdv(dest,0), write_maskA);
-        ldv(dest,1) = MWORD_MUX(src_val0 >> size_argA, rdv(dest,1), write_maskB);
-        ldv(dest,1) = MWORD_MUX(rdv(src,1) << size_argB, rdv(dest,1), write_maskC);
-
-//mword result0 = ldv(dest,0);
-//mword result1 = ldv(dest,1);
-//
-//_d(result0);
-//_d(result1);
-
-    }
-
-//    mword result = ldv(dest,0);
-//    _d(result);
-
-}
-
-
-// align fwd bwd
-//
-// Case [src:align] [dest:align]
-//   src        |. . . . . . . .|. . . . . . . .|. . . . . . . .|. . . . . . . .
-//   buff       |. . . . . . . .|. . . . . . . .|
-//   dest       |. . . . . . . .|. . . . . . . .|. . . . . . . .|. . . . . . . .
-
-// prereq: dest_begin < MWORD_BIT_SIZE
-//
-void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg){ // array1_move_n#
-
-_die;
-
-    mword dest_comp = MWORD_BIT_SIZE-dest_mod;
-
-    mword read_maskA  = NBIT_LO_MASK(dest_mod);
-    mword read_maskB  = ~read_maskA;
-
-    mword dest_end = dest_mod + size_arg;
-    mword dest_end_mod = dest_end % MWORD_BIT_SIZE;
-    mword dest_mword_count = UNITS_1TOM((dest_end-dest_end_mod)) - 1;
-
-
-    ldv(dest,0) = MWORD_MUX(rdv(src,0) << dest_mod, rdv(dest,0), read_maskB);
-
-    int i;
-
-    for(i=0; i<dest_mword_count; i++){
-        ldv(dest,i+1) = MWORD_MUX(rdv(src,i)   >> dest_comp, rdv(dest,i+1), read_maskA);
-        ldv(dest,i+1) = MWORD_MUX(rdv(src,i+1) << dest_mod,  rdv(dest,i+1), read_maskB);
-    }
-
-    if(dest_end_mod){ // dest is aligned; src is unaligned
-
-        if(dest_end_mod > dest_mod){
-
-            read_maskA = NBIT_LO_MASK(dest_mod);
-            read_maskB = NBIT_LO_MASK(dest_end_mod-dest_mod) << dest_mod;
-
-            ldv(dest,i+1) = MWORD_MUX(rdv(src,i)   >> dest_comp, rdv(dest,i+1), read_maskA);
-            ldv(dest,i+1) = MWORD_MUX(rdv(src,i+1) << dest_mod,  rdv(dest,i+1), read_maskB);
-
-        }
-        else{
-
-            read_maskA = NBIT_LO_MASK(dest_end_mod);
-            ldv(dest,i+1) = MWORD_MUX(rdv(src,i) >> dest_comp, rdv(dest,i+1), read_maskA);
-
-        }
-
-    }
-//    else{ // XXX DEBUG ONLY; REMOVE XXX
-//_trace;
-//   }
-
-//    mword result0 = ldv(dest,0);
-//    mword result1 = ldv(dest,1);
-//    mword result2 = ldv(dest,2);
-//    mword result3 = ldv(dest,3);
-//
-//    _d(result0);
-//    _d(result1);
-//    _d(result2);
-//    _d(result3);
-
-}
-
-
 // NB: Do not use on tptr's
 //
 mword *array_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ // array_slice#
@@ -982,7 +755,7 @@ mword *array8_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ 
 }
  
 
-// dest aligned, src un-aligned
+//
 //
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ // array1_slice#
 
@@ -992,26 +765,26 @@ mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end){ 
 }
 
 
-// prereqs: 
-//      src_mod  <  MWORD_BIT_SIZE
-//      size_arg <= MWORD_BIT_SIZE-src_mod
+// XXX SMOKE-TESTED XXX
 //
-void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg){ // array1_slice_single#
+void array1_move(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move#
 
-    ldv(dest,0) = MWORD_MUX(
-                        rdv(src,0) >> src_mod, 
-                        rdv(dest,0), 
-                        NBIT_LO_MASK(size_arg) );
+    mword dest_begin_mword = UNITS_1TOM(dest_begin);
+    dest_begin -= UNITS_MTO1(dest_begin_mword);
+
+    mword src_begin_mword = UNITS_1TOM(src_begin);
+    src_begin -= UNITS_MTO1(src_begin_mword);
+
+    array1_move_unsafe(this_pyr, (dest+dest_begin_mword), dest_begin, (src+src_begin_mword), src_begin, size_arg);
 
 }
-
 
 // comp --> "complementary modulus", i.e. comp(modulus) = (MWORD_BIT_SIZE - modulus)
 // dest_begin and src_begin MUST BE less than MWORD_BIT_SIZE
 // This function performs a full bitwise move from src to dest...
-// XXX src and dest must not overlapped... this is NOT checked in this function XXX
+// XXX src and dest must not overlap... this is NOT checked in this function XXX
 //
-void array1_move_full(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_full#
+void array1_move_unsafe(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_unsafe#
 
     // if src, dest & size_arg are aligned, memmove
     // if src is aligned, but dest is not aligned, this is a move
@@ -1023,90 +796,41 @@ void array1_move_full(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *s
     if(    (  dest_begin % BITS_PER_BYTE == 0)
         && (   src_begin % BITS_PER_BYTE == 0) 
         && (    size_arg % BITS_PER_BYTE == 0) ){
-        _notify("This was supposed to memmove...");
+//        _notify("This was supposed to memmove...");
 //        memmove( ((char*)dest+UNITS_1TO8(dest_begin)), (char*)src, (size_t)UNITS_1TO8(size_arg) );
 //        return;
     }
 
-    mword src_num_splits  = array1_calc_splits(src_begin,  size_arg);
-    mword dest_num_splits = array1_calc_splits(dest_begin, size_arg);
+    mword num_src_splits  = array1_calc_splits(src_begin,  size_arg);
+    mword num_dest_splits = array1_calc_splits(dest_begin, size_arg);
 
-    if((src_num_splits==0) && (dest_num_splits==0)){
-        _notify("(src_num_splits==0) && (dest_num_splits==0)");
-
-        // src    | .xxx.... |
-        //          deadbeef
-        // 
-        // dest   | ...xxx.. |
-        //          000ead00
-
-        ldv(dest,0) = MWORD_MUX(    
-                        MWORD_SHIFT(rdv(src,0),(dest_begin-src_begin)),
-                        rdv(dest,0),
-                        BIT_RANGE((dest_begin+size_arg-1),dest_begin));
-
+    if((num_dest_splits==0) && (num_src_splits==0)){
+//_say("splits - dest:0 src:0");
+        array1_move_split_0_0(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==0) && (dest_num_splits==1)){
-        _notify("(src_num_splits==0) && (dest_num_splits==1)");
-
-        // src    |. x x x . . . .|
-        //         d e a d b e e f
-        // 
-        // dest   |. . . . . . x x|x . . . . . . .|
-        //         c c c c c c e a d 0 0 0 0 0 0 0
-
-        int shiftA = dest_begin-src_begin;
-        int shiftB = -1*COMPLEMENT_MTO1(shiftA);
-
-        mword src_mwordA = MWORD_SHIFT(rdv(src,0),shiftA);
-        mword src_mwordB = MWORD_SHIFT(rdv(src,0),shiftB);
-
-        ldv(dest,0) = MWORD_MUX(
-                        src_mwordA,
-                        rdv(dest,0),
-                        BIT_RANGE(MWORD_MSB,dest_begin));
-
-        ldv(dest,1) = MWORD_MUX(
-                        src_mwordB,
-                        rdv(dest,1),
-                        BIT_RANGE(MODULO_MTO1(dest_begin+size_arg-1),0));
-
+    else if((num_dest_splits==1) && (num_src_splits==0)){
+//_say("splits - dest:1 src:0");
+        array1_move_split_1_0(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==1) && (dest_num_splits==0)){
-        _notify("(src_num_splits==1) && (dest_num_splits==0)");
-
-        // src    |. . . . . . x x|x . . . . . . .|
-        //         f a c e f e e d d e a d b e e f
-        // 
-        // dest   |. . . . x x x .|
-        //         c c c c e d d c 
-
-// XXX WIP WIP WIP WIP WIP WIP WIP WIP WIP XXX //
-
-        mword src_mwordA = BIT_SELECT(rdv(src,0), MWORD_MSB, src_begin);
-        mword src_mwordB = BIT_SELECT(rdv(src,1), (size_arg-(MWORD_MSB-src_begin)), 0);
-
-        mword src_mword = (src_mwordA << dest_begin)
-                            ||
-                          (src_mwordB << (dest_begin+(MWORD_MSB-src_begin)));
-
-        ldv(dest,0) = MWORD_MUX(
-                        src_mword,
-                        rdv(dest,0),
-                        BIT_RANGE((dest_begin+size_arg-1),dest_begin));
-
+    else if((num_dest_splits==0) && (num_src_splits==1)){
+//_say("splits - dest:0 src:1");
+        array1_move_split_0_1(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==1) && (dest_num_splits==1)){
-        _notify("(src_num_splits==1) && (dest_num_splits==1)");
+    else if((num_dest_splits==1) && (num_src_splits==1)){
+//_say("splits - dest:1 src:1");
+        array1_move_split_1_1(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==1) && (dest_num_splits==2)){
-        _notify("(src_num_splits==1) && (dest_num_splits==2)");
+    else if((num_dest_splits==2) && (num_src_splits==1)){
+//_say("splits - dest:2 src:1");
+        array1_move_split_2_1(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==2) && (dest_num_splits==1)){
-        _notify("(src_num_splits==2) && (dest_num_splits==1)");
+    else if((num_dest_splits==1) && (num_src_splits==2)){
+//_say("splits - dest:1 src:2");
+        array1_move_split_1_2(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
-    else if((src_num_splits==2) && (dest_num_splits==2)){
-        _notify("(src_num_splits==2) && (dest_num_splits==2)");
+    else if((num_dest_splits==2) && (num_src_splits==2)){
+//_say("splits - dest:n src:n");
+        array1_move_split_n(this_pyr, dest, dest_begin, src, src_begin, size_arg);
     }
     else{
         _pigs_fly;
@@ -1152,6 +876,372 @@ mword array1_calc_splits(mword begin, mword size_arg){ // array1_calc_splits#
 }
 
 
+//
+//
+void array1_move_split_0_0(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_0_0#
+
+    // src    | .xxx.... |
+    //          deadbeef
+    // 
+    // dest   | ...xxx.. |
+    //          000ead00
+    ldv(dest,0) = MWORD_MUX(
+        (MWORD_SHIFT((rdv(src,0)),(dest_begin-src_begin))),
+        (rdv(dest,0)),
+        (BIT_RANGE((dest_begin+size_arg-1),dest_begin)));
+
+}
+
+
+
+// dest:0 src:1
+//
+void array1_move_split_0_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_0_1#
+
+    // src    |. . . . . . x x|x . . . . . . .|
+    //         f a c e f e e d d e a d b e e f
+    // 
+    // dest   |. . . . x x x .|
+    //         c c c c e d d c 
+
+    mword src_mwordA = BIT_SELECT(rdv(src,0), MWORD_MSB, src_begin);
+    mword src_mwordB = BIT_SELECT(rdv(src,1), (size_arg-(MWORD_MSB-src_begin))-1, 0);
+
+    mword src_mword = (src_mwordA << dest_begin)
+                        |
+                      (src_mwordB << (dest_begin+(MWORD_MSB-src_begin)+1));
+
+    ldv(dest,0) = MWORD_MUX(
+                    src_mword,
+                    rdv(dest,0),
+                    BIT_RANGE((dest_begin+size_arg-1),dest_begin));
+
+}
+
+
+
+// dest:1 src:0
+//
+void array1_move_split_1_0(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_1_0#
+
+    // src    |. x x x . . . .|
+    //         d e a d b e e f
+    // 
+    // dest   |. . . . . . x x|x . . . . . . .|
+    //         c c c c c c e a d 0 0 0 0 0 0 0
+
+    int shiftA = dest_begin-src_begin;
+    int shiftB = -1*COMPLEMENT_MTO1(shiftA);
+
+    mword src_mwordA = MWORD_SHIFT(rdv(src,0),shiftA);
+    mword src_mwordB = MWORD_SHIFT(rdv(src,0),shiftB);
+
+    ldv(dest,0) = MWORD_MUX(
+                    src_mwordA,
+                    rdv(dest,0),
+                    BIT_RANGE(MWORD_MSB,dest_begin));
+
+    ldv(dest,1) = MWORD_MUX(
+                    src_mwordB,
+                    rdv(dest,1),
+                    BIT_RANGE(MODULO_MTO1(dest_begin+size_arg-1),0));
+
+}
+
+
+//
+//
+void array1_move_split_1_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_1_1#
+
+    mword src_comp, dest_comp;
+    mword size_hi,  size_mid, size_lo;
+    mword mask_hi,  mask_mid, mask_lo;
+    mword src_val0, src_val1;
+    mword buff0,    buff1;
+
+    // size_arg <= MWORD_SIZE
+    //               1                0
+    //                  hi       lo
+    // src:  |-----v----------|------v---------|
+    //             |-----------------|
+    //                   |-----------------|
+    // dest: |...........^....|............^...|
+    //                     hi       lo
+    if(size_arg <= MWORD_BIT_SIZE){
+
+        src_comp  = MWORD_BIT_SIZE-src_begin;
+        dest_comp = MWORD_BIT_SIZE-dest_begin;
+
+        size_hi = src_begin;
+
+        mask_hi = NBIT_LO_MASK(size_arg-src_comp);
+
+        src_val0 = rdv(src,0);
+        src_val1 = rdv(src,1);
+
+        buff0 = BIT_SELECT(src_val0, MWORD_MSB, src_begin)
+                        |
+                     ((src_val1 & mask_hi) << src_comp);
+
+        size_lo = dest_comp;
+        size_hi = size_arg-size_lo;
+
+        mask_hi = NBIT_LO_MASK(size_hi);
+        mask_lo = NBIT_HI_MASK(size_lo);
+
+        ldv(dest,0) = MWORD_MUX(buff0 << dest_begin, rdv(dest,0), mask_lo);
+        ldv(dest,1) = MWORD_MUX(buff0 >> dest_comp,  rdv(dest,1), mask_hi);
+
+    }
+    // size_arg > MWORD_SIZE
+    //               1                0
+    //           hi      mid     lo
+    // src:  |--v--v----------|------v---------|
+    //          |--|-----------------|
+    //                |--|-----------------|
+    // dest: |........^..^....|............^...|
+    //                 hi  mid     lo
+    else{
+
+        src_comp  = MWORD_BIT_SIZE-src_begin;
+        dest_comp = MWORD_BIT_SIZE-dest_begin;
+
+        size_hi = size_arg-MWORD_BIT_SIZE;
+        size_lo = src_comp;
+        size_mid = size_arg-(size_hi+size_lo);
+
+        src_val0 = rdv(src,0);
+        src_val1 = rdv(src,1);
+
+        if(size_mid){
+
+            buff0 =
+                //lo
+                BIT_SELECT(src_val0, MWORD_MSB, src_begin)
+                    |
+                //mid
+                (BIT_SELECT(src_val1, size_mid-1, 0) << size_lo);
+
+        }
+        else{
+
+            //lo (no mid)
+            buff0 = BIT_SELECT(src_val0, MWORD_MSB, src_begin);
+
+        }
+
+        //hi
+        buff1 = BIT_SELECT(src_val1, size_hi+size_mid-1, size_mid);
+
+//_d(buff0);
+//_d(buff1);
+
+        size_lo  = dest_comp;
+        size_mid = size_arg-(size_hi+size_lo);
+
+        mask_mid = NBIT_LO_MASK(size_mid);
+        mask_lo  = NBIT_HI_MASK(size_lo);
+        mask_hi  = BIT_RANGE((size_hi+size_mid-1),size_mid);
+
+        ldv(dest,0) = MWORD_MUX(buff0 << dest_begin, rdv(dest,0), mask_lo);
+        ldv(dest,1) = MWORD_MUX(buff0 >> dest_comp,  rdv(dest,1), mask_mid);
+        ldv(dest,1) = MWORD_MUX(buff1 << size_mid,   rdv(dest,1), mask_hi);
+
+    }
+
+}
+
+
+// dest:2 src:1
+//
+void array1_move_split_2_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_2_1#
+
+    //               1                0
+    //             A      B       C
+    // src:  |--v-----v-------|--------v-------|
+    //          |-----|----------------|
+    //                     |-----|----------------|
+    // dest: |.............^..|..^.............|..^.............|
+    //                      A  B        C       D
+
+    mword src_comp, dest_comp;
+    mword size_A, size_B, size_C;
+    mword src_val0, src_val1;
+    mword buff0, buff1;
+
+    src_comp  = MWORD_BIT_SIZE-src_begin;
+    dest_comp = MWORD_BIT_SIZE-dest_begin;
+
+    size_A = size_arg-MWORD_BIT_SIZE;
+    size_C = src_comp;
+    size_B = size_arg-(size_A+size_C);
+
+    src_val0 = rdv(src,0);
+    src_val1 = rdv(src,1);
+
+    if(size_B){
+
+        buff0 =
+            //lo
+            BIT_SELECT(src_val0, MWORD_MSB, src_begin)
+                |
+            //mid
+            (BIT_SELECT(src_val1, size_B-1, 0) << size_C);
+
+    }
+    else{
+
+        //lo (no mid)
+        buff0 = BIT_SELECT(src_val0, MWORD_MSB, src_begin);
+
+    }
+
+    //hi
+    buff1 = BIT_SELECT(src_val1, size_A+size_B-1, size_B);
+
+//_d(buff0);
+//_d(buff1);
+
+    ldv(dest,0) = MWORD_MUX(
+                    (buff0<<dest_begin),
+                    rdv(dest,0),
+                    BIT_RANGE(MWORD_MSB,dest_begin));
+
+    ldv(dest,1) = MWORD_MUX(
+                    (buff0>>dest_comp),
+                    rdv(dest,1),
+                    BIT_RANGE(dest_begin-1,0));
+
+    ldv(dest,1) = MWORD_MUX(
+                    (buff1<<dest_begin),
+                    rdv(dest,1),
+                    BIT_RANGE(MWORD_MSB,dest_begin));
+
+    ldv(dest,2) = MWORD_MUX(
+                    (buff1>>dest_comp),
+                    rdv(dest,2),
+                    BIT_RANGE((size_arg-(MWORD_BIT_SIZE+dest_comp)-1),0));
+
+}
+
+
+// dest:1 src:2
+//
+void array1_move_split_1_2(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_1_2#
+
+    //               1                0
+    //                      A  B        C       D
+    // src:  |.............v..|..v.............|..v.............|
+    //                     |-----|----------------|
+    //          |-----|----------------|
+    // dest: |--^-----^-------|--------^-------|
+    //             A      B       C
+
+    mword src_comp, dest_comp;
+    mword size_A, size_B, size_C, size_D;
+    mword src_val0, src_val1, src_val2;
+    mword buff0, buff1;
+
+    src_comp  = MWORD_BIT_SIZE-src_begin;
+    dest_comp = MWORD_BIT_SIZE-dest_begin;
+
+    size_D = src_comp;
+    size_B = size_D;
+    size_C = src_begin;
+    size_A = size_arg-(size_B+size_C+size_D);
+
+    src_val0 = rdv(src,0);
+    src_val1 = rdv(src,1);
+    src_val2 = rdv(src,2);
+
+    buff0 =
+        BIT_SELECT(src_val0, MWORD_MSB, src_begin)
+            |
+        (BIT_SELECT(src_val1, size_C-1, 0) << size_D);
+
+    buff1 =
+        BIT_SELECT(src_val1, MWORD_MSB, size_C)
+            |
+        (BIT_SELECT(src_val2, size_A-1, 0) << size_B);
+
+//_d(buff0);
+//_d(buff1);
+
+    ldv(dest,0) = MWORD_MUX(
+                    (buff0<<dest_begin),
+                    rdv(dest,0),
+                    BIT_RANGE(MWORD_MSB,dest_begin));
+
+    ldv(dest,1) = MWORD_MUX(
+                    (buff0>>dest_comp),
+                    rdv(dest,1),
+                    BIT_RANGE(dest_begin-1,0));
+
+    ldv(dest,1) = MWORD_MUX(
+                    (buff1<<dest_begin),
+                    rdv(dest,1),
+                    BIT_RANGE((size_arg-MWORD_BIT_SIZE+dest_begin-1),dest_begin));
+
+}
+
+
+// dest>=2, src>=2
+//
+void array1_move_split_n(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg){ // array1_move_split_n#
+
+    // Main loop (0 to n-1):
+    //               1                0
+    //                  hi       lo
+    // src:  |-----v----------|------v---------|
+    //             |-----------------|
+    //                   |-----------------|
+    // dest: |...........^....|............^...|
+    //                     hi       lo
+    //
+    // Final loop: Use array1_move_split_1_1() to move last bits
+    mword src_comp,     dest_comp;
+    mword dest_size_hi, dest_size_lo;
+    mword dest_mask_hi, dest_mask_lo;
+    mword src_mask_hi;
+    mword buff;
+
+    int i, ctr;
+
+    src_comp  = MWORD_BIT_SIZE-src_begin;
+    dest_comp = MWORD_BIT_SIZE-dest_begin;
+
+    src_mask_hi = NBIT_LO_MASK(src_begin);
+
+    dest_size_lo = dest_comp;
+    dest_size_hi = dest_begin;
+
+    dest_mask_hi = NBIT_LO_MASK(dest_size_hi);
+    dest_mask_lo = NBIT_HI_MASK(dest_size_lo);
+
+    for(    i=size_arg,        ctr=0;
+            i>MWORD_BIT_SIZE;
+            i-=MWORD_BIT_SIZE, ctr++){
+
+        buff = BIT_SELECT(rdv(src,ctr+0), MWORD_MSB, src_begin)
+                        |
+                     ((rdv(src,ctr+1) & src_mask_hi) << src_comp);
+
+//_d(buff);
+
+        ldv(dest,ctr+0) = MWORD_MUX(buff << dest_begin, rdv(dest,ctr+0), dest_mask_lo);
+        ldv(dest,ctr+1) = MWORD_MUX(buff >> dest_comp,  rdv(dest,ctr+1), dest_mask_hi);
+
+    }
+
+//_dd(i);
+//_dd(ctr);
+
+    //clean up remaining bits
+    array1_move_unsafe(this_pyr, (dest+ctr), dest_begin, (src+ctr), src_begin, i);
+
+}
+
+
 // XXX Can this be made into a macro?
 //
 void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size){ // array_trunc#
@@ -1162,7 +1252,7 @@ void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size){ // array_
     else if(is_ptr(operand)){ //is_ptr
         sfield(operand) = (int)-1*(new_size*MWORD_SIZE);
     }
-    //tptrs can't be trunc'd
+    //else: do nothing, tptrs can't be trunc'd
 
 }
 
@@ -1392,8 +1482,6 @@ void array_max_heapify(mword *array, mword i, mword array_size){
 }
 
 
-#define ARRAY_LINEAR_THRESH 2           // ARRAY_LINEAR_THRESH#
-
 // array must be in sorted order (non-decreasing)
 // NOTE: It might be nice to know where an element *would* fit in the array
 //       if it were inserted. Need two return values - whether the element was
@@ -1454,6 +1542,9 @@ mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *
             else if(guess == target_val){
                 return guess_index;
             }
+            else{
+                _pigs_fly;
+            }
 
             shift >>= 1;
             shift = (shift == 0) ? 1 : shift;
@@ -1492,6 +1583,9 @@ mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *
                 else if(array_eq_num(guess, target)){
                     return guess_index;
                 }
+                else{
+                    _pigs_fly;
+                }
 
                 shift >>= 1;
                 shift = (shift == 0) ? 1 : shift;
@@ -1525,6 +1619,9 @@ mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *
                 }
                 else if(array_eq(this_pyr, guess, target)){
                     return guess_index;
+                }
+                else{
+                    _pigs_fly;
                 }
 
                 shift >>= 1;
@@ -1560,6 +1657,10 @@ mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *
                 else if(array8_eq(this_pyr, guess, target)){
                     return guess_index;
                 }
+                else{
+                    _pigs_fly;
+                }
+
 
                 shift >>= 1;
                 shift = (shift == 0) ? 1 : shift;
@@ -1575,6 +1676,9 @@ mword array_search_binary(pyr_cache *this_pyr, mword *begin, mword *end, mword *
                         target,
                         st);
 
+        }
+        else{
+            _give_up;
         }
 
 //        return -1; // we didn't find what you were looking for...
@@ -1628,6 +1732,9 @@ mword array_search_linear(pyr_cache *this_pyr, mword *array, int start, int end,
                 return i;
             }
         }
+    }
+    else{
+        _give_up;
     }
 
     return -1; // we didn't find what you were looking for...

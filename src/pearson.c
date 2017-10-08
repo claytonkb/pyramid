@@ -171,6 +171,19 @@ mword pearson_marsaglia_fuzz(mword reset){
 #endif
 
 
+//
+//
+void pearson_empty_hash(char *result){ // pearson_empty_hash#
+
+    int i;
+
+    for(i=0; i<HASH_BYTE_SIZE; i++){
+        result[i] = pearson16_byte_perm[ (i*PERM_TABLE_WIDTH) ];
+    }
+
+}
+
+
 //// allocating
 ////
 //mword *pearson_rand_val(pyr_cache *this_pyr, mword num_mwords){ // pearson_rand_val#

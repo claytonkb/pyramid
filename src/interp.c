@@ -364,7 +364,6 @@ _reset_trace;
     //    tm_wday    int    days since Sunday           0-6
     //    tm_yday    int    days since January 1        0-365
 
-//    struct tm *pyr_utc_epoch = mem_sys_alloc(sizeof(struct tm)); //&this_pyr->interp->utc_epoch;
     struct tm *pyr_utc_epoch = (struct tm *)_newstr(this_pyr, sizeof(struct tm), 0);
 
     pyr_utc_epoch->tm_sec  = utc_epoch->tm_sec;
@@ -402,13 +401,13 @@ _reset_trace;
     }
     else{
         sprintf(srand_string, 
-                "%d%d%d%d%d%d", 
-                global_irt->utc_epoch->tm_sec,
-                global_irt->utc_epoch->tm_min,
-                global_irt->utc_epoch->tm_hour,
-                global_irt->utc_epoch->tm_mday,
-                global_irt->utc_epoch->tm_mon,
-                global_irt->utc_epoch->tm_year);
+            "%d%d%d%d%d%d", 
+            global_irt->utc_epoch->tm_sec,
+            global_irt->utc_epoch->tm_min,
+            global_irt->utc_epoch->tm_hour,
+            global_irt->utc_epoch->tm_mday,
+            global_irt->utc_epoch->tm_mon,
+            global_irt->utc_epoch->tm_year);
     }
 
     mword *pyr_srand_string = string_c2b(this_pyr, srand_string, SRAND_STRING_SIZE);
@@ -430,8 +429,6 @@ _reset_trace;
         srand_hash = (char*)HASH(this_pyr, pyr_srand_string);
     }
 
-
-//    init_by_array( (unsigned long *)srand_hash, HASH_SIZE*(sizeof(mword)/sizeof(unsigned long)));
     init_by_array( (unsigned long *)srand_hash, UNITS_MTO8(HASH_SIZE)/sizeof(unsigned long) );
 
     global_irt->srand = (mword*)srand_hash;
@@ -491,7 +488,6 @@ void interp_init_xbar(pyr_cache *this_pyr){ // interp_init_xbar#
 
     int i=0;
     mword *temp;
-//    mword *cdr;
 
 #ifdef INTERP_RESET_TRACE
 _prn("PYR_NUM_TAGS is ");
@@ -501,10 +497,16 @@ _dd(PYR_NUM_TAGS);
     ////////////////////////
     // GLOBAL_IRT -> XBAR //
     ////////////////////////
-
     global_irt->xbar = mem_new_ptr(this_pyr, PYR_NUM_TAGS);
 
-    ldp(global_irt->xbar,i) = mem_new_ptr(this_pyr, PYR_XBAR_NUM_FIELDS);
+    temp = mem_new_ptr(this_pyr, PYR_XBAR_NUM_FIELDS);
+    ldp(temp,0) = mem_new_val(this_pyr,HASH_SIZE,0xff);
+    pearson_empty_hash((char*)ldp(temp,0));
+    ldp(temp,1) = _val(this_pyr, 0);
+    ldp(temp,2) = _val(this_pyr,(mword)UNINIT_FN_PTR);
+    ldp(temp,3) = _val(this_pyr,PYR_NOUN_TAG);
+    ldp(global_irt->xbar,i) = temp;
+
     i++;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -524,6 +526,20 @@ _dd(PYR_NUM_TAGS);
 
     sort(this_pyr, global_irt->xbar, LEX_MWORD);
 //    sort(this_pyr, global_irt->xbar, UNSIGNED);
+
+//    for(i=0;i<size(global_irt->xbar);i++){
+//        if( is_nil(rdv(rdv(global_irt->xbar,i),0)) ){
+//            _dd(i);
+//            _fatal("is_nil(rdv(rdv(global_irt->xbar,i),0))");
+//        }
+//    }
+
+//    for(i=0;i<size(global_irt->xbar);i++){
+//        if( is_nil(rdv(global_irt->xbar,i)) ){
+//            _dd(i);
+//            _fatal("is_nil(rdv(global_irt->xbar,i))");
+//        }
+//    }
 
 //_dump(global_irt->xbar);
 //_die;

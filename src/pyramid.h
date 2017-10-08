@@ -795,9 +795,9 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define _reset_trace    fprintf(stderr, "INTERP_RESET_TRACE: %s() in %s line %d\n", __func__, __FILE__, __LINE__);   // _trace#
 
 #define QUOTEME(x)      #x
-//#define _d(x)           fprintf(stderr, "%s %08x\n", QUOTEME(x), (mword)x); // d#
+//#define _d(x)           fprintf(stderr, "%s %08x\n", QUOTEME(x), (mword)x);
 #define _d(x)           fprintf(stderr, "%s " x0pr "\n", QUOTEME(x), (mword)x); // d#
-//#define _dd(x)          fprintf(stderr, "%s %d\n",   QUOTEME(x), (mword)x); // dd#
+//#define _dd(x)          fprintf(stderr, "%s %d\n",   QUOTEME(x), (mword)x);
 #define _dd(x)          fprintf(stderr, "%s " dpr "\n",   QUOTEME(x), (mword)x); // dd#
 #define _dw(x)          fprintf(stderr, "%s %08x ",  QUOTEME(x), (mword)x); // dw#
 
@@ -807,7 +807,9 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define _error(x)       fprintf(stderr, "ERROR: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__); // error#
 #define _fatal(x)       fprintf(stderr, "FATAL: %s in %s() at %s line %d\n", x, __func__, __FILE__, __LINE__); _die;  // _fatal#
 #define _pigs_fly       _fatal("Pigs CAN fly...") // _pigs_fly#
+#define _give_up        _fatal("gave up... don't know how to do this") // _give_up#
 #define _enhance(x)     fprintf(stderr, "ENHANCEMENT: %s in %s at %s line %d\n", x, __func__, __FILE__, __LINE__); // enhance#
+#define _debug(pyr,x)   util_bare_metal_prompt(pyr, x);
 
 #ifdef DEV_MODE
 #define _abnormal       global_dev_abnormal_ctr++;

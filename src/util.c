@@ -206,9 +206,6 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _d(tempw-tempv);
 //                _dd(size(ACC));
 
-                _say("global_irt->xbar has an extra 'empty' entry again...");
-                _say("figure out what's going on...");
-
 //        ldv(dest,0) = MWORD_MUX(    
 //                        BIT_MASK(rdv(src,0),(src_begin+size_arg-1),src_begin),
 //                        rdv(dest,0), 
@@ -220,11 +217,49 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                _d(tempv);
 //                _d(tempw);
 
-                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
-                ACC  = _mkval(this_pyr, 3, 0xcccccccc, 0, 0);
-                array1_move_full(this_pyr, ACC, 0, temp, 28, 12);
+//                temp = _mkval(this_pyr, 3, 0xdeadbeef, 0xfacefeed, 0xabaddeed);
+//                ACC  = _mkval(this_pyr, 3, 0xcccccccc, 0xaaaaaaaa, 0);
+//                array1_move(this_pyr, ACC, 4, temp, 28, 40);
 
-//                _d( MWORD_SHIFT(0xdeadbeef, -4) );
+//                temp = _mkval(this_pyr, 5, 0x88888888, 0x99999999, 0xaaaaaaaa, 0xbbbbbbbb, 0xcccccccc);
+//                ACC  = _mkval(this_pyr, 5, 0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555);
+//                array1_move(this_pyr, ACC, 4, temp, 28, 64);
+
+                // 00000000 00000000 00000000 00000000
+                // ff000000 ffffffff 00ffffff 00000000
+
+//                temp = _mkval(this_pyr, 8, 0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777, 0x88888888);
+//                ACC  = _mkval(this_pyr, 8, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000);
+//global_dev_ptr = ACC;
+//                array1_move(this_pyr, ACC, 48, temp, 60, 12);
+
+//                for(i=4; i<64; i+=4){
+//
+//                    tempv = (1 + (genrand_int32() % 32)) * 4;
+//
+//                    temp = _mkval(this_pyr, 8, 0x11111111, 0x22222222, 0x33333333, 0x44444444, 0x55555555, 0x66666666, 0x77777777, 0x88888888);
+//                    ACC  = _mkval(this_pyr, 8, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000);
+//                    array1_move(this_pyr, ACC, 64, temp, 4, tempv);
+//
+//                    _dd(i);
+//                    _dd(2*i);
+//                    _dd(tempv);
+//
+//                    temp = _bs2str(this_pyr, ACC);
+//                    _say((char*)temp);
+//                    _say("");
+//
+//                }
+
+//                ACC = bstruct_cp(this_pyr, global_irt->xbar);
+//                sort(this_pyr, ACC, UNSIGNED);
+
+//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+//                _say("pvc_code.bbl loaded");
+//
+//                ACC = (blob)eval_apply(this_pyr, ACC);
+//                _say("done");
 
                 break;
             case 2:

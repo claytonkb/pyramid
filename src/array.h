@@ -7,7 +7,8 @@
 #define ARRAY_SORT_TYPE_LEAF     0
 #define ARRAY_SORT_TYPE_NON_LEAF 1
 
-#define ARRAY_SEARCH_NOT_FOUND NEG_ONE
+#define ARRAY_SEARCH_NOT_FOUND NEG_ONE      // ARRAY_SEARCH_NOT_FOUND#
+#define ARRAY_LINEAR_THRESH 2               // ARRAY_LINEAR_THRESH#
 
 #define array8_aligned(x) ((x) % BITS_PER_BYTE == 0)
 
@@ -47,18 +48,18 @@ int array_ncmp(pyr_cache *this_pyr, mword *left, mword left_offset, mword *right
 //int array_cmp_lex(mword *left, mword *right);
 //int array8_cmp_lex(pyr_cache *this_pyr, mword *left, mword *right);
 
-#define array_eq_num(l, r)  (array_cmp_num(l, r) == 0)
-#define array_lt_num(l, r)  (array_cmp_num(l, r) <  0)
-#define array_gt_num(l, r)  (array_cmp_num(l, r) >  0)
+#define array_eq_num(l, r)  (array_cmp_num(l, r) == 0) // array_eq_num#
+#define array_lt_num(l, r)  (array_cmp_num(l, r) <  0) // array_lt_num#
+#define array_gt_num(l, r)  (array_cmp_num(l, r) >  0) // array_gt_num#
 
-#define array_eq(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) == 0)
-#define array8_eq(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  == 0)
+#define array_eq(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) == 0) // array_eq#
+#define array8_eq(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  == 0) // array8_eq#
 
-#define array_lt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) <  0)
-#define array8_lt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  <  0)
+#define array_lt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) <  0) // array_lt#
+#define array8_lt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  <  0) // array8_lt#
 
-#define array_gt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) >  0)
-#define array8_gt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  >  0)
+#define array_gt(pyr, l, r)  (array_cmp_lex(pyr, l, r, MWORD_ASIZE) >  0) // array_gt#
+#define array8_gt(pyr, l, r) (array_cmp_lex(pyr, l, r, BYTE_ASIZE)  >  0) // array8_gt#
 
 int array_cmp_alpha(pyr_cache *this_pyr, mword *left, mword *right, access_size_sel access_size);
 //int array_cmp(mword *left, mword *right);
@@ -69,18 +70,29 @@ int array_cmp_num_range(mword *left, mword *left_end, mword *right, mword *right
 //#define array_cmp(x, y) array_cmp_lex(x, y) // array_cmp#
 
 void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, mword src_index, mword size_arg, access_size_sel access_size);
-void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg);
 
-void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
-void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
-void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
+//void array1_move(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword size_arg);
+//void array1_move_single(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
+//void array1_move_double(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
+//void array1_move_n(pyr_cache *this_pyr, mword *dest, mword dest_mod, mword *src, mword size_arg);
 
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
-void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
+//void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
+
 void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
 
-void array1_move_full(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_unsafe(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
 mword array1_calc_splits(mword begin, mword size_arg);
+void array1_move_double_full(pyr_cache *this_pyr, mword *dest, mword dest_begin, mword *src, mword src_begin, mword size_arg);
+void array1_move_split_0_0(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_0_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_1_0(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_1_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_2_1(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_1_2(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_2_2(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
+void array1_move_split_n(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
 
 mword *array_to_string(pyr_cache *this_pyr, mword *array);
 
@@ -103,19 +115,6 @@ blob array_cat_pyr_op(pyr_cache *this_pyr, blob arrays);
 //#define _areq8(x,y,z) (array8_cmp_lex(x, y, z) == 0)
 //#define  _areq(x,y)  (array_cmp_lex(x, y) == 0)
 
-//mword  _alignment_word8(pyr_cache *this_pyr, mword size8);
-////void   _trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
-//mword *_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
-//mword  _cxr1(pyr_cache *this_pyr, mword *val, mword bit);
-//mword *_th(pyr_cache *this_pyr, mword *bs, mword entry);
-//mword *_arcat(pyr_cache *this_pyr, mword *left, mword *right);
-//mword  _array8_size(pyr_cache *this_pyr, mword size8);
-//mword *_arcat8(pyr_cache *this_pyr, mword *left, mword *right);
-//mword *_lf2by(pyr_cache *this_pyr, mword *leaf_arr);
-//mword *_by2lf(pyr_cache *this_pyr, mword *array8);
-//mword *_lf2bi(pyr_cache *this_pyr, mword *array);
-//mword *_bi2lf(pyr_cache *this_pyr, mword *array8);
-//mword  _arlen1(pyr_cache *this_pyr, mword *string);
 //mword  _dec_alignment_word1(pyr_cache *this_pyr, mword alignment_word);
 //mword  _alignment_word1(pyr_cache *this_pyr, mword size1);
 //void   _wrcxr1(pyr_cache *this_pyr, mword *arr, mword off, mword val);

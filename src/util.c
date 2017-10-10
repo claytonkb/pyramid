@@ -22,6 +22,7 @@
 #include "eval.h"
 #include "sort.h"
 #include "mt19937ar.h"
+#include "aexpr.h"
 
 /*****************************************************************************
  *                                                                           *
@@ -261,6 +262,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = (blob)eval_apply(this_pyr, ACC);
 //                _say("done");
 
+                _say("^-^ hi...");
+
                 break;
             case 2:
                 _notify("exiting bare metal prompt");
@@ -292,38 +295,44 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
                 ACC = sexpr_from_string(this_pyr, string_c2b(this_pyr, tempc, 300));
                 break;
             case 10:
+                tempc = cmd_code_str + strlen(cmd_code_str) + 1;
+                _say((char*)tempc);
+                temp = sexpr_from_string(this_pyr, string_c2b(this_pyr, tempc, 300));
+                ACC = aexpr_from_sexpr(this_pyr, temp);
+                break;
+            case 11:
                 ACC = this_pyr->self;
                 _say("ACC <== this_pyr->self");
                 break;
-            case 11:
+            case 12:
                 ACC = nil;
                 _say("ACC <== nil");
                 break;
-            case 12:
+            case 13:
                 cmd_code_str = strtok(NULL, " ");
                 if(cmd_code_str == NULL){ continue; }
                 ACC = (mword*)strtoul((char*)cmd_code_str,NULL,16);
                 _say("ACC <== p");
                 break;
-            case 13:
+            case 14:
                 ACC = init_ptr;
                 _say("ACC <== init_ptr");
                 break;
-            case 14:
+            case 15:
                 ACC = global_dev_overrides;
                 _say("ACC <== global_dev_overrides");
                 break;
-             case 15:
+             case 16:
                 tempc = cmd_code_str + strlen(cmd_code_str) + 1;
                 ACC = io_slurp(this_pyr, tempc);
                 ACC = bstruct_load(this_pyr, ACC, size(ACC));
                 _prn((char*)tempc);
                 _prn(" loaded\n");
                 break;
-             case 16:
+             case 17:
                 util_show_geometries();
                 break;
-             case 17:
+             case 18:
                 temp = xbar_tag_to_string(this_pyr, ACC);
                 _say((char*)temp);
                 break;
@@ -373,15 +382,16 @@ void util_bare_metal_menu(void){
             "6     .....    _mem(ACC)\n"
             "7     .....    _bs2str(ACC)\n"
             "8     .....    _bs2gv(ACC)\n"
-            "9 S   .....    ACC <== sexpr(S)\n"
-            "10    .....    ACC <== this_pyr->self\n"
-            "11    .....    ACC <== nil\n"
-            "12 p  .....    ACC <== p\n"
-            "13    .....    ACC <== init_ptr\n"
-            "14    .....    ACC <== global_dev_overrides\n"
-            "15 f  .....    ACC <== loaded .bbl file f\n"
-            "16    .....    show pyramid constants and geometries\n"
-            "17    .....    xbar_tag_to_string(ACC)");
+            "9  S  .....    ACC <== sexpr(S)\n"
+            "10 S  .....    ACC <== aexpr(S)\n"
+            "11    .....    ACC <== this_pyr->self\n"
+            "12    .....    ACC <== nil\n"
+            "13 p  .....    ACC <== p\n"
+            "14    .....    ACC <== init_ptr\n"
+            "15    .....    ACC <== global_dev_overrides\n"
+            "16 f  .....    ACC <== loaded .bbl file f\n"
+            "17    .....    show pyramid constants and geometries\n"
+            "18    .....    xbar_tag_to_string(ACC)");
 
 }
 

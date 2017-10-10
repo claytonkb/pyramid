@@ -1271,8 +1271,8 @@ mword *array_to_string(pyr_cache *this_pyr, mword *array){ // array_to_string#
     mword arsize = size(array);
     int temp_buffer_size = MAX_UTF8_CHAR_SIZE * (arsize);
 
-    //free'd below
-    char *temp_buffer = mem_sys_alloc( temp_buffer_size );
+    // free'd below
+    char *temp_buffer = mem_sys_alloc( temp_buffer_size ); // XXX WAIVER(mem_sys_alloc) XXX //
     
     mword utf8_length = (mword)u8_toutf8(temp_buffer, temp_buffer_size, (uint32_t *)array, arsize) - 1;
 

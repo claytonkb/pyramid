@@ -11,7 +11,7 @@
 #define PYR_NUM_NOUN_TAGS 47 // PYR_NUM_NOUN_TAGS#
 #define PYR_NUM_VERB_TAGS 16 // PYR_NUM_VERB_TAGS#
 #define PYR_NUM_PRED_TAGS 12 // PYR_NUM_PRED_TAGS#
-#define PYR_NUM_FORM_SYMS 19 // PYR_NUM_FORM_SYMS#
+#define PYR_NUM_FORM_SYMS 20 // PYR_NUM_FORM_SYMS#
 
 #define PYR_XBAR_NUM_FIELDS 4 // PYR_XBAR_NUM_FIELDS#
 
@@ -381,6 +381,10 @@ typedef enum pyr_tag_type_enum {NOUN, VERB, PRED, SYM} pyr_tag_type; // pyr_tag_
 
 // vvv PYR_FORM_SYMS#
 #define PYR_FORM_SYMS                                           \
+    X(PYR_SYM_USER             , "/pyramid/sym/user",           UNINIT_FN_PTR, \
+          PYR_FORM_SYM            , UNINIT_PTR                    ,    UNINIT_PTR   , \
+          UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \
+          UNINIT_PTR            , UNINIT_PTR                    ,    UNINIT_PTR   ) \
     X(PYR_SYM_IGNORE           , "/pyramid/sym/ignore",         UNINIT_FN_PTR, \
           PYR_FORM_SYM            , UNINIT_PTR                    ,    UNINIT_PTR   , \
           UNINIT_VAL            , UNINIT_FN_PTR                 ,    UNINIT_FN_PTR, \

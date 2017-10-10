@@ -362,11 +362,22 @@ inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init){ // mem_ne
 //
 inline void *mem_new_ptr(pyr_cache *this_pyr, mword size){ // mem_new_ptr#
 
-    void *ptr = (void*)mem_alloc(this_pyr, -1*UNITS_MTO8(size));
+    void *ptr;
 
-    int i;
-    for(i = 0; i<size; i++){
-        ldp(ptr,i) = (void*)nil;
+    if(!size){
+
+        return nil;
+
+    }
+    else{
+
+        ptr = (void*)mem_alloc(this_pyr, -1*UNITS_MTO8(size));
+
+        int i;
+        for(i = 0; i<size; i++){
+            ldp(ptr,i) = (void*)nil;
+        }
+
     }
 
     return ptr;

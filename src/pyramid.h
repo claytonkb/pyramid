@@ -171,6 +171,8 @@ typedef uint64_t mword;
 #define UNINIT_PTR UNINIT_PTR_64
 #endif
 
+typedef mword* bstruct; // bstruct#
+
 typedef mword* blob; // blob#
 
 // std types:
@@ -500,10 +502,10 @@ typedef struct { // interp_runtime
 
 //    mword                   *tags_strings;
 //    mword                   *tags_fns;
-    mword                   *xbar;
+    mword                   *xbar;          // sorted by tag
 
     interp_symbols          *symbols;
-    interp_flags            *flags; // XXX not to be confused wiith pyr_vm_flags
+    interp_flags            *flags;         // XXX not to be confused with pyr_vm_flags
     interp_limits           *limits;
     interp_privileges       *privileges;
 
@@ -809,7 +811,7 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define _pigs_fly       _fatal("Pigs CAN fly...") // _pigs_fly#
 #define _give_up        _fatal("gave up... don't know how to do this") // _give_up#
 #define _enhance(x)     fprintf(stderr, "ENHANCEMENT: %s in %s at %s line %d\n", x, __func__, __FILE__, __LINE__); // enhance#
-#define _debug(pyr,x)   util_bare_metal_prompt(pyr, x);
+#define _debug(x)       util_bare_metal_prompt(this_pyr, x);
 
 #ifdef DEV_MODE
 #define _abnormal       global_dev_abnormal_ctr++;

@@ -6,6 +6,8 @@
 #include "array.h"
 #include "introspect.h"
 #include "io.h"
+#include "pearson.h"
+#include "util.h"
 
 // Initialization in interp.c
 //   Idea: Set these up in the relevant X-macros, and add a few padding fields
@@ -45,12 +47,32 @@ void xbar_new(pyr_cache *this_pyr){
 //
 mword *xbar_search(pyr_cache *this_pyr, mword *tag){ // xbar_search#
 
+//Note:
+//    For read-only hash-tables, we can convert to an aop, calculate the average
+//    difference between hash-keys, and then use this average for O(1) lookup.
+//    The resulting lookup should land almost always within a few std-deviations 
+//    of the hash-key divided by the average. For a given hash (assuming it is
+//    read-only, that is, no new insertions), we can calculate the min/max 
+//    deviation; we can also calculate a good "average window" that finds an 
+//    entry 95+% of the time and uses the min/max deviation only as a fallback.
+//    This enables use of massive hash-tables in O(1) time in actual practice,
+//    not just theoretically (as is the case with most hash-tables).
+
     mword offset = array_search(this_pyr, global_irt->xbar, tag, LEX_MWORD);
 
     if(offset == ARRAY_SEARCH_NOT_FOUND)
         return nil;
 
     return rdp(global_irt->xbar,offset);
+
+}
+
+
+//
+//
+mword *xbar_search_string(pyr_cache *this_pyr, bstr s){ // xbar_search_string#
+
+    return xbar_search(this_pyr, pearson_hash8(this_pyr, s));
 
 }
 

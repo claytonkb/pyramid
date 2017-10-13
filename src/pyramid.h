@@ -178,6 +178,8 @@ typedef mword* blob; // blob#
 // std types:
 typedef blob ptr;  // ptr-array ptr#
 typedef blob val;  // val-array val#
+typedef blob val8; // byte val-array val8#
+typedef blob val1; // byte val-array val1#
 typedef blob tptr; // tagged-pointer tptr#
 typedef blob cptr; // C-style (unsafe) pointer cptr#
 typedef blob ls;   // linked-list ls#
@@ -187,7 +189,6 @@ typedef blob mat;  // ls-based matrix mat#
 typedef blob aop;  // array-of-pairs aop#
 typedef blob sap;  // sorted aop sap#
 typedef blob tens; // tensor tens#
-typedef blob ar8;  // byte-array ar8#
 typedef blob bstr; // Babel-string (mword) bstr#
 typedef blob hash; // HASH_SIZE hash value hash#
 typedef blob bsig; // bstruct-signature bsig#
@@ -610,6 +611,10 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define tcar(x) ((mword*)rdp(x,TPTR_PTR_OFFSET))                    // tcar#
 #define tptr_set_tag(dest,src) tagcpy(dest,src)                     // tptr_set_tag#
 #define tptr_set_ptr(dest,src) (ldp(dest,TPTR_PTR_OFFSET) = src)    // tptr_set_ptr#
+
+/////// generic bstruct accessors ///////
+#define rbs(x,y,z) (sfield(x)>0) ? ((z)=rdv(x,y)) : ((sfield(x)<0) ? ((z)=rdp(x,y)) : ((z)=read_thunk(this_pyr,x,y)))
+#define wbs(x,y,z) (sfield(x)>0) ? (ldv(x,y)=(z)) : ((sfield(x)<0) ? (ldp(x,y)=(z)) : (write_thunk(this_pyr,x,y,z)))
 
 /////// relative offset accessors ///////
 #define rel_to_abs(base,rel) (mword*)(base+UNITS_8TOM((mword)rel))

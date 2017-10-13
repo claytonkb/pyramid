@@ -255,14 +255,14 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = bstruct_cp(this_pyr, global_irt->xbar);
 //                sort(this_pyr, ACC, UNSIGNED);
 
-//                ACC = io_slurp(this_pyr, "pvc_code.bbl");
-//                ACC = bstruct_load(this_pyr, ACC, size(ACC));
-//                _say("pvc_code.bbl loaded");
-//
-//                ACC = (blob)eval_apply(this_pyr, ACC);
-//                _say("done");
+                ACC = io_slurp(this_pyr, "pvc_code.bbl");
+                ACC = bstruct_load(this_pyr, ACC, size(ACC));
+                _say("pvc_code.bbl loaded");
 
-                _say("^-^ hi...");
+                ACC = (blob)eval_apply(this_pyr, ACC);
+                _say("done");
+
+//                _say("^-^ hi...");
 
                 break;
             case 2:

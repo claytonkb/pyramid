@@ -8,7 +8,7 @@ pyramid_build(){
     src/string.c src/list.c src/utf8.c src/sexpr.c src/trie.c src/xbar.c \
     src/pvc.c src/std.c src/eval.c src/sort.c src/mt19937ar.c src/aexpr.c \
     src/compress.c \
-    -Wall -Wno-char-subscripts -o bin/pyramid;
+    -Wall -o bin/pyramid;
 }
 
 pyramid_compile(){

@@ -265,7 +265,31 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //                _say("^-^ hi...");
 
-                compress_mtf_encode(this_pyr, C2B("banana"));
+//                ACC = C2B("banana brains");
+//                compress_mtf_encode(this_pyr, ACC);
+
+//                ACC = _mkval(this_pyr, 5, 0x16e6262, 0x3230101, 0x56b0372, 0x73, 0xffffff00);
+//                compress_mtf_decode(this_pyr, ACC);
+
+//                ACC = C2B("In the beginning, God created the heavens and the earth.");
+//                compress_mtf_encode(this_pyr, ACC);
+//                compress_mtf_decode(this_pyr, ACC);
+//
+//_say((char*)ACC);
+
+//                ACC = C2B("invention contention nation");
+                ACC = C2B("contention invention nation rotation caution");
+//                ACC = C2B("repetition");
+                temp = compress_bwt_encode_block(this_pyr, (char*)ACC, array8_size(this_pyr, ACC));
+_say((char*)temp);
+compress_mtf_encode(this_pyr, temp);
+//_d(temp);
+ACC = (mword*)compress_rle_encode(this_pyr, temp);
+//_d(temp);
+//ACC = temp;
+//compress_mtf_decode(this_pyr, temp);
+//ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+//_say((char*)ACC);
 
                 break;
             case 2:

@@ -5,14 +5,25 @@
 #define COMPRESS_H
 
 #define MTF_UPDATE_TABLE_THRESH 0
-#define MTF_BYTE_TABLE_SIZE 256
+#define MTF_BYTE_TABLE_SIZE  256
+#define BWT_COUNT_TABLE_SIZE 256
 
-val8 compress_mtf_encode(pyr_cache *this_pyr, val8 in);
-char compress_mtf_encode_byte(char *byte_table, char *index_table, int curr_index, char c);
-void compress_mtf_update_tables(char *byte_table, char *index_table, int curr_index, char c);
+mword *compress_bwt_encode_block(pyr_cache *this_pyr, char *start, int block_size);
+mword *compress_bwt_decode_block(pyr_cache *this_pyr, char *start, int block_size);
+int compress_bwt_compare_encode(const void *a, const void *b);
+int compress_bwt_compare_decode(const void *a, const void *b);
 
-extern const char mtf_byte_table[MTF_BYTE_TABLE_SIZE];
-//extern const char mtf_index_table[MTF_BYTE_TABLE_SIZE];
+void compress_mtf_encode(pyr_cache *this_pyr, val8 in);
+void compress_mtf_decode(pyr_cache *this_pyr, val8 in);
+
+char compress_mtf_update_index_table(mword *byte_table, char c);
+char compress_mtf_update_byte_table(mword *byte_table, char c);
+
+char *compress_range_encoder(pyr_cache *this_pyr, char *in);
+
+char *compress_rle_encode(pyr_cache *this_pyr, val8 in);
+
+extern const mword mtf_byte_table[MTF_BYTE_TABLE_SIZE];
 
 #endif //COMPRESS_H
 

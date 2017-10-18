@@ -79,7 +79,8 @@ void array_move(pyr_cache *this_pyr, mword *dest, mword dest_index, mword *src, 
 mword *array1_slice(pyr_cache *this_pyr, mword *array, mword start, mword end);
 //void array1_slice_single(pyr_cache *this_pyr, mword *dest, mword *src, mword src_mod, mword size_arg);
 
-void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size);
+void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size); // XXX DEPRECATED XXX
+mword *array_shrink(pyr_cache *this_pyr, mword *array, mword new_begin, mword new_end, access_size_sel access_size);
 
 void array1_move(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);
 void array1_move_unsafe(pyr_cache *this_pyr, mword *dest, int dest_begin, mword *src, int src_begin, mword size_arg);

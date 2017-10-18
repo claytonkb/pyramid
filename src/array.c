@@ -97,7 +97,7 @@ mword *array8_th(pyr_cache *this_pyr, mword *val_array, mword entry8){ // array8
 }
 
 
-//
+// calculates array8 size from sfield and alignment word
 //
 mword array8_size(pyr_cache *this_pyr, mword *string){ // array8_size#
 
@@ -150,7 +150,7 @@ mword array8_enc_align(pyr_cache *this_pyr, mword size8){ // array8_enc_align#
 }
 
 
-//
+// returns the number of MWORDS required to store a val8 array of length size8
 //
 mword array8_mword_size(pyr_cache *this_pyr, mword size8){ // array8_mword_size#
 
@@ -1242,7 +1242,7 @@ void array1_move_split_n(pyr_cache *this_pyr, mword *dest, int dest_begin, mword
 }
 
 
-// XXX Can this be made into a macro?
+// XXX DEPRECATED XXX
 //
 void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size){ // array_trunc#
 
@@ -1253,6 +1253,55 @@ void array_trunc(pyr_cache *this_pyr, mword *operand, mword new_size){ // array_
         sfield(operand) = (int)-1*(new_size*MWORD_SIZE);
     }
     //else: do nothing, tptrs can't be trunc'd
+
+}
+
+
+// shrinks an array in-place, where applicable
+// new_begin and new_end are not sanity-checked here; MUST BE checked by the caller
+//
+mword *array_shrink(pyr_cache *this_pyr, mword *array, mword new_begin, mword new_end, access_size_sel access_size){ // array_shrink#
+
+    mword new_size = new_end-new_begin+1;
+    mword *result = array;
+    mword new_sfield, new_align;
+
+    if(access_size == MWORD_ASIZE){
+
+        result+=new_begin;
+        if(is_val(result)){
+            sfield(result) = UNITS_MTO8(new_size);
+        }
+        else if(is_ptr(result)){ //is_ptr
+            sfield(result) = (int)-1*(UNITS_MTO8(new_size));
+        }
+        //else: do nothing, tptrs can't be trunc'd
+
+    }
+    else if(access_size == BYTE_ASIZE){ // NB: new_begin, new_end are byte-offsets
+
+        if(!is_val(result)) return result;
+
+        if(new_begin){
+            if(MODULO_MTO8(new_begin)){ // not MWORD-aligned
+                memmove( ((char*)result), ((char*)result+new_begin), (size_t)new_size );
+            }
+            else{ // MWORD-aligned
+                result+=UNITS_8TOM(new_begin);
+            }
+        }
+        new_sfield = UNITS_MTO8(array8_mword_size(this_pyr, new_size));
+        new_align = array8_enc_align(this_pyr, new_size);
+        sfield(result) = new_sfield;
+        ldv(result,UNITS_8TOM(new_sfield)-1)  =   new_align;
+        ldv(result,UNITS_8TOM(new_sfield)-2) &= ~(new_align); // padding bytes MUST BE ZERO
+
+    }
+    else{ // if(access_size == BIT_ASIZE){
+        _give_up;
+    }
+
+    return result;
 
 }
 

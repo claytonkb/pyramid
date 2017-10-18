@@ -93,6 +93,43 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
 //mword xbar_avg = 0x27E6714;
 
+
+//int clz_table[256] = {
+//8, 
+//7, 
+//6, 6, 
+//5, 5, 5, 5, 
+//4, 4, 4, 4, 4, 4, 4, 4,
+//3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 
+//2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
+//2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
+//1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+//0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, };
+//
+//double x;
+//double y;
+//int f;
+//double running=0;
+//
+//for(i=0;i<256;i++){
+//    f = (8-clz_table[i]+1);
+//    x = 1<<f;
+//    y = 1/(f*x);
+//    running += y;
+//    fprintf(stderr, "%lf, ", running);
+//}
+//_die;
+
     while(1){
 
         _prn("% ");
@@ -277,19 +314,62 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //
 //_say((char*)ACC);
 
-//                ACC = C2B("invention contention nation");
-                ACC = C2B("contention invention nation rotation caution");
+
+
+
+//                ACC = io_slurp8(this_pyr, "getty.txt");
+
+//                ACC = C2B("invention contention");
+//                ACC = C2B("contention invention nation rotation caution");
+//                ACC = C2B("noituac noitator noitan noitnevni noitnetnoc");
+
 //                ACC = C2B("repetition");
-                temp = compress_bwt_encode_block(this_pyr, (char*)ACC, array8_size(this_pyr, ACC));
-_say((char*)temp);
-compress_mtf_encode(this_pyr, temp);
-//_d(temp);
-ACC = (mword*)compress_rle_encode(this_pyr, temp);
+//                temp = compress_bwt_encode_block(this_pyr, (char*)ACC, array8_size(this_pyr, ACC));
+//ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+//_say((char*)ACC);
+//_die;
+
+                //compress_mtf_encode(this_pyr, temp);
+//_say((char*)temp);
+
+//ACC = (mword*)compress_rle_encode(this_pyr, temp);
+
+//compress_mtf_encode(this_pyr, temp);
+//compress_mtf_decode(this_pyr, ACC);
+//temp = _bs2str(this_pyr, ACC);
+//_say((char*)temp);
+//_die;
+//ACC = compress_range_encoder(this_pyr, temp);
+
+//ACC = _bs2str(this_pyr, temp);
+
+    //_say((char*)temp);
+
+//temp = compress_rle_decode(this_pyr, ACC);
+//ACC = temp;
+
 //_d(temp);
 //ACC = temp;
 //compress_mtf_decode(this_pyr, temp);
-//ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+
+//                ACC = _mkval(this_pyr, 5, 0x16e6262, 0x3230101, 0x56b0372, 0x73, 0x00);
+//                ACC = array_shrink(this_pyr, ACC, 0, 14, BYTE_ASIZE);
+
+                ACC = io_slurp8(this_pyr, "getty.txt");
+                temp = compress_bwt_encode_block(this_pyr, (char*)ACC, array8_size(this_pyr, ACC));
+ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+_say((char*)ACC);
+//                temp = compress_rle_encode(this_pyr, temp);
+//                compress_mtf_encode(this_pyr, temp);
+//                ACC = compress_range_encoder(this_pyr, temp);
+
+//ACC = temp;
 //_say((char*)ACC);
+//                ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+//_say((char*)ACC);
+
+                // TODO: Get range-decoder working; add parameter for range-decoder distribution XXX //
+                // XXX BWT BUG: Declaration of Independence breaks bwt_decode() XXX //
 
                 break;
             case 2:

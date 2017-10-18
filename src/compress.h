@@ -19,11 +19,13 @@ void compress_mtf_decode(pyr_cache *this_pyr, val8 in);
 char compress_mtf_update_index_table(mword *byte_table, char c);
 char compress_mtf_update_byte_table(mword *byte_table, char c);
 
-char *compress_range_encoder(pyr_cache *this_pyr, char *in);
+val8 compress_range_encoder(pyr_cache *this_pyr, val8 in);
 
-char *compress_rle_encode(pyr_cache *this_pyr, val8 in);
+val8 compress_rle_encode(pyr_cache *this_pyr, val8 in);
+val8 compress_rle_decode(pyr_cache *this_pyr, val8 in);
 
 extern const mword mtf_byte_table[MTF_BYTE_TABLE_SIZE];
+extern const double range_table[MTF_BYTE_TABLE_SIZE];
 
 #endif //COMPRESS_H
 

@@ -44,6 +44,7 @@
 #include <inttypes.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
 
 #ifdef PYRAMID_WINDOWS_BUILD
 #define WINVER 0x0500
@@ -77,6 +78,7 @@
 
 // dimensions and units-conversion
 #define BITS_PER_BYTE 8                                         // BITS_PER_BYTE#
+#define BYTE_MAX 255                                            // BYTE_MAX#
 
 #define MWORD_SIZE sizeof(mword)                                // MWORD_SIZE#
 #define MWORD_BIT_SIZE (MWORD_SIZE * BITS_PER_BYTE)             // MWORD_BIT_SIZE#

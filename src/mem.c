@@ -321,6 +321,9 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // mem_alloc#
 //
 //    global_irt->flags->MEM_ALLOC_BLOCKING = FLAG_SET;
 
+//mword mem_usage = b->bound_ptr-b->alloc_ptr;
+//_d(mem_usage);
+
     if((b->alloc_ptr - alloc_request_size) <= b->base_ptr){
         _fatal("memory bank empty");
     }
@@ -445,8 +448,8 @@ inline void *_ptr(pyr_cache *this_pyr, mword *unsafe_ptr){ // _ptr#
 //
 mword *_newstr(pyr_cache *this_pyr, mword size8, char set_char){ // _newstr#
 
-    if(!set_char)
-        set_char = ' ';
+//    if(!set_char)
+//        set_char = ' ';
 
     mword arlength = array8_mword_size(this_pyr, size8);
 

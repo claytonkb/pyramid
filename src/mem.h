@@ -7,7 +7,7 @@
 #define TOP_OF_ALLOC_BANK(x) ((char*)(x->base_ptr)+(x->size-1)) // TOP_OF_ALLOC_BANK#
 
 #define MEM_GC_STAT_BANK_MIN_SIZE (1<<12)
-#define MEM_GC_STAT_BANK_MAX_SIZE (1<<20) // XXX ARBITRARY! XXX
+#define MEM_GC_STAT_BANK_MAX_SIZE (1<<27) // XXX ARBITRARY! XXX
 
 #define MEM_ABS_MAX_ALLOC (((mword)-1)>>1)
 

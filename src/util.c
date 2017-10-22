@@ -24,6 +24,7 @@
 #include "mt19937ar.h"
 #include "aexpr.h"
 #include "compress.h"
+#include "math.h"
 
 /*****************************************************************************
  *                                                                           *
@@ -73,12 +74,13 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
     char buffer[256];
     int i;
 
+//char c;
     mword *ACC = init_ptr;
     mword  tempv=0;
     mword  tempw=0;
     char  *tempc = NULL;
     mword *temp=nil;
-//    mword *temp2=nil;
+    mword *temp2=nil;
     tempv+=0; // silence compiler warning
     tempw+=0; // silence compiler warning
 
@@ -355,21 +357,90 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                ACC = _mkval(this_pyr, 5, 0x16e6262, 0x3230101, 0x56b0372, 0x73, 0x00);
 //                ACC = array_shrink(this_pyr, ACC, 0, 14, BYTE_ASIZE);
 
-                ACC = io_slurp8(this_pyr, "getty.txt");
-                temp = compress_bwt_encode_block(this_pyr, (char*)ACC, array8_size(this_pyr, ACC));
-ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
-_say((char*)ACC);
+//                ACC = io_slurp8(this_pyr, "getty.txt");
+
+
+//i = memcmp( "\x070\x070", "\x080\x080", 2 );
+//_d(i);
+//_die;
+
+//                ACC = _mkval(this_pyr, 65,
+//                    0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f,
+//                    0x10111213, 0x14151617, 0x18191a1b, 0x1c1d1e1f,
+//                    0x20212223, 0x24252627, 0x28292a2b, 0x2c2d2e2f,
+//                    0x30313233, 0x34353637, 0x38393a3b, 0x3c3d3e3f,
+//                    0x40414243, 0x44454647, 0x48494a4b, 0x4c4d4e4f,
+//                    0x50515253, 0x54555657, 0x58595a5b, 0x5c5d5e5f,
+//                    0x60616263, 0x64656667, 0x68696a6b, 0x6c6d6e6f,
+//                    0x70717273, 0x74757677, 0x78797a7b, 0x7c7d7e80,
+//                    0x80818283, 0x84858687, 0x88898a8b, 0x8c8d8e8f,
+//                    0x90919293, 0x94959697, 0x98999a9b, 0x9c9d9e9f,
+//                    0xa0a1a2a3, 0xa4a5a6a7, 0xa8a9aaab, 0xacadaeaf,
+//                    0xb0b1b2b3, 0xb4b5b6b7, 0xb8b9babb, 0xbcbdbebf,
+//                    0xc0c1c2c3, 0xc4c5c6c7, 0xc8c9cacb, 0xcccdcecf,
+//                    0xd0d1d2d3, 0xd4d5d6d7, 0xd8d9dadb, 0xdcdddedf,
+//                    0xe0e1e2e3, 0xe4e5e6e7, 0xe8e9eaeb, 0xecedeeef,
+//                    0xf0f1f2f3, 0xf4f5f6f7, 0xf8f9fafb, 0xfcfdfeff, 0);
+//
+////                ldv(ACC,3)=0;
+//
+//temp = _bs2str(this_pyr, ACC);
+//_say((char*)temp);
+//assert(0);
+//ACC = temp;
+//ACC = compress_bwt_decode_block(this_pyr, (unsigned char*)temp, array8_size(this_pyr, temp));
+//ACC = temp;
+//_say((char*)ACC);
 //                temp = compress_rle_encode(this_pyr, temp);
-//                compress_mtf_encode(this_pyr, temp);
-//                ACC = compress_range_encoder(this_pyr, temp);
 
 //ACC = temp;
 //_say((char*)ACC);
-//                ACC = compress_bwt_decode_block(this_pyr, (char*)temp, array8_size(this_pyr, temp));
+//                ACC = compress_bwt_decode_block(this_pyr, (unsigned char*)temp, array8_size(this_pyr, temp));
 //_say((char*)ACC);
 
-                // TODO: Get range-decoder working; add parameter for range-decoder distribution XXX //
-                // XXX BWT BUG: Declaration of Independence breaks bwt_decode() XXX //
+//                // TODO: Get range-decoder working; add parameter for range-decoder distribution XXX //
+//                ACC = io_slurp8(this_pyr, "doi.txt");
+//                temp = compress_bwt_encode_block(this_pyr, (unsigned char*)ACC, array8_size(this_pyr, ACC));
+//                compress_mtf_encode(this_pyr, temp);
+//                ACC = compress_range_encoder(this_pyr, temp);
+
+//                ACC = _mkval(this_pyr, 2, 0xf8f9fafb, 0xfcfdfeff);
+
+//                ACC = math_add(this_pyr, _val(this_pyr, 0xffffffff), _val(this_pyr, 0x1));
+//                ACC = math_add(this_pyr, 
+//                        _mkval(this_pyr, 2, 0x55555555, 0xffffffff), 
+//                        _mkval(this_pyr, 2, 0xaaaaaaaa, 0x1));
+////                        _val(this_pyr, 0x1));
+ 
+//                ACC = _mkval(this_pyr, 2, 0xf8f9fafb, 0xfcfdfeff);
+//                ACC = _mkval(this_pyr, 2, 0x7060504, 0x3020100);
+//                ACC = math_add(this_pyr, ACC, _val(this_pyr, 1));
+//                ACC = math_neg(this_pyr, ACC);
+
+//                ACC = math_sub(this_pyr, 
+//                        _mkval(this_pyr, 2, 0xffffffff, 3),
+//                        _mkval(this_pyr, 2, 0xffffffff, 12));
+
+tempv = std_time_ms();
+
+//                ACC = math_mul(this_pyr,
+//                        mem_new_val(this_pyr, 2, 0xcc),
+//                        mem_new_val(this_pyr, 2, 0xcc));
+
+temp = std_genrand32(this_pyr, 128);
+ACC = _bs2str(this_pyr, temp);
+_say((char*)ACC);
+
+temp2 = std_genrand32(this_pyr, 128);
+ACC = _bs2str(this_pyr, temp2);
+_say((char*)ACC);
+
+                ACC = math_mul(this_pyr,
+                    temp,
+                    temp2);
+
+tempw = std_time_ms();
+_dd(tempw-tempv);
 
                 break;
             case 2:

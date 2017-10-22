@@ -163,12 +163,20 @@
 // mword#
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
+typedef uint16_t hword;
+#define HWORD_MAX ((2<<15)-1)
+#define HWORD_HI(x) (((x) & 0xffff0000) >> 16)
+#define HWORD_LO(x)  ((x) & 0x0000ffff)
 #define UNINIT_VAL UNINIT_VAL_32
 #define UNINIT_PTR UNINIT_PTR_32
 #endif
 
 #ifdef PYRAMID_64_BIT
 typedef uint64_t mword;
+typedef uint32_t hword;
+#define HWORD_MAX ((2<<31)-1)
+#define HWORD_HI(x) (((x) & 0xffffffff00000000) >> 32)
+#define HWORD_LO(x)  ((x) & 0x00000000ffffffff)
 #define UNINIT_VAL UNINIT_VAL_64
 #define UNINIT_PTR UNINIT_PTR_64
 #endif
@@ -745,6 +753,7 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define mark_traversed_V(x) (sfield(x) |= 0x2) // mark_traversedV#
 
 #define size(x)             (abs(sfield(x))/MWORD_SIZE)                 // size#
+#define hsize(x)            (size(x)*2)                                 // hsize#
 #define size_special(x)     (sfield(x) == 0 ? HASH_SIZE : size(x))      // size_special#
 #define alloc_size(x)       (sfield(x) == 0 ? TPTR_SIZE : size(x)+1)    // alloc_size#
 #define mem_alloc_size(x)   (x == 0 ? TPTR_SIZE : (abs(x)/MWORD_SIZE))  // mem_alloc_size#
@@ -808,6 +817,7 @@ char *global_dev_srand;                         // allow specifying srand from c
 #define _d(x)           fprintf(stderr, "%s " x0pr "\n", QUOTEME(x), (mword)x); // d#
 //#define _dd(x)          fprintf(stderr, "%s %d\n",   QUOTEME(x), (mword)x);
 #define _dd(x)          fprintf(stderr, "%s " dpr "\n",   QUOTEME(x), (mword)x); // dd#
+#define _du(x)          fprintf(stderr, "%s %u\n",   QUOTEME(x), (mword)x); // du#
 #define _dw(x)          fprintf(stderr, "%s %08x ",  QUOTEME(x), (mword)x); // dw#
 
 #define _die            fprintf(stderr, "Died at %s line %d\n", __FILE__, __LINE__); exit(DIE_EXIT_CODE);  // die#
@@ -857,6 +867,7 @@ char *global_dev_srand;                         // allow specifying srand from c
 
 FILE *dev_log; // dev_log#
 int dev_i;     // dev_i#
+char *dev_str;
 
 #define _dump(x)                                                    \
     io_spit(this_pyr, "test.dot",                                   \
@@ -882,6 +893,16 @@ int dev_i;     // dev_i#
             fprintf(stderr, x0pr " ", (unsigned)dev_i*MWORD_SIZE);    \
         }                                                             \
         fprintf(stderr, x0pr "\n", rdv(x,dev_i));                     \
+    }
+
+#define _mem_byte(x,y) \
+    dev_str = (char*)_newstr(this_pyr, 8, 0);               \
+    for(dev_i=0; dev_i<y; dev_i++){                         \
+        sprintf(dev_str, "%08x", x[dev_i]);                 \
+        fprintf(stderr, "%s ", dev_str+6);                  \
+        if(!((dev_i+1) % 16)){                              \
+            fprintf(stderr,"\n");                           \
+        }                                                   \
     }
 
 #ifdef PYRAMID_32_BIT

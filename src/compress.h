@@ -8,8 +8,8 @@
 #define MTF_BYTE_TABLE_SIZE  256
 #define BWT_COUNT_TABLE_SIZE 256
 
-mword *compress_bwt_encode_block(pyr_cache *this_pyr, char *start, int block_size);
-mword *compress_bwt_decode_block(pyr_cache *this_pyr, char *start, int block_size);
+mword *compress_bwt_encode_block(pyr_cache *this_pyr, unsigned char *start, int block_size);
+mword *compress_bwt_decode_block(pyr_cache *this_pyr, unsigned char *start, int block_size);
 int compress_bwt_compare_encode(const void *a, const void *b);
 int compress_bwt_compare_decode(const void *a, const void *b);
 

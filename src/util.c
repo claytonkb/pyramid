@@ -86,6 +86,15 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 
     _notify("entering bare metal prompt");
 
+//uint64_t u;
+//mword v = 0xffffffff;
+//mword w = 0xffffffff;
+//u = (uint64_t)v*w;
+//mword *x = (mword*)&u;
+//_d(x[0]);
+//_d(x[1]);
+//_die;
+
 //    mword *temp = mem_new_val(this_pyr,2,0);
 //    ldp(temp,0) = this_pyr->self;
 //    ldv(temp,1) = MWORD_SIZE;
@@ -131,6 +140,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //    fprintf(stderr, "%lf, ", running);
 //}
 //_die;
+mp_int number;
+int result;
 
     while(1){
 
@@ -421,26 +432,39 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //                        _mkval(this_pyr, 2, 0xffffffff, 3),
 //                        _mkval(this_pyr, 2, 0xffffffff, 12));
 
+
+temp = std_genrand32(this_pyr, 16384);
+//////ACC = _bs2str(this_pyr, temp);
+//////_say((char*)ACC);
+////
+temp2 = std_genrand32(this_pyr, 16384);
+//////ACC = _bs2str(this_pyr, temp2);
+//////_say((char*)ACC);
+//
 tempv = std_time_ms();
-
-//                ACC = math_mul(this_pyr,
-//                        mem_new_val(this_pyr, 2, 0xcc),
-//                        mem_new_val(this_pyr, 2, 0xcc));
-
-temp = std_genrand32(this_pyr, 128);
-ACC = _bs2str(this_pyr, temp);
-_say((char*)ACC);
-
-temp2 = std_genrand32(this_pyr, 128);
-ACC = _bs2str(this_pyr, temp2);
-_say((char*)ACC);
-
-                ACC = math_mul(this_pyr,
-                    temp,
-                    temp2);
-
+//
+////for(i=0;i<1000;i++){
+    ACC = math_lattice_mul(this_pyr,
+        temp,
+        temp2);
+////}
+//
+////                ACC = math_mul(this_pyr,
+////                        mem_new_val(this_pyr, 4, 0xff),
+////                        mem_new_val(this_pyr, 4, 0xff));
+////
 tempw = std_time_ms();
 _dd(tempw-tempv);
+
+
+if ((result = mp_init(&number)) != MP_OKAY) {
+_say(mp_error_to_string(result));
+_die;
+}
+else{
+    _say("blast off!! ^-^");
+}
+
 
                 break;
             case 2:

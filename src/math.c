@@ -10,9 +10,27 @@
 #include "bstruct.h"
 
 // Add/subtract
+//      These are native operations, don't use extern library in order to
+//      avoid the cost of conversion and because native implementation has
+//      superior performance.
+//
 // Multiply/Divide
-// Remainder
-
+//      Multiply is conditionally native or extern library, depending on size
+//      of input
+//
+//      Divide is extern library
+//          Note: Divide is Euclidean division (whole quotient + remainder)
+//           by default. To get an ordinary division (fractional, base-2),
+//           must convert to an inexact number.
+//
+// Base/string conversion
+//      Probably native; copy libtom approach where suitable
+//
+// Exactness
+//      Use Scheme-like construct to store numbers in exact form. An exact
+//      number can be converted to inexact form to any desired level of 
+//      precision.
+//
 
 
 //
@@ -39,7 +57,7 @@ val math_add(pyr_cache *this_pyr, val a, val b){ // math_add#
     mword sum;
     mword carry=0;
 
-    for(i=0;i<size_a;i++){
+    for(i=0;i<size_a;i++){ // XXX PERF: Get the conditional out of the loop, use two separate loops
 
         if(i < size_b){
 
@@ -114,28 +132,53 @@ val math_sub(pyr_cache *this_pyr, val a, val b){ // math_sub#
 }
 
 
+// High-level mul pseudocode:
+// if size_a=1 & size_b=1
+// perform uint64_t multiplication and return the result
+//
+// if size_a*size_b < PYR_LATTICE_MUL_THRESH (64 or so? Run some timing loops to test)
+//      perform lattice multiplication
+// else if size_a*size_b < PYR_OPTIMIZED_MUL_THRESH (64k or so? Run some timing loops to test)
+//      perform optimized multiplication
+// else if size_a*size_b < PYR_MAX_MUL_THRESH (test to find a good max thresh)
+//      convert a & b to libtom format
+//      call mp_mul() in libtommath
+//      convert back to Babel format
+//      return result
+// else
+//      give an exception
+//
+// Also: threading, parallelism
+
 
 //
 //
-val math_mul(pyr_cache *this_pyr, val a, val b){ // math_mul#
+val math_lattice_mul(pyr_cache *this_pyr, val a, val b){ // math_lattice_mul#
 
 // Lattice-multiplication algorithm; requires O(n^2) time but only O(2n)
 // space. There are more efficient methods but they are more difficult to
 // implement and verify. Lattice multiplication is far more efficient than
 // classroom methods like shift and add and it is fairly quick on modern
-// computers for inputs up to a few kilobytes in size.
+// computers for inputs up to several kilobytes in size. For performance
+// reasons, this function is hard-limited with an assert() to operand sizes
+// whose product is <= 2^28 mwords (256k mwords). For larger operands, a
+// more efficient multiplication algorithm should be utilized. 
 //
-// Multiplying two random n-bit numbers on a desktop Westmere CPU (1 thread):
+// This function performs no operand-optimization. Leading zeros in the operands
+// should be truncated (to reduce pointless multiplications) and power-of-2
+// checks should be performed in case the multiplication can be performed by
+// a fast left-shift.
+//
+// Multiplying two random n-bit numbers on a desktop Westmere CPU (1 thread)
+// compiled to 32-bit target:
 // 
 // bits             time (ms)
 // ---------------------------------------------
-// 2048             31
-// 4096             62
-// 8192             171
-// 16384            577 
-// 32768            2325
-// 65536            8954
-//
+// 32768            32  
+// 65536            47
+// 131072           172
+// 262144           687
+// 524288           2793
 //                                      <----- j
 //     MSB
 //     2   3   9   5   8   2   3   3
@@ -178,6 +221,24 @@ val math_mul(pyr_cache *this_pyr, val a, val b){ // math_mul#
 // utilize more space and perform fewer iterations in the outer loop.
 // We still have to make the same number of arithmetic operations either way, 
 // but the cache utilization is superior in this arrangement.
+//
+// For large arguments, use divide & conquer: C:/ckbauman/pyramid/arch/articles/algorithms/chap2.pdf
+//
+// Suppose a and b are both n-bit operands
+// Divide each operand in two halves: a_L, a_R, b_L, b_R
+//
+// a*b = (2^(n/2)*a_L + a_R)(2^(n/2)*b_L + b_R) = 2^n * a_L * b_L + 2^(n/2)*(a_L*b_R + a_R*b_L) + a_R*b_R
+//
+// Calculate a_L*b_L, a_R*b_R, and (a_L+a_R)*(b_L+b_R)
+//
+// Since a_L*b_R + a_R*b_L = (a_L+a_R)*(b_L+b_R) - a_L*b_L - a_R*a_R
+//
+// ... we can reconstruct a*b from the three calculated products
+//
+// Note: these products are recursive, so we can call another instance
+// of math_mul_div_conquer() on each of these products until we reach a base-case
+// Each time, n is being divided by 2, leading to fewer multiplications.
+
 
     val swap;
 
@@ -190,66 +251,51 @@ val math_mul(pyr_cache *this_pyr, val a, val b){ // math_mul#
     mword size_a = size(a);
     mword size_b = size(b);
 
-    mword hsize_a = hsize(a); // since hword is half the size of mword
-    mword hsize_b = hsize(b);
+    assert((size_a * size_b) <= (1<<28)); // For larger numbers, use a more efficient multiplication algorithm
 
-    mword hsize_result = hsize_a+hsize_b; // +1 in case of overflow of most-significant hword
+    mword size_result = size_a+size_b;
 
-    ptr result    = mem_new_ptr(this_pyr, hsize_result);
-    ptr hi_digits = mem_new_ptr(this_pyr, hsize_a);
-    ptr lo_digits = mem_new_ptr(this_pyr, hsize_a);
-
-    hword *ha = (hword*)a;
-    hword *hb = (hword*)b;
+    dmword *result    = (dmword*)mem_new_valz(this_pyr, 2*size_result);
+    dmword *hi_digits = (dmword*)mem_new_valz(this_pyr, 2*size_a);
+    dmword *lo_digits = (dmword*)mem_new_valz(this_pyr, 2*size_a);
 
     int i,j;
 
-    for(i=0; i<hsize_result; i++)
-        ldp(result,i) = _val(this_pyr, 0);
+    dmword product;
 
-    // set up partial sums in row product (digit) arrays; initialize to zero
-    for(i=0; i<hsize_a; i++){
-        ldp(hi_digits,i) = _val(this_pyr, 0);
-        ldp(lo_digits,i) = _val(this_pyr, 0);
-    }
+    for(i=size_b-1; i>=0; i--){
 
-    mword product;
+        product = (dmword)a[0] * b[i]; // detect b[i] = 0 ... set lo_digits[0]=0 and then go to next iteration
 
-    for(i=hsize_b-1; i>=0; i--){
+        hi_digits[0] = lo_digits[0] + DMWORD_HI(product);
+        lo_digits[0] = DMWORD_LO(product);
 
-        product = ha[0] * hb[i];
+        for(j=1; j<size_a; j++){ // generate row product
 
-        ldv(ldp(hi_digits,0),0) = rdv(rdp(lo_digits,0),0) + HWORD_HI(product);
-        ldv(ldp(lo_digits,0),0) = HWORD_LO(product);
+            product = (dmword)a[j] * b[i];
 
-        for(j=1; j<hsize_a; j++){ // generate row product
-
-            product = ha[j] * hb[i];
-
-            ldv(ldp(hi_digits,j),0) = rdv(rdp(lo_digits,j),0)   + HWORD_HI(product);
-            ldv(ldp(lo_digits,j),0) = rdv(rdp(hi_digits,j-1),0) + HWORD_LO(product);
+            hi_digits[j] = lo_digits[j]   + DMWORD_HI(product);
+            lo_digits[j] = hi_digits[j-1] + DMWORD_LO(product);
 
         }
 
-        // digest row products into result; bstruct_cp() is OK here
-        ldv(ldp(result,(hsize_a+i)),0) = rdv(ldp(hi_digits,hsize_a-1),0);
+        // digest row products into result
+        result[size_a+i] = hi_digits[size_a-1];
     }
+
+//_mem(hi_digits);
+//_mem(lo_digits);
 
     // finish digesting column products into result
-    for(i=0; i<hsize_a; i++){
-        ldv(ldp(result,i),0) = rdv(ldp(lo_digits,i),0);
+    for(i=0; i<size_a; i++){
+        result[i] = lo_digits[i];
     }
 
-    mword *final_result = mem_new_valz(this_pyr, size_a+size_b);
-    hword *hfinal_result = (hword*)final_result;
+//_mem(result);
 
-    hword *curr_product;
+    mword *final_result = mem_new_valz(this_pyr, size_result);
 
-    // combine partial sums into final_result
-    for(i=0; i<hsize_result; i++){
-        curr_product = (hword*)ldp(result,i);
-        math_add_hword(this_pyr, (hfinal_result+i), hsize_result-i, curr_product, hsize(curr_product));
-    }
+    math_add_special(this_pyr, (mword*)result, final_result);
 
     // truncate leading zeros, if any
     i=size_a+size_b;
@@ -262,10 +308,13 @@ val math_mul(pyr_cache *this_pyr, val a, val b){ // math_mul#
 
     if(i<size_a+size_b)
         return array_shrink(this_pyr, final_result, 0, i-1, MWORD_ASIZE);
-
+//_mem(final_result);
     return final_result;
 
 }
+
+
+
 
 
 // a = a + b
@@ -316,9 +365,30 @@ hword math_add_hword(pyr_cache *this_pyr, hword *a, mword size_a, hword *b, mwor
 
 // provides streamlined handling of running sums for math_mul()
 //
-mword *math_add_special(pyr_cache *this_pyr, mword *a, mword *b){ // math_add_special#
+void math_add_special(pyr_cache *this_pyr, mword *in, mword *out){ // math_add_special#
 
-    return nil;
+    mword size_out = size(out);
+    int i;
+
+    mword last = 0;
+    mword carry = 0;
+
+    for(i=0;i<size_out;i++){ // indirections in this loop not optimized
+
+        out[i] = in[i*2] + last + carry;
+
+        if(out[i] < in[i*2]
+                ||
+           out[i] < last){
+            carry = 1;
+        }
+        else{
+            carry = 0;
+        }
+
+        last = in[i*2+1]; // gets ignored on final loop
+
+    }
 
 }
 

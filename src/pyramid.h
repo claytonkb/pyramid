@@ -54,6 +54,8 @@
 #include "tags.h"
 #include "symbols.h"
 #include "flags.h"
+#include "tommath.h"
+
 
 /*****************************************************************************
  *                                                                           *
@@ -164,6 +166,9 @@
 #ifdef PYRAMID_32_BIT
 typedef uint32_t mword;
 typedef uint16_t hword;
+typedef uint64_t dmword;
+#define DMWORD_HI(x) (((x) & 0xffffffff00000000) >> 32)
+#define DMWORD_LO(x)  ((x) & 0x00000000ffffffff)
 #define HWORD_MAX ((2<<15)-1)
 #define HWORD_HI(x) (((x) & 0xffff0000) >> 16)
 #define HWORD_LO(x)  ((x) & 0x0000ffff)

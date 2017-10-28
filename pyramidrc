@@ -2,13 +2,17 @@ pyramid_clean(){
     rm -f bin/pyramid.exe
 }
 
+# Note: To build libtommath library with MinGW, copy over the header files
+# to ./MinGW/include because the libtom code uses angle brackets for all the
+# includes
+
 pyramid_build(){
     gcc src/pyramid.c src/mem.c src/interp.c src/pearson.c src/util.c \
     src/array.c src/introspect.c src/tptr.c src/io.c src/bstruct.c \
     src/string.c src/list.c src/utf8.c src/sexpr.c src/trie.c src/xbar.c \
     src/pvc.c src/std.c src/eval.c src/sort.c src/mt19937ar.c src/aexpr.c \
     src/compress.c src/math.c \
-    -Wall -o bin/pyramid;
+    -I libtommath lib/libtommath.a -Wall -o bin/pyramid;
 }
 
 pyramid_compile(){

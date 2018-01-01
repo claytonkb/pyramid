@@ -46,7 +46,10 @@ mword std_time_ms(void){ // std_time_ms#
 #ifdef PYRAMID_WINDOWS_BUILD 
     DWORD raw_time = GetTickCount();
     return (mword)raw_time;
+#else
+    return 0;
 #endif
+
 
 }
 

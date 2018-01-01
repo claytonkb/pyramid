@@ -11,7 +11,9 @@
  *                                                                           *
  ****************************************************************************/
 
-#define PYRAMID_WINDOWS_BUILD
+//#define PYRAMID_WINDOWS_BUILD
+
+#define PYRAMID_64_BIT
 
 #define DEV_MODE
 #define COMPAT_MODE
@@ -54,7 +56,7 @@
 #include "tags.h"
 #include "symbols.h"
 #include "flags.h"
-#include "tommath.h"
+//#include "tommath.h"
 
 
 /*****************************************************************************

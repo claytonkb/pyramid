@@ -22,13 +22,13 @@ void *mem_sys_alloc(int size);
 //void  mem_sys_free(void *p, int size);
 void mem_sys_free(void *p);
 
-inline void mem_bank_alloc(alloc_bank *a, mword bank_size);
-inline void mem_bank_free(alloc_bank *a);
+void mem_bank_alloc(alloc_bank *a, mword bank_size);
+void mem_bank_free(alloc_bank *a);
 
 void mem_new(pyr_cache *this_pyr, mword init_mem_size);
 void mem_destroy(mem_context *m);
 
-//inline void mem_reset_bank(alloc_bank *b);
+//void mem_reset_bank(alloc_bank *b);
 
 void *mem_non_gc_alloc2(mword alloc_sfield);
 void *mem_non_gc_alloc(int size);
@@ -43,19 +43,19 @@ void mem_non_gc_reset_pages(mword *page_ptr);
 mword *mem_alloc(pyr_cache *this_pyr, mword sfield);
 //mword *mem_alloc2(pyr_cache *this_pyr, mword alloc_sfield, access_size_sel access_size);
 
-inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init);
-inline void *mem_new_ptr(pyr_cache *this_pyr, mword size);
-inline void *mem_new_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs);
-inline void *mem_new_cptr(pyr_cache *this_pyr, const mword *hash, mword *cptr);
+void *mem_new_val(pyr_cache *this_pyr, mword size, mword init);
+void *mem_new_ptr(pyr_cache *this_pyr, mword size);
+void *mem_new_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs);
+void *mem_new_cptr(pyr_cache *this_pyr, const mword *hash, mword *cptr);
 
-inline void *_val(pyr_cache *this_pyr, mword value);
-inline void *_ptr(pyr_cache *this_pyr, mword *unsafe_ptr);
-//inline void *_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs);
+void *_val(pyr_cache *this_pyr, mword value);
+void *_ptr(pyr_cache *this_pyr, mword *unsafe_ptr);
+//void *_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs);
 
 mword *_newstr(pyr_cache *this_pyr, mword size8, char set_char);
 mword *_newbits(pyr_cache *this_pyr, mword size1);
 
-inline mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr);
+mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr);
 mword *_dcons(pyr_cache *this_pyr, mword *car, mword *cdr, mword *cpr);
 
 void *_mkval(pyr_cache *this_pyr, mword array_size, ...);

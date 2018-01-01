@@ -252,7 +252,7 @@ void mem_destroy(mem_context *m){ // mem_destroy#
 
 //
 //
-inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
+void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
 
     a->base_ptr    = mem_sys_alloc(bank_size); // XXX WAIVER(mem_sys_alloc) XXX //
     a->size        = bank_size;
@@ -266,7 +266,7 @@ inline void mem_bank_alloc(alloc_bank *a, mword bank_size){ // mem_bank_alloc#
 
 //
 //
-inline void mem_bank_free(alloc_bank *a){ // mem_bank_free#
+void mem_bank_free(alloc_bank *a){ // mem_bank_free#
 
     mem_sys_free(a->base_ptr);
 
@@ -347,7 +347,7 @@ mword *mem_alloc(pyr_cache *this_pyr, mword alloc_sfield){ // mem_alloc#
 
 //
 //
-inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init){ // mem_new_val#
+void *mem_new_val(pyr_cache *this_pyr, mword size, mword init){ // mem_new_val#
 
     mword local_size = UNITS_MTO8(size);
 
@@ -363,7 +363,7 @@ inline void *mem_new_val(pyr_cache *this_pyr, mword size, mword init){ // mem_ne
 
 //
 //
-inline void *mem_new_ptr(pyr_cache *this_pyr, mword size){ // mem_new_ptr#
+void *mem_new_ptr(pyr_cache *this_pyr, mword size){ // mem_new_ptr#
 
     void *ptr;
 
@@ -390,7 +390,7 @@ inline void *mem_new_ptr(pyr_cache *this_pyr, mword size){ // mem_new_ptr#
 
 //
 //
-inline void *mem_new_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs){
+void *mem_new_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs){
 
     mword *ptr = mem_alloc(this_pyr, TPTR_SFIELD);
 
@@ -408,7 +408,7 @@ inline void *mem_new_tptr(pyr_cache *this_pyr, const mword *hash, mword *bs){
 
 //
 //
-inline void *mem_new_cptr(pyr_cache *this_pyr, const mword *hash, mword *cptr){ // mem_new_cptr#
+void *mem_new_cptr(pyr_cache *this_pyr, const mword *hash, mword *cptr){ // mem_new_cptr#
 
     return mem_new_tptr(this_pyr, hash, _val(this_pyr, (mword)cptr));
 
@@ -418,7 +418,7 @@ inline void *mem_new_cptr(pyr_cache *this_pyr, const mword *hash, mword *cptr){ 
 // Accepts a data value and returns a val-array of size 1 containing that 
 // data value
 //
-inline void *_val(pyr_cache *this_pyr, mword value){ // _val#
+void *_val(pyr_cache *this_pyr, mword value){ // _val#
 
     void *ptr = mem_new_val(this_pyr, 1, 0);
     ldv(ptr,0) = value;
@@ -431,7 +431,7 @@ inline void *_val(pyr_cache *this_pyr, mword value){ // _val#
 // Accepts a single unsafe pointer and returns a safe ptr-array of size
 // 1 containing the unsafe pointer
 //
-inline void *_ptr(pyr_cache *this_pyr, mword *unsafe_ptr){ // _ptr#
+void *_ptr(pyr_cache *this_pyr, mword *unsafe_ptr){ // _ptr#
 
     void *ptr = mem_new_ptr(this_pyr, 1);
     ldp(ptr,0) = unsafe_ptr;
@@ -485,7 +485,7 @@ mword *_newbits(pyr_cache *this_pyr, mword size1){ // _newbits#
 
 //
 //
-inline mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr){ // _cons#
+mword *_cons(pyr_cache *this_pyr, mword *car, mword *cdr){ // _cons#
 
     mword **cons_cell = (mword**)mem_new_cons(this_pyr);
     ldp(cons_cell,0) = car;

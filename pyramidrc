@@ -11,8 +11,11 @@ pyramid_build(){
     src/array.c src/introspect.c src/tptr.c src/io.c src/bstruct.c \
     src/string.c src/list.c src/utf8.c src/sexpr.c src/trie.c src/xbar.c \
     src/pvc.c src/std.c src/eval.c src/sort.c src/mt19937ar.c src/aexpr.c \
-    src/compress.c src/math.c \
-    -I libtommath lib/libtommath.a -Wall -o bin/pyramid;
+    src/compress.c \
+    -Wfatal-errors \
+    -Wall -o bin/pyramid;
+#    src/compress.c src/math.c \
+    # -I libtommath lib/libtommath.a -Wall -o bin/pyramid;
 }
 
 pyramid_compile(){

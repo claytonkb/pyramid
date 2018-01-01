@@ -80,7 +80,7 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
     mword  tempw=0;
     char  *tempc = NULL;
     mword *temp=nil;
-    mword *temp2=nil;
+//    mword *temp2=nil;
     tempv+=0; // silence compiler warning
     tempw+=0; // silence compiler warning
 
@@ -140,8 +140,8 @@ void util_bare_metal_prompt(pyr_cache *this_pyr, mword *init_ptr){ // util_bare_
 //    fprintf(stderr, "%lf, ", running);
 //}
 //_die;
-mp_int number;
-int result;
+//mp_int number;
+//int result;
 
     while(1){
 
@@ -437,33 +437,34 @@ temp = std_genrand32(this_pyr, 16384);
 //////ACC = _bs2str(this_pyr, temp);
 //////_say((char*)ACC);
 ////
-temp2 = std_genrand32(this_pyr, 16384);
+//temp2 = std_genrand32(this_pyr, 16384);
 //////ACC = _bs2str(this_pyr, temp2);
 //////_say((char*)ACC);
 //
 tempv = std_time_ms();
 //
 ////for(i=0;i<1000;i++){
-    ACC = math_lattice_mul(this_pyr,
-        temp,
-        temp2);
+//    ACC = math_lattice_mul(this_pyr,
+//        temp,
+//        temp2);
 ////}
 //
 ////                ACC = math_mul(this_pyr,
 ////                        mem_new_val(this_pyr, 4, 0xff),
 ////                        mem_new_val(this_pyr, 4, 0xff));
 ////
-tempw = std_time_ms();
-_dd(tempw-tempv);
 
-
-if ((result = mp_init(&number)) != MP_OKAY) {
-_say(mp_error_to_string(result));
-_die;
-}
-else{
-    _say("blast off!! ^-^");
-}
+//tempw = std_time_ms();
+//_dd(tempw-tempv);
+//
+//
+//if ((result = mp_init(&number)) != MP_OKAY) {
+//_say(mp_error_to_string(result));
+//_die;
+//}
+//else{
+//    _say("blast off!! ^-^");
+//}
 
 
                 break;

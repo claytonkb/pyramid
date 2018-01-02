@@ -102,9 +102,9 @@ _reset_trace;
 
     wall_clock_time = (clock() - wall_clock_time) / CLOCKS_PER_SEC;
 
-    mem_sys_free(golden_nil-1);
+//    mem_sys_free(golden_nil-1);
 
-    interp_exit(this_pyr);
+//    interp_exit(this_pyr);
 
     return wall_clock_time;
 
@@ -322,13 +322,13 @@ PYR_TAGS
 
     interp_init_srand(this_pyr);
 
-    this_pyr->self = interp_load_root_bvm(this_pyr);
-    this_pyr->cpu  = mem_non_gc_alloc(sizeof(pyr_cpu));
+//    this_pyr->self = interp_load_root_bvm(this_pyr);
+//    this_pyr->cpu  = mem_non_gc_alloc(sizeof(pyr_cpu));
 
-    global_dev_overrides = interp_load_dev_overrides(this_pyr);
-    global_dev_overrides++;
+//    global_dev_overrides = interp_load_dev_overrides(this_pyr);
+//    global_dev_overrides++;
 
-    global_irt->env = interp_load_pyr_env(this_pyr);
+//    global_irt->env = interp_load_pyr_env(this_pyr);
 
     global_irt->flags->INTERP_BOOT_IN_PROGRESS = CLR;
 
@@ -717,7 +717,6 @@ void interp_init_symbols(pyr_cache *this_pyr){ // interp_init_symbols#
 mword *interp_load_root_bvm(pyr_cache *this_pyr){ // interp_load_root_bvm#
 
 //    return interp_init_load_from_file(this_pyr, "rt/root.bbl");
-
     mword *temp = io_slurp8(this_pyr, "rt/root.bbl");
     return bstruct_load(this_pyr, temp, size(temp));
 

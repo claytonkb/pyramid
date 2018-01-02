@@ -159,7 +159,7 @@ void mem_non_gc_reset(void){ // mem_non_gc_reset#
 _reset_trace;
 #endif
 
-    mem_non_gc_reset_pages(global_irt->sys_mem->base_ptr);
+//    mem_non_gc_reset_pages(global_irt->sys_mem->base_ptr);
 
     global_irt->sys_mem->current_page = global_irt->sys_mem->base_ptr;
     global_irt->sys_mem->current_offset = 0;
